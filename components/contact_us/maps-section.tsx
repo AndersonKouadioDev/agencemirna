@@ -29,7 +29,7 @@ export default function MapsSection() {
           <div className="md:w-1/2 bg-primary/10">
             <Motion variant="verticalSlideIn" animationParams={{ delay: 0.1 }}>
               <Image
-                src="/images/photos/immeuble.jpeg"
+                src="/images/photos/immeuble1.jpg"
                 alt="We Help You To Find Your Dream Home Image - Houz X Webflow Template"
                 className="object-cover w-full h-full flex-grow"
                 width={500}

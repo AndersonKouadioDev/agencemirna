@@ -27,6 +27,7 @@ import {
   ArrowUpDownIcon,
   Users,
   ChevronLeft,
+  ChevronRightIcon,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -358,6 +359,14 @@ const PriceCard = ({ bien }: { bien: any }) => {
               required
             />
             <SubmitButton />
+            <Link
+              href={process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "#"}
+              target="_blank"
+              className="flex h-8 w-full items-center justify-center rounded-full bg-green-700 text-base font-semibold text-white transition ease-out hover:ring-2 hover:ring-green-500 hover:ring-offset-2 dark:bg-white lg:h-10 lg:text-base"
+            >
+              <span className="tracking-tight text-sm">WhatsApp</span>
+              <ChevronRightIcon className="ml-2 text-primary" />
+            </Link>
           </form>
           {status === "success" && (
             <p className="text-green-600 text-sm mt-2">

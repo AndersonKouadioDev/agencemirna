@@ -55,7 +55,7 @@ export default function ContactContentSection() {
               <div className="flex items-center">
                 <Building2 className="w-5 h-5 mr-3 text-gray-400" />
                 <span>
-                  2ème étage de l&apos;immeuble Zorôgbê, Rue du 7 décembre
+                  1er étage de l&apos;immeuble Fawaz, Rue Pierre Marie et Currie
                   <br />
                   Marcory Zone 4, Abidjan Côte d&apos;Ivoire
                 </span>
@@ -66,7 +66,7 @@ export default function ContactContentSection() {
               </div>
               <div className="flex items-center">
                 <Phone className="w-5 h-5 mr-3 text-gray-400" />
-                <span>(+225) 01 43 483 131 / (+225) 27 21 536 231</span>
+                <span>(+225) 27 21 536 231 | (+225) 01 43 483 131 | (+225) 07 03 06 42 06</span>
               </div>
             </div>
           </div>

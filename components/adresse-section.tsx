@@ -37,14 +37,15 @@ export default function AdresseSection() {
                 immobiliers.
               </p>
               <p className="text-gray-800 text-sm md:text-base mb-4">
-                Horraire : Lundi - Vendredi : 8h00 - 18h00
+                Horraire : Lundi - Vendredi : 8h30 - 17h00
               </p>
               <div className="my-6 w-full h-px bg-gray-500 rounded-full"></div>
               <div className="space-y-4 text-sm md:text-base">
                 <div className="flex items-center gap-2">
                   <Building2 className="size-5 flex-shrink-0 text-primary" />
                   <span>
-                    2ème étage de l&apos;immeuble Zorôgbê, Rue du 7 décembre
+                    1er étage de l&apos;immeuble Fawaz, Rue Pierre Marie et
+                    Currie
                     <br />
                     Marcory Zone 4, Abidjan Côte d&apos;Ivoire
                   </span>
@@ -55,7 +56,7 @@ export default function AdresseSection() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="size-5 flex-shrink-0 text-primary" />
-                  <span>(+225) 01 43 483 131 / (+225) 27 21 536 231</span>
+                  <span>(+225) 27 21 536 231 | (+225) 01 43 483 131 | (+225) 07 03 06 42 06</span>
                 </div>
               </div>
             </Motion>
