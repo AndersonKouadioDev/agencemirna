@@ -2,6 +2,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import type { Metadata, Viewport } from "next";
 import { Roboto as FontSans } from "next/font/google";
+import { GoogleTagManager } from "@next/third-parties/google";
 
 import "./globals.css";
 import { Providers } from "./provider";
@@ -152,6 +153,8 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
+        <GoogleTagManager gtmId="G-C5RY1GRYG1" />
+
         <Providers>
           {children}
           <Toaster />

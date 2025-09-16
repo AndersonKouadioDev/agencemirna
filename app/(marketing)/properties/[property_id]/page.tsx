@@ -3,11 +3,12 @@ import GallerySection from "@/components/properties/[property_id]/gallery-sectio
 import { getBienWithImages } from "@/src/actions/bien.actions";
 import { DateRangePicker } from "@nextui-org/date-picker";
 
-export default async function Page({
-  params,
-}: {
-  params: { property_id: string };
-}) {
+export default async function Page(
+  props: {
+    params: Promise<{ property_id: string }>;
+  }
+) {
+  const params = await props.params;
   const bien = await getBienWithImages(params.property_id);
 
   return (
