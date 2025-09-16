@@ -1,0 +1,20 @@
+import { SiteFooter } from "@/components/site-footer";
+import { Header } from "@/components/site-header";
+
+interface MarketingLayoutProps {
+  children: React.ReactNode;
+}
+
+export default async function MarketingLayout({
+  children,
+}: MarketingLayoutProps) {
+  return (
+    <>
+      <Header />
+      <main className="mx-auto flex-1">{children}</main>
+      <SiteFooter />
+    </>
+  );
+}
+
+

@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 15%;
+
+    --primary: 37 76% 54%;
+    --primary-foreground: 0 0% 9%;
+
+    --secondary: 36 64% 13%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 36 64% 13%;
+    --muted-foreground: 0 0% 45.1%;
+
+    --accent: 36 64% 13%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 15%;
+
+    --radius: 0.5rem;
+
+    /* Custom properties */
+    --navigation-height: 3.5rem;
+  }
+
+  .dark {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 15%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 15%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 37 76% 54%;
+    --primary-foreground: 0 0% 9%;
+
+    --secondary: 36 64% 13%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 36 64% 13%;
+    --muted-foreground: 0 0% 63.9%;
+
+    --accent: 36 64% 13%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 36 64% 13%;
+    --input: 36 64% 13%;
+    --ring: 0 0% 83.1%;
+  }
+
+  @font-face {
+    font-family: "Agate";
+    src: url("/font/agate.otf") format("opentype");
+    font-weight: 400;
+    font-style: normal;
+  }
+  
+  @font-face {
+    font-family: "Agate";
+    src: url("/font/agate-italic.otf") format("opentype");
+    font-weight: 400;
+    font-style: italic;
+  }
+  @font-face {
+    font-family: "Agate";
+    src: url("/font/agate-bold.otf") format("opentype");
+    font-weight: 400;
+    font-style:normal;
+  }
+
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
