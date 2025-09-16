@@ -153,7 +153,7 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
-        <GoogleTagManager gtmId="G-C5RY1GRYG1" />
+        <GoogleTagManager gtmId="GTM-W2PS7KNF" />
         <GoogleAnalytics gaId="G-C5RY1GRYG1" />
 
         <Providers>
