@@ -2,10 +2,10 @@ import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 import type { Metadata, Viewport } from "next";
 import { Roboto as FontSans } from "next/font/google";
-import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
 
 import "./globals.css";
 import { Providers } from "./provider";
+import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
 
 const fontSans = FontSans({
   weight: ["400", "700"],
@@ -145,7 +145,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="fr" suppressHydrationWarning>
       <head />
       <body
         className={cn(
