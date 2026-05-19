@@ -72,9 +72,13 @@ export async function getBien(bienId: string) {
 export async function getBienWithImages(bienId: string) {
   const bien = await getBien(bienId);
 
+  if (!bien) {
+    return null;
+  }
+
   // Récupérer les images du bien
   // Ici, bien.folder contiendrait 'dakar', 'kilagi', etc.
-  const images = await getBienImages(bien?.folder);
+  const images = await getBienImages(bien.folder ?? "");
   return { ...bien, images };
 }
 
@@ -94,10 +98,10 @@ export async function getAllBiens() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Erreur lors de la récupération du bien:", error);
-    return null;
+    console.error("Erreur lors de la récupération des biens:", error);
+    return [];
   }
 
-  // Retourner le bien avec ses images
-  return biens;
+  // Retourner les biens (jamais null pour éviter les crashs sur .length)
+  return biens ?? [];
 }

@@ -1,5 +1,15 @@
+import { dirname } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  turbopack: {
+    // Force le workspace root pour éviter le warning sur les multiples lockfiles
+    // (un pnpm-lock.yaml dans le repo parent crée une ambiguïté)
+    root: __dirname,
+  },
   images: {
     remotePatterns: [
       {

@@ -4,7 +4,17 @@ import ContactUsEmail from "@/emails/contact_us.email";
 import ContactUsSuccessEmail from "@/emails/contact_us_success.email";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resendInstance: Resend | null = null;
+function getResend(): Resend {
+  if (!resendInstance) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error("RESEND_API_KEY n'est pas définie");
+    }
+    resendInstance = new Resend(apiKey);
+  }
+  return resendInstance;
+}
 
 export async function ContactUs({
   firstName,
@@ -21,7 +31,7 @@ export async function ContactUs({
 }) {
   try {
     // Envoi de l'e-mail de contact à l'agence
-    const { data: contactData, error: contactError } = await resend.emails.send(
+    const { data: contactData, error: contactError } = await getResend().emails.send(
       {
         from: "website@agencemirna.com",
         to: ["info@agencemirna.com"],
@@ -41,7 +51,7 @@ export async function ContactUs({
     }
 
     // Envoi de l'e-mail de confirmation au client
-    const { data: successData, error: successError } = await resend.emails.send(
+    const { data: successData, error: successError } = await getResend().emails.send(
       {
         from: "info@agencemirna.com",
         to: [email],
