@@ -40,11 +40,15 @@ async function getBienImagesFromFolder(
 
 /**
  * Récupère les images d'un bien depuis la table `bien_images` (système actuel).
- * Si vide ET le bien a un `folder` legacy, retourne les URLs du folder Storage.
+ * Fallback en cascade :
+ * 1. Table bien_images (nouveau système, multi-photos)
+ * 2. Folder Storage legacy si défini
+ * 3. bien.image (cover unique legacy) wrappée en array
  */
 async function getBienImagesUnified(
   bienId: string,
   folder: string | null,
+  legacyCover: string | null,
 ): Promise<string[]> {
   const supabase = await createClient();
 
@@ -59,10 +63,17 @@ async function getBienImagesUnified(
     return rows.map((r) => r.url);
   }
 
-  // 2. Fallback : folder Storage legacy
+  // 2. Fallback : folder Storage legacy (si configuré ET accessible)
   if (folder) {
     const files = await getBienImagesFromFolder(folder);
-    return files.map((f) => f.url);
+    if (files.length > 0) {
+      return files.map((f) => f.url);
+    }
+  }
+
+  // 3. Dernier recours : bien.image (cover unique legacy) en array
+  if (legacyCover) {
+    return [legacyCover];
   }
 
   return [];
@@ -105,7 +116,11 @@ export async function getBienWithImages(bienId: string) {
     return null;
   }
 
-  const images = await getBienImagesUnified(bien.id, bien.folder ?? null);
+  const images = await getBienImagesUnified(
+    bien.id,
+    bien.folder ?? null,
+    bien.image ?? null,
+  );
   return { ...bien, images };
 }
 
@@ -141,12 +156,16 @@ export async function getAllBiens() {
 // ============================================================================
 
 /**
- * Server Action : si un bien a un `folder` Storage legacy et 0 image dans
- * bien_images, importe les URLs du folder dans bien_images (path préservé).
- * Idempotent (no-op si bien_images déjà rempli).
+ * Server Action : importe les photos d'un bien legacy dans bien_images.
+ *
+ * Stratégie :
+ * 1. Si bien_images contient déjà des entries → no-op (idempotent)
+ * 2. Sinon, tente d'importer depuis le folder Storage (si bien.folder set)
+ * 3. Sinon (dernier recours), importe bien.image (cover unique) en tant
+ *    que seule entry dans bien_images
  *
  * Appelée silencieusement par l'admin à chaque chargement de la page d'édition.
- * Le user n'a rien à faire.
+ * Le user n'a rien à faire — ses photos cover legacy seront éditables.
  */
 export async function migrateBienImagesFromFolder(
   bienId: string,
@@ -163,35 +182,50 @@ export async function migrateBienImagesFromFolder(
     return { ok: true, imported: 0 };
   }
 
-  // Récupérer le folder du bien
+  // Récupérer le folder et l'image cover legacy du bien
   const { data: bien } = await supabase
     .from("biens")
-    .select("folder")
+    .select("folder, image")
     .eq("id", bienId)
     .maybeSingle();
 
-  if (!bien?.folder) {
+  if (!bien) {
     return { ok: true, imported: 0 };
   }
 
-  const files = await getBienImagesFromFolder(bien.folder);
-  if (files.length === 0) {
-    return { ok: true, imported: 0 };
+  // 1. Essayer le folder Storage en priorité
+  if (bien.folder) {
+    const files = await getBienImagesFromFolder(bien.folder);
+    if (files.length > 0) {
+      const rows = files.map((file, i) => ({
+        bien_id: bienId,
+        url: file.url,
+        storage_path: `biens/${bien.folder}/${file.name}`,
+        ordre: i,
+      }));
+      const { error } = await supabase.from("bien_images").insert(rows);
+      if (error) {
+        console.error("migrateBienImagesFromFolder (folder) error:", error);
+        return { ok: false, imported: 0 };
+      }
+      return { ok: true, imported: rows.length };
+    }
   }
 
-  // Insert dans bien_images avec storage_path pour cleanup futur
-  const rows = files.map((file, i) => ({
-    bien_id: bienId,
-    url: file.url,
-    storage_path: `biens/${bien.folder}/${file.name}`,
-    ordre: i,
-  }));
-
-  const { error } = await supabase.from("bien_images").insert(rows);
-  if (error) {
-    console.error("migrateBienImagesFromFolder error:", error);
-    return { ok: false, imported: 0 };
+  // 2. Dernier recours : importer bien.image (cover unique legacy)
+  if (bien.image) {
+    const { error } = await supabase.from("bien_images").insert({
+      bien_id: bienId,
+      url: bien.image,
+      storage_path: null, // URL inconnue, pas de cleanup auto
+      ordre: 0,
+    });
+    if (error) {
+      console.error("migrateBienImagesFromFolder (legacy cover) error:", error);
+      return { ok: false, imported: 0 };
+    }
+    return { ok: true, imported: 1 };
   }
 
-  return { ok: true, imported: rows.length };
+  return { ok: true, imported: 0 };
 }
