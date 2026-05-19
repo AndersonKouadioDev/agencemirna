@@ -1,7 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { I18nProvider } from "@react-aria/i18n";
+// IMPORTANT : importer I18nProvider depuis @heroui/react (et non
+// @react-aria/i18n) pour partager la même instance de contexte que les
+// composants HeroUI (Calendar, DateRangePicker, etc.). Sinon deux copies
+// distinctes du module créent deux contextes séparés et la locale n'est
+// pas vue par les composants HeroUI.
+import { I18nProvider } from "@heroui/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 interface ValueObject {
