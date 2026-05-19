@@ -37,7 +37,7 @@ export function AdminTopbar({ admin }: { admin: AdminUser | null }) {
             href="/"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1.5 rounded-md hover:bg-muted"
+            className="hidden sm:inline-flex items-center gap-1.5 text-xs text-neutral-600 hover:text-neutral-900 transition-colors px-2 py-1.5 rounded-md hover:bg-zinc-100"
           >
             <ExternalLink className="h-3.5 w-3.5" />
             Voir le site
@@ -61,6 +61,7 @@ export function AdminTopbar({ admin }: { admin: AdminUser | null }) {
               size="sm"
               title="Déconnexion"
               aria-label="Déconnexion"
+              className="text-neutral-700 hover:bg-zinc-100 hover:text-neutral-900"
             >
               <LogOut className="h-4 w-4" />
               <span className="sr-only sm:not-sr-only sm:ml-1.5 sm:text-xs">

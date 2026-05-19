@@ -30,7 +30,12 @@ export function ComingSoon({
           <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
           <p className="text-sm text-muted-foreground mt-1">{description}</p>
         </div>
-        <Button variant="outline" size="sm" asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          asChild
+          className="hover:bg-zinc-100 hover:text-neutral-900 border-zinc-200"
+        >
           <Link href="/admin" className="flex items-center gap-1.5">
             <ArrowLeft className="h-4 w-4" />
             Retour au tableau de bord

@@ -114,10 +114,13 @@ function NavLink({
       href={item.href}
       onClick={onNavigate}
       className={cn(
+        // IMPORTANT : ne PAS utiliser bg-muted/bg-accent ici — ces tokens
+        // sont définis en marron foncé dans globals.css (couleurs de marque)
+        // → hover devient un bloc presque noir. On force des gris neutres.
         "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all",
         isActive
           ? "bg-primary/10 text-primary"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          : "text-neutral-600 hover:bg-zinc-100 hover:text-neutral-900",
       )}
     >
       {/* Barre verticale d'accent à gauche quand actif (plus visible que juste la couleur) */}
