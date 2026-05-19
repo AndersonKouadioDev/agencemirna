@@ -6,7 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatNumber } from "@/utils/formatNumber";
-import { DateRangePicker } from "@nextui-org/date-picker";
+import {
+  DateRangePicker,
+  DateField,
+  RangeCalendar,
+  Label,
+} from "@heroui/react";
 import { getLocalTimeZone } from "@internationalized/date";
 import dayjs from "dayjs";
 
@@ -323,35 +328,46 @@ const PriceCard = ({ bien }: { bien: any }) => {
               required
             />
             <DateRangePicker
-              variant="bordered"
-              label="Période de séjour"
-              isRequired
               value={value}
               onChange={setValue}
-              calendarProps={{
-                classNames: {
-                  base: "bg-background",
-                  headerWrapper: "pt-4 bg-background",
-                  prevButton: "border-1 border-default-200 rounded-small",
-                  nextButton: "border-1 border-default-200 rounded-small",
-                  gridHeader:
-                    "bg-background shadow-none border-b-1 border-default-100",
-                  cellButton: [
-                    "data-[today=true]:bg-default-100 data-[selected=true]:bg-gray-100 rounded-small",
-                    // start (pseudo)
-                    "data-[range-start=true]:before:rounded-l-small",
-                    "data-[selection-start=true]:before:rounded-l-small",
-                    // end (pseudo)
-                    "data-[range-end=true]:before:rounded-r-small",
-                    "data-[selection-end=true]:before:rounded-r-small",
-                    // start (selected)
-                    "data-[selected=true]:data-[selection-start=true]:data-[range-selection=true]:rounded-small",
-                    // end (selected)
-                    "data-[selected=true]:data-[selection-end=true]:data-[range-selection=true]:rounded-small",
-                  ],
-                },
-              }}
-            />
+              isRequired
+              className="w-full"
+            >
+              <Label className="text-sm font-medium">Période de séjour</Label>
+              <DateField.Group className="rounded-full border border-input bg-background">
+                <DateField.Input slot="start">
+                  {(segment) => <DateField.Segment segment={segment} />}
+                </DateField.Input>
+                <DateRangePicker.RangeSeparator />
+                <DateField.Input slot="end">
+                  {(segment) => <DateField.Segment segment={segment} />}
+                </DateField.Input>
+              </DateField.Group>
+              <DateRangePicker.Popover>
+                <RangeCalendar
+                  aria-label="Période de séjour"
+                  firstDayOfWeek="mon"
+                >
+                  <RangeCalendar.Header>
+                    <RangeCalendar.NavButton slot="previous" />
+                    <RangeCalendar.Heading />
+                    <RangeCalendar.NavButton slot="next" />
+                  </RangeCalendar.Header>
+                  <RangeCalendar.Grid>
+                    <RangeCalendar.GridHeader>
+                      {(day) => (
+                        <RangeCalendar.HeaderCell>
+                          {day}
+                        </RangeCalendar.HeaderCell>
+                      )}
+                    </RangeCalendar.GridHeader>
+                    <RangeCalendar.GridBody>
+                      {(date) => <RangeCalendar.Cell date={date} />}
+                    </RangeCalendar.GridBody>
+                  </RangeCalendar.Grid>
+                </RangeCalendar>
+              </DateRangePicker.Popover>
+            </DateRangePicker>
             <Textarea
               name="message"
               placeholder="Message"
