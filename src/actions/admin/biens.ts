@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/src/supabase/server";
 import { getAdminUser } from "@/src/supabase/admin-auth";
 import { deleteAdminImage } from "./upload";
+import { migrateBienImagesFromFolder } from "@/src/actions/bien.actions";
 
 /**
  * Server Actions admin pour la table `biens`.
@@ -146,6 +147,13 @@ export async function getBienAdmin(
   if (error || !bien) {
     if (error) console.error("getBienAdmin error:", error);
     return null;
+  }
+
+  // Auto-import des images legacy : si ce bien a un `folder` Storage mais
+  // 0 entries en bien_images, on importe automatiquement (silencieusement).
+  // Idempotent : appelé à chaque édition, ne fait rien si déjà migré.
+  if (bien.folder) {
+    await migrateBienImagesFromFolder(id).catch(() => {});
   }
 
   const { data: images } = await supabase
