@@ -62,10 +62,13 @@ export default async function AdminDashboardPage() {
     },
   ];
 
+  const firstName = admin.fullName?.split(" ")[0]?.trim();
+  const greeting = firstName ? `Bonjour ${firstName}` : "Bonjour";
+
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Bonjour {admin.fullName?.split(" ")[0] ?? ""} 👋</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{greeting} 👋</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Voici un aperçu de ce qui se passe sur agencemirna.com aujourd'hui.
         </p>
