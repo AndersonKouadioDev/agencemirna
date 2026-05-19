@@ -88,11 +88,6 @@ export const metadata: Metadata = {
       "Votre partenaire de confiance pour l'immobilier à Abidjan. Découvrez nos offres exclusives !",
     images: ["https://www.agencemirna.com/twitter-image.png"],
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
   robots: {
     index: true,
     follow: true,

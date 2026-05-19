@@ -113,10 +113,12 @@ export function SiteFooter() {
               <h2 className="text-2xl text-secondary md:text-3xl lg:text-4xl text-center lg:text-left font-agate font-bold mb-4">
                 Découvrez des opportunités immobilières exclusives !
               </h2>
-              <p className="text-sm md:text-base mb-4">
-                Abonnez-vous à la newsletter de l&apos;Agence Mirna et soyez le
-                premier à découvrir :
-                <ul className="list-disc list-inside">
+              <div className="text-sm md:text-base mb-4">
+                <p>
+                  Abonnez-vous à la newsletter de l&apos;Agence Mirna et soyez
+                  le premier à découvrir :
+                </p>
+                <ul className="list-disc list-inside mt-2">
                   <li>🏠 Nos nouvelles propriétés exclusives</li>
                   <li>
                     💡 Des conseils d&apos;experts pour vos projets immobiliers
@@ -126,7 +128,7 @@ export function SiteFooter() {
                   </li>
                   <li>🎁 Des offres spéciales réservées à nos abonnés</li>
                 </ul>
-              </p>
+              </div>
               <p className="text-sm md:text-base mb-4">
                 Rejoignez notre communauté d&apos;investisseurs et de
                 propriétaires avisés. Recevez chaque mois une sélection

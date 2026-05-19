@@ -4,7 +4,17 @@ import BookingRequestEmail from "@/emails/booking_asking.email";
 import BookingRequestConfirmationEmail from "@/emails/booking_asking_confirmation.email";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resendInstance: Resend | null = null;
+function getResend(): Resend {
+  if (!resendInstance) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      throw new Error("RESEND_API_KEY n'est pas définie");
+    }
+    resendInstance = new Resend(apiKey);
+  }
+  return resendInstance;
+}
 
 export async function BookingRequest({
   firstName,
@@ -31,7 +41,7 @@ export async function BookingRequest({
 }) {
   try {
     // Envoi de l'e-mail de demande de réservation à l'agence
-    const { data: requestData, error: requestError } = await resend.emails.send(
+    const { data: requestData, error: requestError } = await getResend().emails.send(
       {
         from: "website@agencemirna.com",
         to: ["info@agencemirna.com"],
@@ -57,7 +67,7 @@ export async function BookingRequest({
 
     // Envoi de l'e-mail de confirmation au client
     const { data: confirmationData, error: confirmationError } =
-      await resend.emails.send({
+      await getResend().emails.send({
         from: "info@agencemirna.com",
         to: [email],
         subject: "Confirmation de votre demande de réservation - Agence Mirna",

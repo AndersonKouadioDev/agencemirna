@@ -8,7 +8,7 @@ import { createClient } from "../supabase/server";
  * @returns - The images of the bien
  */
 const getBienImages = async (folderName: string) => {
-  const supabase = createClient();
+  const supabase = await createClient();
   // Le chemin complet sera maintenant 'biens/dakar' par exemple
   const fullPath = `biens/${folderName}`;
 
@@ -40,7 +40,7 @@ const getBienImages = async (folderName: string) => {
  * @returns - The bien
  */
 export async function getBien(bienId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Récupérer les informations du bien depuis la base de données
   const { data: bien, error } = await supabase
@@ -72,14 +72,18 @@ export async function getBien(bienId: string) {
 export async function getBienWithImages(bienId: string) {
   const bien = await getBien(bienId);
 
+  if (!bien) {
+    return null;
+  }
+
   // Récupérer les images du bien
   // Ici, bien.folder contiendrait 'dakar', 'kilagi', etc.
-  const images = await getBienImages(bien?.folder);
+  const images = await getBienImages(bien.folder ?? "");
   return { ...bien, images };
 }
 
 export async function getAllBiens() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Récupérer les informations du bien depuis la base de données
   const { data: biens, error } = await supabase
@@ -94,10 +98,10 @@ export async function getAllBiens() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Erreur lors de la récupération du bien:", error);
-    return null;
+    console.error("Erreur lors de la récupération des biens:", error);
+    return [];
   }
 
-  // Retourner le bien avec ses images
-  return biens;
+  // Retourner les biens (jamais null pour éviter les crashs sur .length)
+  return biens ?? [];
 }
