@@ -29,7 +29,7 @@ export default async function AdminAuthedLayout({
   const admin = await requireAdmin();
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-stone-50">
       <AdminSidebar />
       <div className="lg:pl-64">
         <AdminTopbar admin={admin} />
