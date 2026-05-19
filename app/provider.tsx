@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useLocale, I18nProvider } from "@react-aria/i18n";
+import { I18nProvider } from "@react-aria/i18n";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 interface ValueObject {
@@ -27,19 +27,19 @@ export interface ProvidersProps {
   themeProps?: ThemeProviderProps;
 }
 
+// Site francophone (Côte d'Ivoire) — on force la locale fr-FR pour que
+// les composants react-aria (DatePicker, Calendar, etc.) affichent les
+// libellés et formats de date en français, indépendamment de la locale
+// du navigateur de l'utilisateur.
+const LOCALE = "fr-FR";
+
 export function Providers({
   children,
   themeProps = { attribute: "class", defaultTheme: "light" },
 }: ProvidersProps) {
-  const { locale, direction } = useLocale();
-
   return (
     <NextThemesProvider {...themeProps}>
-      <I18nProvider locale={locale}>
-        <div dir={direction} lang={locale}>
-          {children}
-        </div>
-      </I18nProvider>
+      <I18nProvider locale={LOCALE}>{children}</I18nProvider>
     </NextThemesProvider>
   );
 }
