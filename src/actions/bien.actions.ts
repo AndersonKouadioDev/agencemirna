@@ -8,7 +8,7 @@ import { createClient } from "../supabase/server";
  * @returns - The images of the bien
  */
 const getBienImages = async (folderName: string) => {
-  const supabase = createClient();
+  const supabase = await createClient();
   // Le chemin complet sera maintenant 'biens/dakar' par exemple
   const fullPath = `biens/${folderName}`;
 
@@ -40,7 +40,7 @@ const getBienImages = async (folderName: string) => {
  * @returns - The bien
  */
 export async function getBien(bienId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Récupérer les informations du bien depuis la base de données
   const { data: bien, error } = await supabase
@@ -79,7 +79,7 @@ export async function getBienWithImages(bienId: string) {
 }
 
 export async function getAllBiens() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // Récupérer les informations du bien depuis la base de données
   const { data: biens, error } = await supabase
