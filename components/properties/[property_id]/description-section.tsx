@@ -342,6 +342,11 @@ const PriceCard = ({ bien }: { bien: any }) => {
                 <DateField.Input slot="end">
                   {(segment) => <DateField.Segment segment={segment} />}
                 </DateField.Input>
+                <DateField.Suffix>
+                  <DateRangePicker.Trigger>
+                    <DateRangePicker.TriggerIndicator />
+                  </DateRangePicker.Trigger>
+                </DateField.Suffix>
               </DateField.Group>
               <DateRangePicker.Popover>
                 <RangeCalendar
