@@ -32,9 +32,10 @@ export default function GallerySection({ bien }: { bien: any }) {
           </h2>
         </Motion>
 
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
-          {/* Image principale (cover) */}
-          <div className="relative aspect-[4/3] md:aspect-auto md:h-full overflow-hidden rounded-3xl shadow-lg group">
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Image principale (cover) — toujours aspect 4/3 pour aligner
+              naturellement avec la grille 2×2 d'à côté */}
+          <div className="relative aspect-[4/3] overflow-hidden rounded-3xl shadow-lg group">
             <Image
               src={cover}
               alt={`${propertyName} — photo principale`}
