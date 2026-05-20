@@ -149,12 +149,11 @@ export async function getBienAdmin(
     return null;
   }
 
-  // Auto-import des images legacy : si ce bien a un `folder` Storage mais
-  // 0 entries en bien_images, on importe automatiquement (silencieusement).
-  // Idempotent : appelé à chaque édition, ne fait rien si déjà migré.
-  if (bien.folder) {
-    await migrateBienImagesFromFolder(id).catch(() => {});
-  }
+  // Auto-import des images legacy : tente d'importer depuis le folder
+  // Storage OU depuis bien.image (cover unique legacy). Idempotent :
+  // ne fait rien si bien_images contient déjà des entries.
+  // Appelé inconditionnellement (la fonction décide elle-même quoi faire).
+  await migrateBienImagesFromFolder(id).catch(() => {});
 
   const { data: images } = await supabase
     .from("bien_images")
