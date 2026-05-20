@@ -86,24 +86,27 @@ function GalleryCarousel({
 
   return (
     <>
-      {/* Carrousel principal */}
+      {/* Carrousel principal — clic sur l'image ouvre la lightbox */}
       <div className="relative">
         <div ref={mainRef} className="overflow-hidden rounded-2xl shadow-xl">
           <div className="flex">
             {images.map((url, i) => (
-              <div
+              <button
                 key={url}
-                className="relative shrink-0 grow-0 basis-full aspect-[16/9] bg-stone-100"
+                type="button"
+                onClick={() => setLightboxOpen(true)}
+                className="relative shrink-0 grow-0 basis-full aspect-[16/9] bg-stone-100 cursor-zoom-in group"
+                aria-label={`Voir la photo ${i + 1} en plein écran`}
               >
                 <Image
                   src={url}
                   alt={`${propertyName} — photo ${i + 1}`}
                   fill
                   sizes="(max-width: 1024px) 100vw, 1024px"
-                  className="object-cover"
+                  className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
                   priority={i === 0}
                 />
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -124,21 +127,28 @@ function GalleryCarousel({
           {selectedIndex + 1} / {images.length}
         </div>
 
-        {/* Boutons prev/next */}
+        {/* Boutons prev/next (avec stopPropagation pour ne pas déclencher
+            l'ouverture de la lightbox sous-jacente) */}
         {images.length > 1 && (
           <>
             <button
               type="button"
-              onClick={() => mainApi?.scrollPrev()}
-              className="absolute left-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-md hover:bg-white transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                mainApi?.scrollPrev();
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-md hover:bg-white transition-colors z-10"
               aria-label="Photo précédente"
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
             <button
               type="button"
-              onClick={() => mainApi?.scrollNext()}
-              className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-md hover:bg-white transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                mainApi?.scrollNext();
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-md hover:bg-white transition-colors z-10"
               aria-label="Photo suivante"
             >
               <ChevronRight className="h-5 w-5" />
