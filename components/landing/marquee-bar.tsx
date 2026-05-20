@@ -1,18 +1,28 @@
 import Link from "next/link";
-import { Megaphone, Phone, Sparkles, ArrowRight, Newspaper } from "lucide-react";
+import {
+  Megaphone,
+  Phone,
+  Sparkles,
+  ArrowRight,
+  Newspaper,
+} from "lucide-react";
+import { getActivePromotions } from "@/src/actions/public";
 
 /**
  * Bandeau défilant en haut de la home — annonces et liens rapides.
- * Animation CSS pure (marquee keyframe) — pas de JS, performant.
- * Pause au hover. Respecte prefers-reduced-motion (s'arrête).
+ * Server Component qui charge les promotions actives depuis Supabase.
+ * - Si des promos actives existent, elles sont injectées au début
+ * - Sinon, fallback sur les messages génériques utiles (estimation, tel, services)
+ * - Animation CSS pure (marquee keyframe), pause au hover, respect reduced-motion
  */
 
-const ANNOUNCEMENTS = [
-  {
-    icon: Sparkles,
-    text: "Nouveau : appartements meublés disponibles à Cocody dès 60 000 FCFA/nuitée",
-    href: "/properties",
-  },
+type AnnouncementItem = {
+  icon: typeof Sparkles;
+  text: string;
+  href: string;
+};
+
+const FALLBACK_ANNOUNCEMENTS: AnnouncementItem[] = [
   {
     icon: Megaphone,
     text: "Estimation gratuite de votre bien — réponse sous 24h",
@@ -28,11 +38,30 @@ const ANNOUNCEMENTS = [
     text: "Découvrez nos services : Gestion, Vente, Location meublée, Décoration",
     href: "/services",
   },
+  {
+    icon: Sparkles,
+    text: "Nouveau : appartements meublés disponibles dès 50 000 FCFA/nuit",
+    href: "/properties?service=location",
+  },
 ];
 
-export default function MarqueeBar() {
+export default async function MarqueeBar() {
+  const promos = await getActivePromotions();
+
+  // Construit la liste : promos actives (max 3) puis fallback pour remplir
+  const promoItems: AnnouncementItem[] = promos.slice(0, 3).map((p) => ({
+    icon: Sparkles,
+    text: p.title,
+    href: p.cta_url || "/promotions",
+  }));
+
+  const announcements: AnnouncementItem[] =
+    promoItems.length > 0
+      ? [...promoItems, ...FALLBACK_ANNOUNCEMENTS.slice(0, 2)]
+      : FALLBACK_ANNOUNCEMENTS;
+
   // On duplique le contenu pour un défilement infini sans coupure
-  const items = [...ANNOUNCEMENTS, ...ANNOUNCEMENTS];
+  const items = [...announcements, ...announcements];
 
   return (
     <div className="relative bg-secondary text-white overflow-hidden border-b border-white/5">

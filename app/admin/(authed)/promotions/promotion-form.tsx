@@ -23,7 +23,12 @@ export function PromotionForm({ promo }: { promo?: PromotionAdminRow }) {
     promo?.description ?? "",
   );
   const [imageUrls, setImageUrls] = React.useState<string[]>(
-    promo?.image ? [promo.image] : [],
+    promo?.image && promo.image.startsWith("/images/") ? [] : promo?.image ? [promo.image] : [],
+  );
+  // URL alternative — pour réutiliser une image existante (ex: /images/biens/bien1.jpg)
+  // sans avoir à re-uploader. Pratique pour les promos test ou les visuels génériques.
+  const [imageAltUrl, setImageAltUrl] = React.useState<string>(
+    promo?.image && promo.image.startsWith("/images/") ? promo.image : "",
   );
   const [ctaLabel, setCtaLabel] = React.useState(promo?.cta_label ?? "");
   const [ctaUrl, setCtaUrl] = React.useState(promo?.cta_url ?? "");
@@ -51,8 +56,12 @@ export function PromotionForm({ promo }: { promo?: PromotionAdminRow }) {
     setError(null);
     setSubmitting(true);
 
-    if (!imageUrls[0]) {
-      setError("Une image est obligatoire pour publier une promotion.");
+    // Image : upload prioritaire, sinon URL alternative, sinon erreur
+    const finalImage = imageUrls[0] || imageAltUrl.trim();
+    if (!finalImage) {
+      setError(
+        "Une image est obligatoire — uploadez un fichier OU collez une URL d'image existante.",
+      );
       setSubmitting(false);
       return;
     }
@@ -61,7 +70,7 @@ export function PromotionForm({ promo }: { promo?: PromotionAdminRow }) {
       id: promo?.id,
       title,
       description: description || null,
-      image: imageUrls[0],
+      image: finalImage,
       cta_label: ctaLabel || null,
       cta_url: ctaUrl || null,
       starts_at: startsAt ? new Date(startsAt).toISOString() : null,
@@ -140,7 +149,7 @@ export function PromotionForm({ promo }: { promo?: PromotionAdminRow }) {
 
           <Section
             title="Image"
-            subtitle="Visuel principal affiché sur la page /promotions et (si activé) en bandeau sur la home"
+            subtitle="Visuel principal affiché sur la page /promotions et (si activé) en bandeau sur la home. Format conseillé : carré ou rectangle 16/9."
           >
             <ImageUploader
               value={imageUrls}
@@ -148,6 +157,25 @@ export function PromotionForm({ promo }: { promo?: PromotionAdminRow }) {
               pathPrefix={pathPrefix}
               maxFiles={1}
             />
+
+            {/* Alternative : URL d'image existante (réutilise un visuel
+                déjà présent dans /public ou Supabase Storage). Utile pour
+                des promos rapides sans upload dédié. */}
+            <div className="mt-4 pt-4 border-t border-stone-200">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2 block">
+                Ou réutiliser une image existante (URL)
+              </Label>
+              <Input
+                value={imageAltUrl}
+                onChange={(e) => setImageAltUrl(e.target.value)}
+                placeholder="Ex : /images/biens/bien1.jpg ou https://…"
+                className="text-sm"
+              />
+              <p className="mt-1.5 text-xs text-neutral-500">
+                Laissez vide si vous uploadez une image ci-dessus. Sinon,
+                collez le chemin d'une image déjà présente sur le site.
+              </p>
+            </div>
           </Section>
 
           <Section
