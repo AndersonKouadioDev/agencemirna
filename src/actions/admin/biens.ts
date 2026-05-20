@@ -41,6 +41,7 @@ export type BienAdminRow = {
   type_bien_id: number | null;
   service_bien_id: number | null;
   categorie_bien_id: number | null;
+  is_active: boolean;
   created_at: string;
   // Joints
   types_bien: { id: number; name: string | null } | null;
@@ -81,7 +82,7 @@ export async function listBiensAdmin(): Promise<BienAdminRow[]> {
       id, name, short_description, description, image, prix, prix_month,
       chambre, salon, salle_bains, capacity, address, ville_commune, pays,
       localisation, folder, type_bien_id, service_bien_id, categorie_bien_id,
-      created_at,
+      is_active, created_at,
       types_bien:type_bien_id (id, name),
       services_bien:service_bien_id (id, name),
       categories_bien:categorie_bien_id (id, name)
@@ -136,7 +137,7 @@ export async function getBienAdmin(
       id, name, short_description, description, image, prix, prix_month,
       chambre, salon, salle_bains, capacity, address, ville_commune, pays,
       localisation, folder, type_bien_id, service_bien_id, categorie_bien_id,
-      created_at,
+      is_active, created_at,
       types_bien:type_bien_id (id, name),
       services_bien:service_bien_id (id, name),
       categories_bien:categorie_bien_id (id, name)
@@ -233,6 +234,8 @@ export type BienFormData = {
   type_bien_id?: number | null;
   service_bien_id?: number | null;
   categorie_bien_id?: number | null;
+  /** Si false, le bien est masqué du site public (toujours visible en admin). */
+  is_active?: boolean;
   /** URLs des images dans l'ordre voulu. La 1ère = cover. */
   image_urls: string[];
 };
@@ -268,6 +271,7 @@ export async function upsertBien(
     service_bien_id: input.service_bien_id ?? null,
     categorie_bien_id: input.categorie_bien_id ?? null,
     image: input.image_urls[0] ?? null, // legacy field : cover pour compat site public
+    is_active: input.is_active ?? true,
   };
 
   let bienId: string;

@@ -149,12 +149,21 @@ function CoverCell({ bien }: { bien: BienAdminRow }) {
 function NameCell({ bien }: { bien: BienAdminRow }) {
   return (
     <div className="min-w-0">
-      <Link
-        href={`/admin/biens/${bien.id}`}
-        className="font-medium text-neutral-900 hover:text-primary truncate block"
-      >
-        {bien.name ?? "(sans nom)"}
-      </Link>
+      <div className="flex items-center gap-2">
+        <Link
+          href={`/admin/biens/${bien.id}`}
+          className={`font-medium hover:text-primary truncate ${
+            bien.is_active ? "text-neutral-900" : "text-neutral-500"
+          }`}
+        >
+          {bien.name ?? "(sans nom)"}
+        </Link>
+        {!bien.is_active && (
+          <span className="inline-flex items-center rounded-full bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-neutral-600 shrink-0">
+            Désactivé
+          </span>
+        )}
+      </div>
       <div className="text-xs text-neutral-500 truncate">
         {[bien.ville_commune, bien.pays].filter(Boolean).join(" · ")}
       </div>

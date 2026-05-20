@@ -76,6 +76,11 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
     images.map((img) => img.url),
   );
 
+  // Toggle activation (par défaut true pour les nouveaux biens)
+  const [isActive, setIsActive] = React.useState<boolean>(
+    bien?.is_active ?? true,
+  );
+
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -117,6 +122,7 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
       type_bien_id: parseInt(form.type_bien_id, 10) || null,
       service_bien_id: parseInt(form.service_bien_id, 10) || null,
       categorie_bien_id: parseInt(form.categorie_bien_id, 10) || null,
+      is_active: isActive,
       image_urls: imageUrls,
     });
 
@@ -255,8 +261,35 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
           </Section>
         </div>
 
-        {/* Colonne droite : 1/3 (caractéristiques + prix) */}
+        {/* Colonne droite : 1/3 (publication + catégorisation + prix + caractéristiques) */}
         <div className="space-y-6">
+          {/* Section : Publication */}
+          <Section
+            title="Publication"
+            subtitle="Activer ou désactiver l'affichage du bien sur le site public."
+          >
+            <label className="flex items-start gap-3 cursor-pointer select-none rounded-md p-2 -m-2 hover:bg-stone-50">
+              <input
+                type="checkbox"
+                checked={isActive}
+                onChange={(e) => setIsActive(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-stone-300 text-primary focus:ring-primary/30"
+              />
+              <span className="flex-1">
+                <span
+                  className={`block text-sm font-medium ${isActive ? "text-neutral-900" : "text-neutral-500"}`}
+                >
+                  {isActive ? "Bien actif (visible)" : "Bien désactivé"}
+                </span>
+                <span className="block text-xs text-neutral-500 mt-0.5">
+                  {isActive
+                    ? "Visible sur agencemirna.com et dans le catalogue /properties"
+                    : "Masqué du site public — toujours visible et éditable ici en admin"}
+                </span>
+              </span>
+            </label>
+          </Section>
+
           {/* Section : Catégorisation */}
           <Section title="Catégorisation">
             <Field label="Type de bien">

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "../supabase/server";
+import { getAdminUser } from "../supabase/admin-auth";
 
 /**
  * Helper : récupère les images depuis le bucket Storage pour un bien
@@ -16,8 +17,10 @@ async function getBienImagesFromFolder(
   const supabase = await createClient();
   const fullPath = `biens/${folderName}`;
 
+  // FIX : utiliser "images" (le vrai bucket id), pas "public.images" qui
+  // n'existait pas et causait un list vide.
   const { data, error } = await supabase.storage
-    .from("public.images")
+    .from("images")
     .list(fullPath, {
       limit: 100,
       offset: 0,
@@ -25,11 +28,12 @@ async function getBienImagesFromFolder(
     });
 
   if (error || !data) {
+    if (error) console.error("getBienImagesFromFolder error:", error);
     return [];
   }
 
   return data
-    .filter((file) => file.name && !file.name.startsWith(".")) // ignore .emptyFolderPlaceholder etc.
+    .filter((file) => file.name && !file.name.startsWith(".")) // ignore .emptyFolderPlaceholder
     .map((file) => ({
       url: supabase.storage
         .from("images")
@@ -228,4 +232,52 @@ export async function migrateBienImagesFromFolder(
   }
 
   return { ok: true, imported: 0 };
+}
+
+/**
+ * Server Action : bulk import pour TOUS les biens.
+ * Appelée depuis l'admin (un bouton), elle parcourt chaque bien et
+ * applique migrateBienImagesFromFolder en cascade.
+ * Retourne un récap : { bien.id, bien.name, folder, imported, ok }
+ *
+ * Idempotent : un bien déjà importé sera no-op.
+ */
+export async function bulkImportAllBienImages(): Promise<{
+  ok: boolean;
+  results: Array<{
+    id: string;
+    name: string | null;
+    folder: string | null;
+    imported: number;
+    ok: boolean;
+  }>;
+}> {
+  const admin = await getAdminUser();
+  if (!admin) {
+    return { ok: false, results: [] };
+  }
+
+  const supabase = await createClient();
+  const { data: biens } = await supabase
+    .from("biens")
+    .select("id, name, folder")
+    .order("name");
+
+  if (!biens) {
+    return { ok: false, results: [] };
+  }
+
+  const results = [];
+  for (const bien of biens) {
+    const r = await migrateBienImagesFromFolder(bien.id);
+    results.push({
+      id: bien.id,
+      name: bien.name,
+      folder: bien.folder,
+      imported: r.imported,
+      ok: r.ok,
+    });
+  }
+
+  return { ok: true, results };
 }
