@@ -29,15 +29,24 @@ SET
 
 -- Nettoyer les anciennes policies sur ce bucket si elles existent
 DROP POLICY IF EXISTS "public read images bucket" ON storage.objects;
+DROP POLICY IF EXISTS "admins list images bucket" ON storage.objects;
 DROP POLICY IF EXISTS "admins insert images bucket" ON storage.objects;
 DROP POLICY IF EXISTS "admins update images bucket" ON storage.objects;
 DROP POLICY IF EXISTS "admins delete images bucket" ON storage.objects;
 
--- 1. SELECT : lecture publique (anyone peut voir les images des biens)
-CREATE POLICY "public read images bucket"
+-- 1. SELECT (LIST) : restreint aux admins.
+--    Note : ce bucket est public (public = true), donc l'AFFICHAGE des
+--    images via les URLs (getPublicUrl) ne dépend PAS de cette policy.
+--    Cette policy contrôle uniquement le droit de LISTER les fichiers
+--    via l'API .storage.list(), qu'on ne veut PAS exposer aux visiteurs
+--    (sinon ils peuvent scraper le contenu complet du bucket).
+CREATE POLICY "admins list images bucket"
   ON storage.objects
   FOR SELECT
-  USING (bucket_id = 'images');
+  USING (
+    bucket_id = 'images'
+    AND EXISTS (SELECT 1 FROM public.admin_users WHERE user_id = auth.uid())
+  );
 
 -- 2. INSERT : seuls les admins (whitelist admin_users) peuvent uploader
 CREATE POLICY "admins insert images bucket"
