@@ -176,15 +176,13 @@ export async function migrateBienImagesFromFolder(
 ): Promise<{ ok: boolean; imported: number }> {
   const supabase = await createClient();
 
-  // Vérif : le bien a-t-il déjà des bien_images ?
-  const { count } = await supabase
+  // Récupérer les bien_images existantes (avec leurs storage_path)
+  const { data: existing } = await supabase
     .from("bien_images")
-    .select("*", { count: "exact", head: true })
+    .select("id, storage_path")
     .eq("bien_id", bienId);
 
-  if ((count ?? 0) > 0) {
-    return { ok: true, imported: 0 };
-  }
+  const existingCount = existing?.length ?? 0;
 
   // Récupérer le folder et l'image cover legacy du bien
   const { data: bien } = await supabase
@@ -201,6 +199,30 @@ export async function migrateBienImagesFromFolder(
   if (bien.folder) {
     const files = await getBienImagesFromFolder(bien.folder);
     if (files.length > 0) {
+      // Si on a déjà PLUS d'entries que ce que le folder contient,
+      // l'admin a probablement ajouté des photos manuellement → no-op.
+      if (existingCount >= files.length) {
+        return { ok: true, imported: 0 };
+      }
+
+      // Cas spécial : on a 1 entry legacy (storage_path NULL = importée
+      // depuis bien.image au tout début), et le folder contient plus de
+      // photos. On remplace pour avoir la galerie complète.
+      const allLegacyCovers =
+        existingCount > 0 &&
+        existing!.every((e) => e.storage_path === null);
+
+      if (allLegacyCovers) {
+        // Supprime les entries legacy puis ré-importe depuis folder
+        await supabase
+          .from("bien_images")
+          .delete()
+          .eq("bien_id", bienId);
+      } else if (existingCount > 0) {
+        // L'admin a déjà uploadé des vraies photos, on respecte
+        return { ok: true, imported: 0 };
+      }
+
       const rows = files.map((file, i) => ({
         bien_id: bienId,
         url: file.url,
@@ -214,6 +236,12 @@ export async function migrateBienImagesFromFolder(
       }
       return { ok: true, imported: rows.length };
     }
+  }
+
+  // Si on est ici, pas de folder ou folder vide. Si le bien a déjà
+  // au moins 1 entry, on ne fait rien.
+  if (existingCount > 0) {
+    return { ok: true, imported: 0 };
   }
 
   // 2. Dernier recours : importer bien.image (cover unique legacy)
