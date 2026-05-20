@@ -70,9 +70,9 @@ export const Header = () => {
   return (
     <>
       <motion.header
-        className="fixed w-full z-50 "
+        className="fixed top-[40px] w-full z-50"
         initial={{ y: 0 }}
-        animate={{ y: isVisible ? 0 : "-100%" }}
+        animate={{ y: isVisible ? 0 : "-140%" }}
         transition={{ duration: 0.3 }}
       >
         <nav className="relative z-[1000] w-full bg-white">

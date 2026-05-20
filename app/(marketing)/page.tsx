@@ -7,16 +7,12 @@ import FeaturedPropertiesServer from "@/components/landing/featured-properties-s
 import FeaturesSection from "@/components/landing/features-section";
 import HeroSection from "@/components/landing/hero-section";
 import HomePromoBanner from "@/components/landing/home-promo-banner";
-import MarqueeBar from "@/components/landing/marquee-bar";
 import SocialSection from "@/components/landing/social-section";
 import StatsSection from "@/components/landing/stats-section";
 
 export default async function Page() {
   return (
     <>
-      {/* Bandeau annonces défilantes */}
-      <MarqueeBar />
-
       {/* Hero avec recherche intégrée */}
       <HeroSection />
 
