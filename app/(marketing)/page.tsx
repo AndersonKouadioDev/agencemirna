@@ -9,6 +9,7 @@ import FeaturedPropertiesServer from "@/components/landing/featured-properties-s
 import FeaturesSection from "@/components/landing/features-section";
 import HeroSection from "@/components/landing/hero-section";
 import HomePromoBanner from "@/components/landing/home-promo-banner";
+import PostersCarousel from "@/components/landing/posters-carousel";
 import QuartiersSection from "@/components/landing/quartiers-section";
 import SocialSection from "@/components/landing/social-section";
 import StatsSection from "@/components/landing/stats-section";
@@ -19,6 +20,9 @@ export default async function Page() {
     <>
       {/* Hero avec recherche intégrée */}
       <HeroSection />
+
+      {/* Carousel horizontal des dernières affiches/créas (depuis Supabase) */}
+      <PostersCarousel />
 
       {/* Catégories rapides */}
       <CategoryPillsSection />

@@ -1,6 +1,19 @@
 import Image from "next/image";
-import { Mail, MessageCircle, Phone, Sparkles, Users } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowRight,
+  Award,
+  Headphones,
+  Mail,
+  MessageCircle,
+  Phone,
+  ShieldCheck,
+  Sparkles,
+  User,
+  Users,
+} from "lucide-react";
 import { Card, Chip } from "@heroui/react";
+import { Button } from "@/components/ui/button";
 import { getActiveAgents } from "@/src/actions/public";
 
 export const metadata = {
@@ -159,23 +172,139 @@ function AgentCard({
 // ============================================================================
 
 function EmptyAgents() {
+  const promises = [
+    {
+      icon: ShieldCheck,
+      title: "Conseillers certifiés",
+      text: "Expertise locale du marché abidjanais, formation continue, intégrité absolue.",
+    },
+    {
+      icon: Headphones,
+      title: "Réponse sous 24h",
+      text: "Un interlocuteur unique dédié, joignable par WhatsApp, téléphone ou email.",
+    },
+    {
+      icon: Award,
+      title: "Accompagnement complet",
+      text: "Visite, négociation, signature, gestion : on vous porte de bout en bout.",
+    },
+  ];
+
   return (
-    <Card
-      variant="default"
-      className="bg-white border-stone-200 overflow-hidden"
-    >
-      <Card.Content className="p-12 sm:p-16 text-center">
-        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary mb-6">
-          <Users className="h-7 w-7" />
+    <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-10 lg:gap-16 items-center">
+      {/* Colonne gauche — éditorial + CTAs */}
+      <div>
+        <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary mb-6">
+          <Sparkles className="h-3 w-3" />
+          Bientôt en ligne
         </div>
-        <h2 className="font-agate text-2xl sm:text-3xl font-bold text-secondary mb-2">
-          Notre équipe sera bientôt présentée
+
+        <h2 className="font-agate text-4xl sm:text-5xl font-bold text-secondary leading-[1.1] mb-5">
+          La rencontre, <span className="italic text-primary">en vrai</span>.
         </h2>
-        <p className="text-neutral-600 max-w-md mx-auto">
-          Nos conseillers sont en cours d'intégration sur le site.
+
+        <p className="text-base sm:text-lg text-neutral-700 leading-relaxed mb-8">
+          Nos conseillers préparent leur arrivée sur le site. En attendant,
+          nous restons à votre écoute — par WhatsApp, téléphone ou en
+          rendez-vous dans nos bureaux de Marcory Zone 4.
         </p>
-      </Card.Content>
-    </Card>
+
+        <div className="flex flex-col sm:flex-row gap-3 mb-10">
+          <Button asChild className="rounded-full h-12 px-6">
+            <Link
+              href={
+                process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE ||
+                "https://wa.me/22501434831131"
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <MessageCircle className="h-4 w-4 mr-2" />
+              Parler à un conseiller
+            </Link>
+          </Button>
+          <Button
+            asChild
+            variant="outline"
+            className="rounded-full h-12 px-6"
+          >
+            <Link href="/contact_us">
+              Prendre rendez-vous
+              <ArrowRight className="h-4 w-4 ml-2" />
+            </Link>
+          </Button>
+        </div>
+
+        {/* Liste promesses */}
+        <div className="space-y-5 border-t border-stone-200 pt-8">
+          {promises.map((p) => {
+            const Icon = p.icon;
+            return (
+              <div key={p.title} className="flex items-start gap-4">
+                <div className="shrink-0 h-10 w-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-secondary text-sm sm:text-base">
+                    {p.title}
+                  </h3>
+                  <p className="text-sm text-neutral-600 leading-relaxed mt-0.5">
+                    {p.text}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Colonne droite — grille "silhouettes" en attente */}
+      <div className="relative">
+        {/* Décor blur background */}
+        <div
+          aria-hidden
+          className="absolute -inset-8 bg-gradient-to-br from-primary/20 via-transparent to-secondary/10 blur-3xl opacity-40"
+        />
+        <div className="relative grid grid-cols-2 gap-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className={`relative aspect-[4/5] rounded-2xl overflow-hidden bg-gradient-to-br from-white via-stone-50 to-primary/5 border border-stone-200/80 ${
+                i === 0 || i === 3 ? "translate-y-6" : ""
+              }`}
+            >
+              {/* Silhouette avatar */}
+              <div className="absolute inset-0 flex flex-col items-center justify-end pb-8">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl" />
+                  <div className="relative h-24 w-24 sm:h-28 sm:w-28 rounded-full bg-gradient-to-br from-primary/30 to-secondary/30 flex items-center justify-center">
+                    <User className="h-12 w-12 text-white/80" />
+                  </div>
+                </div>
+                <div className="mt-5 h-2.5 w-20 rounded-full bg-stone-200" />
+                <div className="mt-2 h-2 w-14 rounded-full bg-stone-200/70" />
+              </div>
+
+              {/* Badge "Bientôt" */}
+              <div className="absolute top-3 right-3">
+                <span className="inline-flex items-center rounded-full bg-white/95 backdrop-blur px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-primary shadow-sm">
+                  Bientôt
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Bandeau bas */}
+        <div className="relative mt-8 flex items-center justify-center gap-2 text-sm text-neutral-600">
+          <Users className="h-4 w-4 text-primary" />
+          <span>
+            <strong className="text-secondary">+10 experts</strong> à votre
+            service très bientôt
+          </span>
+        </div>
+      </div>
+    </div>
   );
 }
 
