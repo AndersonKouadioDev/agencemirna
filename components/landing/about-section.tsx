@@ -1,44 +1,11 @@
 import { CheckIcon } from "lucide-react";
-import NumberTicker from "../magicui/number-ticker";
 import Image from "next/image";
 import Link from "next/link";
 import { buttonVariants } from "../ui/button";
 import Motion from "../motion";
 
-const Stats = () => {
-  return (
-    <div className="grid md:grid-cols-4 gap-8 md:gap-4 translate-y-[-1rem] animate-fade-in opacity-0 [--animation-delay:1200ms]">
-      <div className="text-center">
-        <h2 className="text-3xl md:text-4xl lg:text-4xl font-bold">
-          <NumberTicker className="inline" value={3} />
-          <span className="text-color-one">+</span>
-        </h2>
-        <p className="text-gray-700">Ans d&apos;existence</p>
-      </div>
-      <div className="text-center">
-        <h2 className="text-3xl md:text-4xl lg:text-4xl font-bold">
-          <NumberTicker className="inline" value={500} />
-          <span className="text-color-one">+</span>
-        </h2>
-        <p className="text-gray-700">Clients satisfaits</p>
-      </div>
-      <div className="text-center">
-        <h2 className="text-3xl md:text-4xl lg:text-4xl font-bold">
-          <NumberTicker className="inline" value={1000} />
-          <span className="text-color-one">+</span>
-        </h2>
-        <p className="text-gray-700">Transactions réussies</p>
-      </div>
-      <div className="text-center">
-        <h2 className="text-3xl md:text-4xl lg:text-4xl font-bold">
-          <NumberTicker className="inline" value={10} />
-          <span className="text-color-one">+</span>
-        </h2>
-        <p className="text-gray-700">Agents dévoués</p>
-      </div>
-    </div>
-  );
-};
+// Note : le composant Stats interne a été retiré (audit redondance) —
+// les chiffres clés sont désormais dans <StatsSection /> plus haut sur la home.
 
 export default function AboutSection() {
   return (
@@ -154,14 +121,8 @@ export default function AboutSection() {
             </div>
           </Motion>
         </div>
-
-        <div className="mt-20 pt-16 md:mt-36 md:pt-20 border-t border-gray-200">
-          <Motion variant="verticalSlideIn">
-            <div className="max-w-[1108px] mx-auto text-center">
-              <Stats />
-            </div>
-          </Motion>
-        </div>
+        {/* Stats supprimés ici — déjà présents dans <StatsSection /> plus haut
+            dans la page pour éviter le doublon (audit redondance). */}
       </div>
     </section>
   );

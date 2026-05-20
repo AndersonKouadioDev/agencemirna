@@ -1,100 +1,72 @@
 import Marquee from "@/components/magicui/marquee";
 import Image from "next/image";
-import Motion from "./motion";
+
+/**
+ * Section partenaires — marquee infini avec logos couleur, hover pause.
+ * - Header serif Editorial Luxury (cohérence avec le reste de la page)
+ * - Logos h-12 sm:h-16 (avant h-14/16/20 trop petit)
+ * - Couleurs originales (avant grayscale invisible)
+ * - Hover : scale-110 + opacity full
+ * - Marquee dupliqué pour défilement continu sans saut
+ */
+
+const PARTNERS = [
+  { src: "/images/partenaires/partenaire1.jpeg", alt: "Partenaire 1" },
+  { src: "/images/partenaires/partenaire2.jpeg", alt: "Partenaire 2" },
+  { src: "/images/partenaires/partenaire3.png", alt: "Partenaire 3" },
+  { src: "/images/partenaires/partenaire4.jpg", alt: "Partenaire 4" },
+  { src: "/images/partenaires/partenaire5.jpg", alt: "Partenaire 5" },
+  { src: "/images/partenaires/partenaire6.png", alt: "Partenaire 6" },
+  { src: "/images/partenaires/partenaire7.png", alt: "Partenaire 7" },
+  { src: "/images/partenaires/partenaire8.svg", alt: "Partenaire 8" },
+];
 
 export default function ClientSection() {
   return (
-    <section
-      id="clients"
-      className="relative overflow-hidden isolate py-32 mx-auto max-w-screen-2xl"
-    >
-      <div className="container relative">
-        <div className="mx-auto max-w-screen-xl px-4 md:px-8">
-          <Motion variant="verticalSlideIn">
-            <h2 className="text-center md:text-xl font-semibold text-gray-600">
-              Approuvé par plus de 100 clients et partenaires.
-            </h2>
-          </Motion>
-          <Motion variant="verticalSlideIn">
-            <div className="relative mt-6 w-full">
-              <Marquee className="max-w-full [--duration:40s]">
-                <div className="relative max-w-20 max-h-14 md:max-h-16 lg:max-h-20">
-                  <Image
-                    src={"/images/partenaires/partenaire1.jpeg"}
-                    className="w-full h-full object-contain"
-                    alt={"/images/partenaires/partenaire1.jpeg"}
-                    width={100}
-                    height={100}
-                  />
-                </div>
-                <div className="relative max-w-20 max-h-14 md:max-h-16 lg:max-h-20">
-                  <Image
-                    src={"/images/partenaires/partenaire2.jpeg"}
-                    className="w-full h-full object-contain"
-                    alt={"/images/partenaires/partenaire2.jpeg"}
-                    width={100}
-                    height={100}
-                  />
-                </div>
-                <div className="relative max-w-20 max-h-14 md:max-h-16 lg:max-h-20">
-                  <Image
-                    src={"/images/partenaires/partenaire3.png"}
-                    className="w-full h-full object-contain"
-                    alt={"/images/partenaires/partenaire3.png"}
-                    width={100}
-                    height={100}
-                  />
-                </div>
-                <div className="relative max-w-20 max-h-14 md:max-h-16 lg:max-h-20">
-                  <Image
-                    src={"/images/partenaires/partenaire4.jpg"}
-                    className="w-full h-full object-contain"
-                    alt={"/images/partenaires/partenaire4.jpg"}
-                    width={100}
-                    height={100}
-                  />
-                </div>
-                <div className="relative max-w-20 max-h-14 md:max-h-16 lg:max-h-20">
-                  <Image
-                    src={"/images/partenaires/partenaire5.jpg"}
-                    className="w-full h-full object-contain"
-                    alt={"/images/partenaires/partenaire5.jpg"}
-                    width={100}
-                    height={100}
-                  />
-                </div>
-                <div className="relative max-w-20 max-h-14 md:max-h-16 lg:max-h-20">
-                  <Image
-                    src={"/images/partenaires/partenaire6.png"}
-                    className="w-full h-full object-contain"
-                    alt={"/images/partenaires/partenaire6.png"}
-                    width={100}
-                    height={100}
-                  />
-                </div>
-                <div className="relative max-w-20 max-h-14 md:max-h-16 lg:max-h-20">
-                  <Image
-                    src={"/images/partenaires/partenaire7.png"}
-                    className="w-full h-full object-contain"
-                    alt={"/images/partenaires/partenaire7.png"}
-                    width={100}
-                    height={100}
-                  />
-                </div>
-                <div className="relative max-w-20 max-h-14 md:max-h-16 lg:max-h-20">
-                  <Image
-                    src={"/images/partenaires/partenaire8.svg"}
-                    className="w-full h-full object-contain"
-                    alt={"/images/partenaires/partenaire8.svg"}
-                    width={100}
-                    height={100}
-                  />
-                </div>
-              </Marquee>
-              <div className="pointer-events-none absolute inset-y-0 left-0 h-full w-1/5 bg-gradient-to-r from-background"></div>
-              <div className="pointer-events-none absolute inset-y-0 right-0 h-full w-1/5 bg-gradient-to-l from-background"></div>
-            </div>
-          </Motion>
+    <section id="clients" className="bg-[#FAF5EE] py-20 sm:py-24">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        {/* Header */}
+        <div className="text-center mb-12 max-w-2xl mx-auto">
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
+            Ils nous font confiance
+          </p>
+          <h2 className="font-agate text-3xl sm:text-4xl md:text-5xl font-bold text-secondary leading-tight">
+            Plus de 100 clients & partenaires
+          </h2>
+          <p className="mt-4 text-base text-neutral-700 leading-relaxed">
+            Particuliers, expatriés, entreprises et institutions :
+            l'Agence Mirna accompagne toutes les ambitions immobilières.
+          </p>
+        </div>
+
+        {/* Marquee logos */}
+        <div className="relative">
+          {/* Gradient fade left/right */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute left-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-r from-[#FAF5EE] to-transparent"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute right-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-l from-[#FAF5EE] to-transparent"
+          />
+
+          <Marquee className="max-w-full [--duration:50s] [--gap:3rem] py-4">
+            {PARTNERS.map((p, i) => (
+              <div
+                key={i}
+                className="group flex items-center justify-center h-16 sm:h-20 w-28 sm:w-36 shrink-0"
+              >
+                <Image
+                  src={p.src}
+                  alt={p.alt}
+                  width={140}
+                  height={80}
+                  className="max-h-full max-w-full object-contain opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300"
+                />
+              </div>
+            ))}
+          </Marquee>
         </div>
       </div>
     </section>
