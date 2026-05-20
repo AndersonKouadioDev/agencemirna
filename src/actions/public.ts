@@ -2,6 +2,55 @@
 
 import { createClient } from "../supabase/server";
 
+// ============================================================================
+// Données de référence pour filtres publics (types, services, catégories)
+// ============================================================================
+
+export type BienReferenceData = {
+  types: { id: number; name: string }[];
+  services: { id: number; name: string }[];
+  categories: { id: number; name: string }[];
+};
+
+/**
+ * Charge les listes types/services/categories utilisées pour peupler
+ * les dropdowns des filtres sur /properties (et autres pages publiques).
+ * Lecture publique — aucune restriction RLS sur ces tables référentielles.
+ */
+export async function getBienReferenceData(): Promise<BienReferenceData> {
+  const supabase = await createClient();
+
+  const [typesRes, servicesRes, categoriesRes] = await Promise.all([
+    supabase
+      .from("types_bien")
+      .select("id, name")
+      .order("name", { ascending: true }),
+    supabase
+      .from("services_bien")
+      .select("id, name")
+      .order("name", { ascending: true }),
+    supabase
+      .from("categories_bien")
+      .select("id, name")
+      .order("name", { ascending: true }),
+  ]);
+
+  return {
+    types: (typesRes.data ?? []).filter((t) => t.name) as {
+      id: number;
+      name: string;
+    }[],
+    services: (servicesRes.data ?? []).filter((s) => s.name) as {
+      id: number;
+      name: string;
+    }[],
+    categories: (categoriesRes.data ?? []).filter((c) => c.name) as {
+      id: number;
+      name: string;
+    }[],
+  };
+}
+
 /**
  * Server Actions de lecture publique pour le site marketing.
  * Toutes ces actions vont à travers les RLS policies qui filtrent

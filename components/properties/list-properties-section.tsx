@@ -11,31 +11,111 @@ import {
 } from "@/components/ui/select";
 import PropertySection from "./property-section";
 import Motion from "../motion";
-import { getAllBiens } from "@/src/actions/bien.actions";
-import { useState, useEffect, Dispatch } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ResetIcon } from "@radix-ui/react-icons";
 import Image from "next/image";
 
-export default function ListPropertiesSection() {
-  const [biens, setBiens] = useState<any>([]);
-  const [oldBiens, setOldBiens] = useState<any>([]);
-  useEffect(() => {
-    const fetchBiens = async () => {
-      const biens = await getAllBiens();
-      setBiens(biens);
-      setOldBiens(biens);
-    };
-    fetchBiens();
-  }, []);
+type RefItem = { id: number; name: string };
+
+type Filters = {
+  q: string;
+  type: string;
+  service: string;
+  location: string;
+};
+
+/**
+ * Composant client de listing + filtrage des biens.
+ * - Reçoit les biens + données de référence depuis le Server Component parent
+ * - Lit les URL params (q, type, service, location) pour pré-remplir
+ * - Filtre côté client avec `includes()` (case-insensitive, résilient au case)
+ * - Sync l'URL à chaque changement de filtre (URL = source de vérité partageable)
+ */
+export default function ListPropertiesSection({
+  initialBiens,
+  types,
+  services,
+  initialFilters,
+}: {
+  initialBiens: any[];
+  types: RefItem[];
+  services: RefItem[];
+  initialFilters: Filters;
+}) {
+  const [filters, setFilters] = useState<Filters>(initialFilters);
+
+  const filteredBiens = useMemo(() => {
+    return initialBiens.filter((bien: any) => {
+      // Filtre texte libre : nom du bien
+      if (filters.q) {
+        const q = filters.q.toLowerCase().trim();
+        const haystack = [
+          bien.name,
+          bien.address,
+          bien.ville_commune,
+          bien.pays,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+      // Filtre localisation (peut être différent de q pour cibler le quartier)
+      if (filters.location) {
+        const loc = filters.location.toLowerCase().trim();
+        const hay = [bien.address, bien.ville_commune, bien.pays]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        if (!hay.includes(loc)) return false;
+      }
+      // Filtre type : match exact (insensible à la casse)
+      if (filters.type && bien.types_bien?.name) {
+        if (
+          bien.types_bien.name.toLowerCase() !== filters.type.toLowerCase()
+        )
+          return false;
+      }
+      // Filtre service : `includes` pour être robuste aux libellés DB
+      // (ex: dropdown "Location meublée courte durée" matche aussi "location" venant du hero)
+      if (filters.service && bien.services_bien?.name) {
+        const svc = filters.service.toLowerCase().trim();
+        const name = bien.services_bien.name.toLowerCase();
+        if (!name.includes(svc) && !svc.includes(name)) return false;
+      }
+      return true;
+    });
+  }, [initialBiens, filters]);
 
   return (
     <section
       id="hero"
       className="relative isolate py-32 mx-auto max-w-screen-2xl"
     >
-      <PropertySearchBar biens={oldBiens} setBiens={setBiens} />
-      {biens.length > 0 ? (
-        <PropertySection biens={biens} />
+      <PropertySearchBar
+        filters={filters}
+        setFilters={setFilters}
+        types={types}
+        services={services}
+      />
+      {filteredBiens.length > 0 ? (
+        <>
+          <div className="px-6 mb-6 text-sm text-neutral-600">
+            <span className="font-semibold text-secondary">
+              {filteredBiens.length}
+            </span>{" "}
+            bien{filteredBiens.length > 1 ? "s" : ""} trouvé
+            {filteredBiens.length > 1 ? "s" : ""}
+            {filters.q || filters.type || filters.service || filters.location
+              ? " · "
+              : null}
+            {filters.q && (
+              <span className="italic">recherche « {filters.q} »</span>
+            )}
+          </div>
+          <PropertySection biens={filteredBiens} />
+        </>
       ) : (
         <NoPropertyFound />
       )}
@@ -44,63 +124,72 @@ export default function ListPropertiesSection() {
 }
 
 export const PropertySearchBar = ({
-  biens,
-  setBiens,
+  filters,
+  setFilters,
+  types,
+  services,
 }: {
-  biens: any;
-  setBiens: Dispatch<any>;
+  filters: Filters;
+  setFilters: (f: Filters) => void;
+  types: RefItem[];
+  services: RefItem[];
 }) => {
-  const [search, setSearch] = useState("");
-  const [location, setLocation] = useState("");
-  const [type, setType] = useState("");
-  const [service, setService] = useState("");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [localQ, setLocalQ] = useState(filters.q);
 
-  const handleSearch = () => {
-    let filteredBiens = search
-      ? biens.filter((bien: any) => {
-          return bien.name.toLowerCase().includes(search.toLowerCase());
-        })
-      : biens;
-
-    filteredBiens = location
-      ? filteredBiens.filter((bien: any) => {
-          return (
-            bien.address.toLowerCase() +
-            " " +
-            bien.ville_commune.toLowerCase() +
-            " " +
-            bien.pays.toLowerCase()
-          ).includes(location.toLowerCase());
-        })
-      : filteredBiens;
-
-    filteredBiens = type
-      ? filteredBiens.filter((bien: any) => {
-          return bien.types_bien.name.toLowerCase() === type.toLowerCase();
-        })
-      : filteredBiens;
-
-    filteredBiens = service
-      ? filteredBiens.filter((bien: any) => {
-          return (
-            bien.services_bien.name.toLowerCase() === service.toLowerCase()
-          );
-        })
-      : filteredBiens;
-
-    setBiens(filteredBiens);
-  };
-
-  const handleReset = () => {
-    setBiens(biens);
-    setSearch("");
-    setLocation("");
-    setType("");
-    setService("");
-  };
+  // Sync URL params -> filters (back/forward browser nav)
   useEffect(() => {
-    handleSearch();
-  }, [location, type, service]);
+    const sp = {
+      q: searchParams.get("q") ?? "",
+      type: searchParams.get("type") ?? "",
+      service: searchParams.get("service") ?? "",
+      location: searchParams.get("location") ?? "",
+    };
+    if (
+      sp.q !== filters.q ||
+      sp.type !== filters.type ||
+      sp.service !== filters.service ||
+      sp.location !== filters.location
+    ) {
+      setFilters(sp);
+      setLocalQ(sp.q);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  function syncUrl(next: Filters) {
+    const params = new URLSearchParams();
+    if (next.q) params.set("q", next.q);
+    if (next.type) params.set("type", next.type);
+    if (next.service) params.set("service", next.service);
+    if (next.location) params.set("location", next.location);
+    const qs = params.toString();
+    router.replace(qs ? `/properties?${qs}` : "/properties", { scroll: false });
+  }
+
+  function update(patch: Partial<Filters>) {
+    const next = { ...filters, ...patch };
+    setFilters(next);
+    syncUrl(next);
+  }
+
+  function onSearchSubmit() {
+    update({ q: localQ });
+  }
+
+  function handleReset() {
+    setLocalQ("");
+    setFilters({ q: "", type: "", service: "", location: "" });
+    router.replace("/properties", { scroll: false });
+  }
+
+  const hasActive = !!(
+    filters.q ||
+    filters.location ||
+    filters.type ||
+    filters.service
+  );
 
   return (
     <div className="px-6">
@@ -114,55 +203,69 @@ export const PropertySearchBar = ({
               />
               <Input
                 type="text"
-                placeholder="Rechercher une properté..."
+                placeholder="Rechercher (nom, ville, quartier...)"
                 className="pl-10 pr-4 py-2 w-full rounded-full"
-                onChange={(e) => setSearch(e.target.value)}
+                value={localQ}
+                onChange={(e) => setLocalQ(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    onSearchSubmit();
+                  }
+                }}
               />
             </div>
-            <Button className="rounded-full px-6" onClick={handleSearch}>
+            <Button
+              className="rounded-full px-6"
+              onClick={onSearchSubmit}
+              type="button"
+            >
               Rechercher
             </Button>
           </div>
           <div className="flex-1 gap-4 w-full flex sm:flex-row flex-col justify-end items-center space-x-2">
             <Select
-              value={location}
-              onValueChange={(value: any) => setLocation(value)}
+              value={filters.type || "all"}
+              onValueChange={(value) =>
+                update({ type: value === "all" ? "" : value })
+              }
             >
-              <SelectTrigger className="w-full rounded-full border-none bg-gray-100">
-                <SelectValue placeholder="Localisation" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="marcory zone 4">Marcory Zone 4</SelectItem>
-                <SelectItem value="marcory residential">
-                  Marcory Résidentiel
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={type} onValueChange={(value: any) => setType(value)}>
               <SelectTrigger className="w-full rounded-full border-none bg-gray-100">
                 <SelectValue placeholder="Type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="studio">Studios</SelectItem>
-                <SelectItem value="appartement">Appartements</SelectItem>
-                <SelectItem value="maison">Maisons</SelectItem>
-                <SelectItem value="terrain">Terrains</SelectItem>
+                <SelectItem value="all">Tous les types</SelectItem>
+                {types.map((t) => (
+                  <SelectItem key={t.id} value={t.name}>
+                    {t.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select
-              value={service}
-              onValueChange={(value: any) => setService(value)}
+              value={filters.service || "all"}
+              onValueChange={(value) =>
+                update({ service: value === "all" ? "" : value })
+              }
             >
               <SelectTrigger className="w-full rounded-full border-none bg-gray-100">
                 <SelectValue placeholder="Service" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="vente">Vente</SelectItem>
-                <SelectItem value="location">Location</SelectItem>
+                <SelectItem value="all">Tous les services</SelectItem>
+                {services.map((s) => (
+                  <SelectItem key={s.id} value={s.name}>
+                    {s.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            {(search || location || type || service) && (
-              <Button className="rounded-full px-4 md:px-6" onClick={handleReset}>
+            {hasActive && (
+              <Button
+                className="rounded-full px-4 md:px-6"
+                onClick={handleReset}
+                type="button"
+              >
                 <ResetIcon className="w-4 h-4" />
               </Button>
             )}
