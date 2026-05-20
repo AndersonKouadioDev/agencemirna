@@ -17,19 +17,15 @@ type FooterLink = { id: number; title: string; url: string };
 
 const footerLinks: FooterLink[][] = [
   [
-    { id: 1, title: "A propos", url: "/about" },
+    { id: 1, title: "À propos", url: "/about" },
     { id: 2, title: "Contact", url: "/contact_us" },
     { id: 3, title: "Nos propriétés", url: "/properties" },
-    { id: 4, title: "Nos services", url: "/about" },
+    { id: 4, title: "Nos services", url: "/services" },
   ],
   [
-    { id: 5, title: "Nos partenaires", url: "#" },
-    { id: 6, title: "Nos agents", url: "#" },
-    { id: 7, title: "Nos projets", url: "#" },
-  ],
-  [
-    { id: 8, title: "Newsletter", url: "#" },
-    { id: 9, title: "Nos actualités", url: "#" },
+    { id: 5, title: "Notre équipe", url: "/agents" },
+    { id: 6, title: "Promotions", url: "/promotions" },
+    { id: 7, title: "WhatsApp", url: "https://wa.me/2250143483131" },
   ],
 ];
 
