@@ -178,9 +178,11 @@ CREATE TRIGGER social_mentions_updated_at
 -- ─── SEEDS (contenus actuellement hardcodés dans les composants) ───────────
 
 -- Testimonials (depuis testimonials-section.tsx)
+-- Pattern WHERE NOT EXISTS sur author_name pour idempotence à la ré-exécution.
 INSERT INTO public.testimonials
   (quote, author_name, author_role, avatar_initials, rating, ordre)
-VALUES
+SELECT v.quote, v.author_name, v.author_role, v.avatar_initials, v.rating, v.ordre
+FROM (VALUES
   (
     'L''Agence Mirna a géré la location de mon appartement à Marcory de A à Z. Trouvaille de locataires sérieux en moins de 2 semaines, état des lieux digital, virement à date fixe. Je recommande sans hésiter.',
     'Aïcha K.', 'Propriétaire bailleur · Marcory Zone 4', 'AK', 5, 1
@@ -193,37 +195,48 @@ VALUES
     'J''investis dans l''immo résidentiel depuis 5 ans. Mirna est la seule agence d''Abidjan qui m''a présenté un dossier complet avec rentabilité brute, charges, comparables. Du sérieux.',
     'Yves M.', 'Investisseur · Plateau-Abidjan', 'YM', 5, 3
   )
-ON CONFLICT DO NOTHING;
+) AS v(quote, author_name, author_role, avatar_initials, rating, ordre)
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.testimonials t WHERE t.author_name = v.author_name
+);
 
 -- Articles (depuis blog-section.tsx)
+-- Pattern WHERE NOT EXISTS sur slug pour idempotence.
 INSERT INTO public.articles
   (slug, title, excerpt, image, category, read_time_minutes, published_at, ordre)
-VALUES
+SELECT v.slug, v.title, v.excerpt, v.image, v.category, v.read_time_minutes, v.published_at::timestamptz, v.ordre
+FROM (VALUES
   (
     'estimer-prix-bien-abidjan-2026',
     'Comment estimer le juste prix de votre bien à Abidjan en 2026',
     'Méthode pas-à-pas pour fixer un prix de vente ou de location réaliste, basée sur les comparables, l''état du bien et la dynamique du quartier.',
     '/images/biens/bien15.jpg',
-    'Guide propriétaire', 6, '2026-05-12'::timestamptz, 1
+    'Guide propriétaire', 6, '2026-05-12', 1
   ),
   (
     'top-5-quartiers-investir-abidjan',
     'Top 5 des quartiers où investir à Abidjan cette année',
     'De Cocody Riviera à Marcory Zone 4 en passant par Bingerville, notre classement des zones avec le meilleur potentiel de plus-value.',
     '/images/biens/bien21.jpg',
-    'Investissement', 8, '2026-04-28'::timestamptz, 2
+    'Investissement', 8, '2026-04-28', 2
   ),
   (
     'location-meublee-vs-vide-cote-ivoire',
     'Location meublée vs vide : quelle stratégie en Côte d''Ivoire ?',
     'Fiscalité, rentabilité, profil de locataire, charges récurrentes : on compare les deux modèles pour vous aider à choisir.',
     '/images/biens/bien33.jpg',
-    'Stratégie', 5, '2026-04-15'::timestamptz, 3
+    'Stratégie', 5, '2026-04-15', 3
   )
-ON CONFLICT (slug) DO NOTHING;
+) AS v(slug, title, excerpt, image, category, read_time_minutes, published_at, ordre)
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.articles a WHERE a.slug = v.slug
+);
 
 -- FAQs (depuis faq-section.tsx)
-INSERT INTO public.faqs (question, answer, ordre) VALUES
+-- Pattern WHERE NOT EXISTS sur question pour idempotence.
+INSERT INTO public.faqs (question, answer, ordre)
+SELECT v.question, v.answer, v.ordre
+FROM (VALUES
   (
     'Quels sont vos frais d''agence pour la location ?',
     'Pour une location standard, nos honoraires sont de 1 mois de loyer pour le bailleur et 1 mois pour le locataire (visite, état des lieux, rédaction du bail). Pour la gestion locative complète, nous facturons 8% du loyer mensuel encaissé.',
@@ -254,25 +267,34 @@ INSERT INTO public.faqs (question, answer, ordre) VALUES
     'Mandat de gestion détaillé, comptes rendus mensuels avec photos, virement à date fixe le 5 du mois, dépôt de garantie séquestré, assurance loyers impayés en option, intervention 24h en cas d''urgence (plomberie, électricité). Vous avez un interlocuteur unique dédié.',
     6
   )
-ON CONFLICT DO NOTHING;
+) AS v(question, answer, ordre)
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.faqs f WHERE f.question = v.question
+);
 
 -- Social mentions (depuis social-section.tsx)
+-- Pattern WHERE NOT EXISTS sur (network, author_name) pour idempotence.
 INSERT INTO public.social_mentions
   (network, author_name, author_handle, text, date_label, likes, rating, ordre)
-VALUES
+SELECT v.network, v.author_name, v.author_handle, v.text, v.date_label, v.likes, v.rating, v.ordre
+FROM (VALUES
   (
     'facebook', 'Aïcha K.', 'Marcory Zone 4',
     'Service impeccable, locataires trouvés en 2 semaines pour mon appart. L''équipe Mirna est ultra pro 👌',
-    'Il y a 3 jours', 24, NULL, 1
+    'Il y a 3 jours', 24, NULL::int, 1
   ),
   (
     'google', 'Thomas R.', 'Google Reviews',
     'Trouvé un studio meublé à Cocody en 4 jours. Visite virtuelle, contrat à distance, parfait pour les expats.',
-    'Il y a 1 semaine', NULL, 5, 2
+    'Il y a 1 semaine', NULL::int, 5, 2
   ),
   (
     'instagram', 'Yves M.', '@yves.invest',
     'Le seul cabinet d''Abidjan qui présente des dossiers d''invest sérieux avec ROI clair. Recommandé.',
-    'Il y a 2 semaines', 47, NULL, 3
+    'Il y a 2 semaines', 47, NULL::int, 3
   )
-ON CONFLICT DO NOTHING;
+) AS v(network, author_name, author_handle, text, date_label, likes, rating, ordre)
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.social_mentions m
+  WHERE m.network = v.network AND m.author_name = v.author_name
+);

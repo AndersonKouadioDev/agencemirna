@@ -9,8 +9,10 @@
 -- =============================================================================
 
 -- ─── 1. TYPES DE BIEN (extension) ───────────────────────────────────────────
--- ON CONFLICT pour idempotence : ré-exécution safe si déjà inséré
-INSERT INTO public.types_bien (name) VALUES
+-- Pattern INSERT ... SELECT ... WHERE NOT EXISTS pour idempotence sans
+-- nécessiter de contrainte UNIQUE (les tables originales n'en ont pas).
+INSERT INTO public.types_bien (name)
+SELECT v.name FROM (VALUES
   ('Villa'),
   ('Duplex'),
   ('Maison'),
@@ -19,27 +21,35 @@ INSERT INTO public.types_bien (name) VALUES
   ('Local commercial'),
   ('Bureau'),
   ('Immeuble')
-ON CONFLICT (name) DO NOTHING;
+) AS v(name)
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.types_bien t WHERE t.name = v.name
+);
 
 -- ─── 2. SERVICES / TYPES DE TRANSACTION (extension) ────────────────────────
--- Note : on garde l'existant (Vente de biens immobiliers, Location meublée
--- courte durée, etc.) et on ajoute les manquants pour avoir une grille
--- complète à la 'IDX' du marché.
-INSERT INTO public.services_bien (name) VALUES
+INSERT INTO public.services_bien (name)
+SELECT v.name FROM (VALUES
   ('Vente'),
   ('Location nue'),
   ('Location meublée longue durée'),
   ('Bail commercial'),
   ('Bail à usage d''habitation'),
   ('Gestion locative')
-ON CONFLICT (name) DO NOTHING;
+) AS v(name)
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.services_bien s WHERE s.name = v.name
+);
 
 -- ─── 3. CATÉGORIES (caractéristique meublé/non meublé) ─────────────────────
-INSERT INTO public.categories_bien (name) VALUES
+INSERT INTO public.categories_bien (name)
+SELECT v.name FROM (VALUES
   ('Meublé'),
   ('Non meublé'),
   ('Semi-meublé')
-ON CONFLICT (name) DO NOTHING;
+) AS v(name)
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.categories_bien c WHERE c.name = v.name
+);
 
 -- ─── 4. TABLE QUARTIERS ────────────────────────────────────────────────────
 -- Configurable via /admin/quartiers (CRUD à venir).
@@ -98,9 +108,12 @@ CREATE POLICY "admin all quartiers"
   WITH CHECK (public.is_admin());
 
 -- ─── 6. SEED : 4 quartiers initiaux (configurables ensuite via admin) ──────
+-- Pattern WHERE NOT EXISTS sur (name, commune) pour idempotence
+-- (sans contrainte UNIQUE composite, ré-exécution safe).
 INSERT INTO public.quartiers
   (name, commune, badge, tagline, description, image, search_query, ordre, is_active, is_featured)
-VALUES
+SELECT v.name, v.commune, v.badge, v.tagline, v.description, v.image, v.search_query, v.ordre, v.is_active, v.is_featured
+FROM (VALUES
   (
     'Cocody', 'Abidjan', 'Premium',
     'Le prestige résidentiel',
@@ -129,4 +142,8 @@ VALUES
     '/images/biens/bien3.jpg',
     'Riviera', 4, true, true
   )
-ON CONFLICT DO NOTHING;
+) AS v(name, commune, badge, tagline, description, image, search_query, ordre, is_active, is_featured)
+WHERE NOT EXISTS (
+  SELECT 1 FROM public.quartiers q
+  WHERE q.name = v.name AND q.commune = v.commune
+);
