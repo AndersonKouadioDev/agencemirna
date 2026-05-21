@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Building2, Phone, Mail } from "lucide-react";
 import { useFormStatus } from "react-dom";
-import { ContactUs } from "@/services/emails/contact_us.action";
+import { createLead } from "@/src/actions/leads";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -19,21 +19,29 @@ function SubmitButton() {
 
 export default function ContactContentSection() {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   async function handleSubmit(formData: FormData) {
-    const result = await ContactUs({
-      firstName: formData.get("firstName") as string,
-      lastName: formData.get("lastName") as string,
-      email: formData.get("email") as string,
-      phone: formData.get("phone") as string,
-      message: formData.get("message") as string,
+    setErrorMessage(null);
+    const firstName = (formData.get("firstName") as string) || "";
+    const lastName = (formData.get("lastName") as string) || "";
+    const full_name = `${firstName} ${lastName}`.trim() || null;
+    const result = await createLead({
+      source: "contact",
+      full_name,
+      email: (formData.get("email") as string) || null,
+      phone: (formData.get("phone") as string) || null,
+      message: (formData.get("message") as string) || null,
+      source_url:
+        typeof window !== "undefined" ? window.location.pathname : null,
     });
-    if (result.success) {
+    if (result.ok) {
       setStatus("success");
       formRef.current?.reset();
     } else {
       setStatus("error");
+      setErrorMessage(result.error);
     }
   }
 
@@ -150,12 +158,13 @@ export default function ContactContentSection() {
               <SubmitButton />
               {status === "success" && (
                 <p className="text-green-600">
-                  Votre message a été envoyé avec succès !
+                  Votre message a été reçu. Un conseiller vous rappelle
+                  sous 24h ouvrées.
                 </p>
               )}
               {status === "error" && (
                 <p className="text-red-600">
-                  Une erreur s&apos;est produite. Veuillez réessayer.
+                  {errorMessage ?? "Une erreur s'est produite. Veuillez réessayer."}
                 </p>
               )}
             </form>

@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "../supabase/server";
+import { notifyNewLead } from "../lib/notify";
 
 /**
  * Server Actions publiques pour la capture de leads (RLS autorise INSERT
@@ -70,25 +71,43 @@ export async function createLead(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.from("leads").insert({
+  const { data: insertedLead, error } = await supabase
+    .from("leads")
+    .insert({
+      source: input.source,
+      full_name: input.full_name?.trim() || null,
+      email,
+      phone,
+      message: input.message?.trim() || null,
+      bien_id: input.bien_id || null,
+      source_url: input.source_url || null,
+      metadata: input.metadata ?? null,
+    })
+    .select("id")
+    .single();
+
+  if (error || !insertedLead) {
+    console.error("createLead error:", error);
+    return { ok: false, error: "Impossible d'enregistrer votre demande." };
+  }
+
+  // Best-effort : notification email à l'agence. Skip silencieux si
+  // RESEND_API_KEY non configuré, échec silencieux sinon (le lead est
+  // déjà créé en DB).
+  const bienName =
+    (input.metadata?.bien_name as string | undefined) ?? null;
+  notifyNewLead({
+    id: insertedLead.id as string,
     source: input.source,
     full_name: input.full_name?.trim() || null,
     email,
     phone,
     message: input.message?.trim() || null,
-    bien_id: input.bien_id || null,
-    source_url: input.source_url || null,
     metadata: input.metadata ?? null,
+    bien_name: bienName,
+  }).catch((e) => {
+    console.error("[notify] failed:", e);
   });
-
-  if (error) {
-    console.error("createLead error:", error);
-    return { ok: false, error: "Impossible d'enregistrer votre demande." };
-  }
-
-  // À terme : envoyer un email de notification à l'agence ici via Resend
-  // ou Supabase Edge Function. Pour l'instant, le lead est juste stocké
-  // en DB et visible dans /admin/leads.
 
   return { ok: true };
 }
