@@ -15,6 +15,7 @@ import {
   Newspaper,
   MessageCircle,
   MapPin,
+  Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -26,6 +27,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { label: "Tableau de bord", href: "/admin", icon: LayoutDashboard },
+  { label: "Leads", href: "/admin/leads", icon: Inbox },
   { label: "Biens", href: "/admin/biens", icon: Home },
   { label: "Quartiers", href: "/admin/quartiers", icon: MapPin },
   { label: "Services", href: "/admin/services", icon: Sparkles },

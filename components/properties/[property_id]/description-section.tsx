@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatNumber } from "@/utils/formatNumber";
+import { RequestVisitButton } from "./request-visit-button";
 import {
   DateRangePicker,
   DateField,
@@ -389,6 +390,14 @@ const PriceCard = ({ bien }: { bien: any }) => {
               <ChevronRightIcon className="ml-2 text-primary" />
             </Link>
           </form>
+
+          {/* Demande de visite : enregistre un lead avec bien_id pour suivi admin */}
+          <div className="mt-3">
+            <RequestVisitButton
+              bienId={bien?.id}
+              bienName={bien?.name ?? null}
+            />
+          </div>
           {status === "success" && (
             <p className="text-green-600 text-sm mt-2">
               Votre demande a été envoyée avec succès !
