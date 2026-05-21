@@ -33,7 +33,7 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * <DataTable> — composant réutilisable pour toutes les tables admin.
+ * <DataTable> : composant réutilisable pour toutes les tables admin.
  *
  * Built on TanStack Table v8 : tri, filtre/recherche, pagination.
  * Style cohérent avec le reste de l'admin (stone/primary).

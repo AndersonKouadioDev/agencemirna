@@ -11,7 +11,7 @@ import { getAdminUser } from "@/src/supabase/admin-auth";
  * Construction, Promotion immobilière).
  *
  * Périmètre : ces services sont **fixes** (seedés via migration). Le back-office
- * permet de les éditer, réordonner, activer/désactiver — mais pas de créer
+ * permet de les éditer, réordonner, activer/désactiver : mais pas de créer
  * de nouveaux services ni d'en supprimer.
  */
 
@@ -98,7 +98,7 @@ export async function getServiceAdmin(
 }
 
 // ============================================================================
-// UPSERT (update uniquement — pas de create)
+// UPSERT (update uniquement : pas de create)
 // ============================================================================
 
 export async function upsertService(

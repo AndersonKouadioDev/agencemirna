@@ -11,7 +11,7 @@ export default async function MarketingLayout({
 }: MarketingLayoutProps) {
   return (
     <>
-      {/* Bandeau d'annonces défilantes — fixé en haut, au-dessus du Header */}
+      {/* Bandeau d'annonces défilantes : fixé en haut, au-dessus du Header */}
       <div className="fixed top-0 left-0 right-0 z-[60]">
         <MarqueeBar />
       </div>

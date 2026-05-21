@@ -14,7 +14,7 @@ export async function generateMetadata(props: {
   const service = await getServiceBySlug(slug);
   if (!service) return { title: "Service introuvable" };
   return {
-    title: `${service.name} — Agence Mirna`,
+    title: `${service.name} : Agence Mirna`,
     description: service.short_description ?? undefined,
   };
 }
@@ -155,7 +155,7 @@ export default async function ServiceDetailPage(props: {
                     Prêt à démarrer ?
                   </Card.Title>
                   <Card.Description className="text-white/80">
-                    Échangeons sur votre projet — réponse sous 24h, devis
+                    Échangeons sur votre projet : réponse sous 24h, devis
                     gratuit et sans engagement.
                   </Card.Description>
                 </Card.Header>

@@ -183,7 +183,7 @@ function ServiceRow({
             </div>
           ) : (
             <div className="flex h-14 w-20 items-center justify-center rounded-md bg-primary/10 text-primary text-xs font-semibold">
-              {service.icon ?? "—"}
+              {service.icon ?? ":"}
             </div>
           )}
         </div>
@@ -208,7 +208,7 @@ function ServiceRow({
             )}
           </div>
           <p className="text-xs text-neutral-500 line-clamp-2">
-            {service.short_description ?? "—"}
+            {service.short_description ?? ":"}
           </p>
           <div className="mt-1.5 flex items-center gap-3 text-[11px] text-neutral-400">
             <span className="font-mono">/{service.slug}</span>

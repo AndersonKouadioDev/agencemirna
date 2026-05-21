@@ -9,7 +9,7 @@ import {
 import { getActivePromotions } from "@/src/actions/public";
 
 /**
- * Bandeau défilant en haut de la home — annonces et liens rapides.
+ * Bandeau défilant en haut de la home : annonces et liens rapides.
  * Server Component qui charge les promotions actives depuis Supabase.
  * - Si des promos actives existent, elles sont injectées au début
  * - Sinon, fallback sur les messages génériques utiles (estimation, tel, services)
@@ -25,7 +25,7 @@ type AnnouncementItem = {
 const FALLBACK_ANNOUNCEMENTS: AnnouncementItem[] = [
   {
     icon: Megaphone,
-    text: "Estimation gratuite de votre bien — réponse sous 24h",
+    text: "Estimation gratuite de votre bien : réponse sous 24h",
     href: "/contact_us",
   },
   {

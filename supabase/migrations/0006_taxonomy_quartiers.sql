@@ -97,7 +97,7 @@ CREATE POLICY "admin all quartiers"
   USING (public.is_admin())
   WITH CHECK (public.is_admin());
 
--- ─── 6. SEED — 4 quartiers initiaux (configurables ensuite via admin) ──────
+-- ─── 6. SEED : 4 quartiers initiaux (configurables ensuite via admin) ──────
 INSERT INTO public.quartiers
   (name, commune, badge, tagline, description, image, search_query, ordre, is_active, is_featured)
 VALUES

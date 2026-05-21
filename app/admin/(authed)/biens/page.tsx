@@ -20,7 +20,7 @@ export default async function AdminBiensPage(props: {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Biens</h1>
           <p className="text-sm text-neutral-500 mt-1">
-            Gérez votre portefeuille de biens immobiliers — {biens.length}{" "}
+            Gérez votre portefeuille de biens immobiliers : {biens.length}{" "}
             bien{biens.length > 1 ? "s" : ""} au total.
           </p>
         </div>

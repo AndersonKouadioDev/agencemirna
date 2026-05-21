@@ -25,7 +25,7 @@ export function PromotionForm({ promo }: { promo?: PromotionAdminRow }) {
   const [imageUrls, setImageUrls] = React.useState<string[]>(
     promo?.image && promo.image.startsWith("/images/") ? [] : promo?.image ? [promo.image] : [],
   );
-  // URL alternative — pour réutiliser une image existante (ex: /images/biens/bien1.jpg)
+  // URL alternative : pour réutiliser une image existante (ex: /images/biens/bien1.jpg)
   // sans avoir à re-uploader. Pratique pour les promos test ou les visuels génériques.
   const [imageAltUrl, setImageAltUrl] = React.useState<string>(
     promo?.image && promo.image.startsWith("/images/") ? promo.image : "",
@@ -60,7 +60,7 @@ export function PromotionForm({ promo }: { promo?: PromotionAdminRow }) {
     const finalImage = imageUrls[0] || imageAltUrl.trim();
     if (!finalImage) {
       setError(
-        "Une image est obligatoire — uploadez un fichier OU collez une URL d'image existante.",
+        "Une image est obligatoire : uploadez un fichier OU collez une URL d'image existante.",
       );
       setSubmitting(false);
       return;
@@ -134,7 +134,7 @@ export function PromotionForm({ promo }: { promo?: PromotionAdminRow }) {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                placeholder="Ex: Nouvelle résidence à Cocody — 10% de remise"
+                placeholder="Ex: Nouvelle résidence à Cocody : 10% de remise"
               />
             </Field>
             <Field label="Description">
@@ -180,7 +180,7 @@ export function PromotionForm({ promo }: { promo?: PromotionAdminRow }) {
 
           <Section
             title="Bouton d'action"
-            subtitle="Optionnel — pour rediriger vers une page, un bien, un formulaire…"
+            subtitle="Optionnel : pour rediriger vers une page, un bien, un formulaire…"
           >
             <Field label="Libellé du bouton">
               <Input

@@ -7,7 +7,7 @@ import { getActiveServices } from "@/src/actions/public";
 import { ServiceIcon } from "./service-icon";
 
 export const metadata = {
-  title: "Nos services — Agence Mirna",
+  title: "Nos services : Agence Mirna",
   description:
     "Vente, gestion immobilière, location meublée, décoration, construction, promotion : tous nos services à Abidjan.",
 };
@@ -41,7 +41,7 @@ export default async function ServicesHubPage() {
 
           <p className="mt-6 text-lg sm:text-xl text-neutral-700 max-w-2xl mx-auto leading-relaxed">
             De la vente à la gestion locative, de la décoration à la
-            construction — Agence Mirna est votre partenaire immobilier
+            construction : Agence Mirna est votre partenaire immobilier
             complet à Abidjan.
           </p>
         </div>

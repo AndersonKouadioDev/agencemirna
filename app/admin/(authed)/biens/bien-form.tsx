@@ -89,7 +89,7 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
   // nettoyés au save côté upsertBien via diff).
   const pathPrefix = React.useMemo(() => {
     if (bien?.id) return `biens/${bien.id}`;
-    // Random non persisté pour la création — sera remplacé par bien_id réel
+    // Random non persisté pour la création : sera remplacé par bien_id réel
     // après save (mais comme on stocke storage_path en DB, pas besoin
     // de renommer les fichiers).
     return `biens/draft-${typeof crypto !== "undefined" ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
@@ -284,7 +284,7 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
                 <span className="block text-xs text-neutral-500 mt-0.5">
                   {isActive
                     ? "Visible sur agencemirna.com et dans le catalogue /properties"
-                    : "Masqué du site public — toujours visible et éditable ici en admin"}
+                    : "Masqué du site public : toujours visible et éditable ici en admin"}
                 </span>
               </span>
             </label>

@@ -9,14 +9,18 @@ import {
   Star,
   Youtube,
 } from "lucide-react";
+import {
+  getActiveSocialMentions,
+  type PublicSocialMention,
+} from "@/src/actions/public";
 
 /**
- * Section "Suivez-nous & On parle de nous" — preuve sociale enrichie.
+ * Section "Suivez-nous & On parle de nous" : preuve sociale enrichie.
  *
  * Layout 3 colonnes desktop :
  *  1. Réseaux + CTA WhatsApp + mini grille Instagram preview
  *  2. Mosaïque Instagram grande (1 large + 4 carrées)
- *  3. Aside "On parle de nous" — feed style social (FB / IG / Google)
+ *  3. Aside "On parle de nous" : feed style social (FB / IG / Google)
  *  Mobile : tout en stack.
  *
  * Les mentions sont actuellement hardcodées mais plausibles. À terme,
@@ -71,45 +75,44 @@ const SOCIAL_LINKS = [
   },
 ];
 
-type Mention = {
-  network: "facebook" | "instagram" | "google";
-  author: string;
-  handle: string;
-  text: string;
-  date: string;
-  likes?: number;
-  rating?: number;
-};
-
-const MENTIONS: Mention[] = [
+const FALLBACK_MENTIONS: PublicSocialMention[] = [
   {
+    id: "fb-1",
     network: "facebook",
-    author: "Aïcha K.",
-    handle: "Marcory Zone 4",
+    author_name: "Aïcha K.",
+    author_handle: "Marcory Zone 4",
     text: "Service impeccable, locataires trouvés en 2 semaines pour mon appart. L'équipe Mirna est ultra pro 👌",
-    date: "Il y a 3 jours",
+    date_label: "Il y a 3 jours",
     likes: 24,
+    rating: null,
+    ordre: 1,
   },
   {
+    id: "fb-2",
     network: "google",
-    author: "Thomas R.",
-    handle: "Google Reviews",
+    author_name: "Thomas R.",
+    author_handle: "Google Reviews",
     text: "Trouvé un studio meublé à Cocody en 4 jours. Visite virtuelle, contrat à distance, parfait pour les expats.",
-    date: "Il y a 1 semaine",
+    date_label: "Il y a 1 semaine",
+    likes: null,
     rating: 5,
+    ordre: 2,
   },
   {
+    id: "fb-3",
     network: "instagram",
-    author: "Yves M.",
-    handle: "@yves.invest",
+    author_name: "Yves M.",
+    author_handle: "@yves.invest",
     text: "Le seul cabinet d'Abidjan qui présente des dossiers d'invest sérieux avec ROI clair. Recommandé.",
-    date: "Il y a 2 semaines",
+    date_label: "Il y a 2 semaines",
     likes: 47,
+    rating: null,
+    ordre: 3,
   },
 ];
 
 const NETWORK_META: Record<
-  Mention["network"],
+  string,
   { icon: typeof Facebook; bg: string; label: string }
 > = {
   facebook: { icon: Facebook, bg: "bg-blue-500", label: "Facebook" },
@@ -119,9 +122,14 @@ const NETWORK_META: Record<
     label: "Instagram",
   },
   google: { icon: Star, bg: "bg-amber-500", label: "Google" },
+  linkedin: { icon: Linkedin, bg: "bg-sky-600", label: "LinkedIn" },
+  twitter: { icon: Facebook, bg: "bg-sky-400", label: "Twitter" },
+  youtube: { icon: Youtube, bg: "bg-red-600", label: "YouTube" },
 };
 
-export default function SocialSection() {
+export default async function SocialSection() {
+  const fromDb = await getActiveSocialMentions({ limit: 6 });
+  const mentions = fromDb.length > 0 ? fromDb : FALLBACK_MENTIONS;
   return (
     <section className="bg-white py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -141,7 +149,7 @@ export default function SocialSection() {
 
         {/* Layout 3 colonnes desktop */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr_1.1fr] gap-8 lg:gap-10">
-          {/* COL 1 — Réseaux + WhatsApp + mini grid Insta */}
+          {/* COL 1 : Réseaux + WhatsApp + mini grid Insta */}
           <div className="flex flex-col gap-6">
             <div className="grid grid-cols-2 gap-2">
               {SOCIAL_LINKS.map((s) => {
@@ -211,7 +219,7 @@ export default function SocialSection() {
             </div>
           </div>
 
-          {/* COL 2 — Mosaïque Instagram grande */}
+          {/* COL 2 : Mosaïque Instagram grande */}
           <div className="grid grid-cols-2 gap-2 sm:gap-3">
             {INSTAGRAM_GRID.map((src, i) => (
               <Link
@@ -239,7 +247,7 @@ export default function SocialSection() {
             ))}
           </div>
 
-          {/* COL 3 — Aside "On parle de nous" */}
+          {/* COL 3 : Aside "On parle de nous" */}
           <aside>
             <div className="mb-5 flex items-center justify-between">
               <h3 className="font-agate text-xl font-bold text-secondary">
@@ -255,12 +263,12 @@ export default function SocialSection() {
             </div>
 
             <div className="space-y-4">
-              {MENTIONS.map((m, i) => {
-                const meta = NETWORK_META[m.network];
+              {mentions.map((m) => {
+                const meta = NETWORK_META[m.network] ?? NETWORK_META.facebook;
                 const Icon = meta.icon;
                 return (
                   <article
-                    key={i}
+                    key={m.id}
                     className="rounded-2xl border border-stone-200 bg-white p-4 hover:shadow-md hover:border-stone-300 transition-all"
                   >
                     <header className="flex items-center gap-3 mb-2">
@@ -271,10 +279,10 @@ export default function SocialSection() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-semibold text-secondary truncate">
-                          {m.author}
+                          {m.author_name}
                         </div>
                         <div className="text-[11px] text-neutral-500 truncate">
-                          {m.handle} · {meta.label}
+                          {m.author_handle ? `${m.author_handle} · ` : ""}{meta.label}
                         </div>
                       </div>
                       {m.rating && (
@@ -292,8 +300,8 @@ export default function SocialSection() {
                       {m.text}
                     </p>
                     <footer className="mt-3 flex items-center justify-between text-[11px] text-neutral-500">
-                      <span>{m.date}</span>
-                      {m.likes !== undefined && (
+                      <span>{m.date_label}</span>
+                      {m.likes != null && (
                         <span className="inline-flex items-center gap-1">
                           <Heart className="h-3 w-3" /> {m.likes}
                         </span>

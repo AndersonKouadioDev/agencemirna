@@ -7,7 +7,7 @@
  */
 
 export type AbidjanLocation = {
-  /** Valeur utilisée comme query param (?q=...) — matche address/ville/quartier en includes() */
+  /** Valeur utilisée comme query param (?q=...) : matche address/ville/quartier en includes() */
   value: string;
   /** Libellé affiché dans le dropdown */
   label: string;
@@ -68,7 +68,7 @@ export const ABIDJAN_LOCATIONS: AbidjanLocation[] = [
 ];
 
 /**
- * Liste des types de bien — pour les dropdowns de recherche rapide
+ * Liste des types de bien : pour les dropdowns de recherche rapide
  * (le filtre /properties charge dynamiquement les vrais types depuis la DB).
  */
 export const BIEN_TYPES: Array<{ value: string; label: string }> = [
@@ -82,7 +82,7 @@ export const BIEN_TYPES: Array<{ value: string; label: string }> = [
 ];
 
 /**
- * Liste des services — matchera via includes() sur le nom DB.
+ * Liste des services : matchera via includes() sur le nom DB.
  */
 export const BIEN_SERVICES: Array<{ value: string; label: string }> = [
   { value: "", label: "Tous les services" },

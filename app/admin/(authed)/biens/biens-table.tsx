@@ -193,7 +193,7 @@ function TypeServiceCell({ bien }: { bien: BienAdminRow }) {
         </span>
       )}
       {!type && !service && !cat && (
-        <span className="text-xs text-neutral-400">—</span>
+        <span className="text-xs text-neutral-400">:</span>
       )}
     </div>
   );
@@ -201,7 +201,7 @@ function TypeServiceCell({ bien }: { bien: BienAdminRow }) {
 
 function PrixCell({ bien }: { bien: BienAdminRow }) {
   if (bien.prix == null) {
-    return <span className="text-xs text-neutral-400">—</span>;
+    return <span className="text-xs text-neutral-400">:</span>;
   }
   return (
     <div className="tabular-nums">

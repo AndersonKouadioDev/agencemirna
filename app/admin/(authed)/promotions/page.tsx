@@ -19,7 +19,7 @@ export default async function AdminPromotionsPage(props: {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Promotions</h1>
           <p className="text-sm text-neutral-500 mt-1">
-            Publiez vos créas et offres sur le site —{" "}
+            Publiez vos créas et offres sur le site :{" "}
             {promotions.length} promotion{promotions.length > 1 ? "s" : ""}.
             Cochez "afficher sur la home" pour mettre en avant une promo.
           </p>

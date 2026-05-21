@@ -12,7 +12,7 @@ export default async function AdminDashboardPage() {
   const admin = await requireAdmin();
   const supabase = await createClient();
 
-  // Compteurs simples — best-effort. Les tables `promotions` et `agents`
+  // Compteurs simples : best-effort. Les tables `promotions` et `agents`
   // n'existent pas encore (migration semaine 2), on les protège avec un wrapper.
   const safeCount = async (table: string): Promise<number> => {
     try {

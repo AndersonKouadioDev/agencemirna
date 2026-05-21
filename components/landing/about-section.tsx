@@ -9,7 +9,7 @@ import {
 } from "./motion-section";
 
 /**
- * Teaser éditorial "Pourquoi Choisir Agence Mirna" — version courte pour la home.
+ * Teaser éditorial "Pourquoi Choisir Agence Mirna" : version courte pour la home.
  * Le contenu détaillé (histoire, équipe, valeurs) est sur /about (page dédiée).
  *
  * Layout cohérent avec les autres sections : full-width bg + container max-w-7xl
@@ -85,7 +85,7 @@ export default function AboutSection() {
             <div className="relative aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl">
               <Image
                 src="/images/biens/bien15.jpg"
-                alt="Agence Mirna — Marcory Zone 4"
+                alt="Agence Mirna : Marcory Zone 4"
                 fill
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 className="object-cover hover:scale-105 transition-transform duration-700"

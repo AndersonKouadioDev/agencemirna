@@ -169,7 +169,7 @@ export async function getAllBiens() {
  *    que seule entry dans bien_images
  *
  * Appelée silencieusement par l'admin à chaque chargement de la page d'édition.
- * Le user n'a rien à faire — ses photos cover legacy seront éditables.
+ * Le user n'a rien à faire : ses photos cover legacy seront éditables.
  */
 export async function migrateBienImagesFromFolder(
   bienId: string,

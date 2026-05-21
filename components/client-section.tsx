@@ -2,7 +2,7 @@ import Marquee from "@/components/magicui/marquee";
 import Image from "next/image";
 
 /**
- * Section partenaires — marquee infini avec logos couleur, hover pause.
+ * Section partenaires : marquee infini avec logos couleur, hover pause.
  * - Header serif Editorial Luxury (cohérence avec le reste de la page)
  * - Logos h-12 sm:h-16 (avant h-14/16/20 trop petit)
  * - Couleurs originales (avant grayscale invisible)

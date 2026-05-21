@@ -15,7 +15,7 @@ export const metadata: Metadata = {
  * Layout des routes admin authentifiées.
  * Ce layout ne s'applique PAS à /admin/login (route hors du route group `(authed)`).
  *
- * Le route group `(authed)` est invisible dans l'URL — les pages dedans
+ * Le route group `(authed)` est invisible dans l'URL : les pages dedans
  * répondent à /admin (page.tsx), /admin/biens, /admin/services, etc.
  */
 export default async function AdminAuthedLayout({

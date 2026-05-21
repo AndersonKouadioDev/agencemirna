@@ -9,7 +9,7 @@ import {
 } from "./motion-section";
 
 /**
- * Section "Nos quartiers" — vitrine des zones où Mirna opère.
+ * Section "Nos quartiers" : vitrine des zones où Mirna opère.
  *
  * Server Component qui charge les quartiers depuis Supabase (table `quartiers`,
  * configurable via admin). Fallback statique si DB vide pour ne jamais avoir

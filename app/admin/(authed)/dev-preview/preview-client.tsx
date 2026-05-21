@@ -287,7 +287,7 @@ function BulkImportSection() {
                         {r.name ?? "(sans nom)"}
                       </td>
                       <td className="px-3 py-2 font-mono text-xs text-neutral-500">
-                        {r.folder ?? "—"}
+                        {r.folder ?? ":"}
                       </td>
                       <td className="px-3 py-2 text-right tabular-nums">
                         {r.ok ? (

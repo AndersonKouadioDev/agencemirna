@@ -86,7 +86,7 @@ function GalleryCarousel({
 
   return (
     <>
-      {/* Carrousel principal — clic sur l'image ouvre la lightbox */}
+      {/* Carrousel principal : clic sur l'image ouvre la lightbox */}
       <div className="relative">
         <div ref={mainRef} className="overflow-hidden rounded-2xl shadow-xl">
           <div className="flex">
@@ -100,7 +100,7 @@ function GalleryCarousel({
               >
                 <Image
                   src={url}
-                  alt={`${propertyName} — photo ${i + 1}`}
+                  alt={`${propertyName} : photo ${i + 1}`}
                   fill
                   sizes="(max-width: 1024px) 100vw, 1024px"
                   className="object-cover transition-transform duration-300 group-hover:scale-[1.02]"
@@ -271,7 +271,7 @@ function Lightbox({
             >
               <Image
                 src={url}
-                alt={`${propertyName} — photo ${i + 1}`}
+                alt={`${propertyName} : photo ${i + 1}`}
                 fill
                 sizes="100vw"
                 className="object-contain"

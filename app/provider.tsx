@@ -32,7 +32,7 @@ export interface ProvidersProps {
   themeProps?: ThemeProviderProps;
 }
 
-// Site francophone (Côte d'Ivoire) — on force la locale fr-FR pour que
+// Site francophone (Côte d'Ivoire) : on force la locale fr-FR pour que
 // les composants react-aria (DatePicker, Calendar, etc.) affichent les
 // libellés et formats de date en français, indépendamment de la locale
 // du navigateur de l'utilisateur.

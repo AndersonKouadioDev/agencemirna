@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getActivePromotions } from "@/src/actions/public";
 
 export const metadata = {
-  title: "Promotions — Agence Mirna",
+  title: "Promotions : Agence Mirna",
   description:
     "Découvrez nos promotions, créas et offres en cours sur Agence Mirna.",
 };

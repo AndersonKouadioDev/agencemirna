@@ -11,7 +11,7 @@ import StatsSection from "@/components/landing/stats-section";
 import TestimonialsSection from "@/components/landing/testimonials-section";
 
 /**
- * Home — 11 sections resserrées (avant : 14).
+ * Home : 11 sections resserrées (avant : 14).
  *
  * Réorganisation (mai 2026) :
  * - Retirés de la home : CategoryPills (redondant avec dropdown Type),
@@ -32,7 +32,7 @@ export default async function Page() {
       {/* Carousel horizontal des dernières affiches/créas (depuis Supabase) */}
       <PostersCarousel />
 
-      {/* Nos quartiers — cards cliquables → /properties préfiltré */}
+      {/* Nos quartiers : cards cliquables → /properties préfiltré */}
       <QuartiersSection />
 
       {/* Carousel des biens vedettes (depuis Supabase) */}

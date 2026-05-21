@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 import { uploadAdminImage } from "@/src/actions/admin/upload";
 
 /**
- * <ImageUploader> — composant controlled multi-images.
+ * <ImageUploader> : composant controlled multi-images.
  *
  * - Drag & drop OU clic pour upload
  * - Preview grid des images existantes

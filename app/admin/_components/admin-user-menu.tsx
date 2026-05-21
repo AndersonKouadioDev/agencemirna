@@ -88,7 +88,7 @@ export function AdminUserMenu({ admin }: { admin: AdminUser | null }) {
 
         <DropdownMenuSeparator />
 
-        {/* Logout — danger variant (rouge) */}
+        {/* Logout : danger variant (rouge) */}
         <form action={signOutAdmin}>
           <DropdownMenuItem asChild variant="danger">
             <button type="submit" className="w-full">

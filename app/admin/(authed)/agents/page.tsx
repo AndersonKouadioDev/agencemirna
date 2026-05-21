@@ -19,7 +19,7 @@ export default async function AdminAgentsPage(props: {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Agents</h1>
           <p className="text-sm text-neutral-500 mt-1">
-            L'équipe d'Agence Mirna — {agents.length} agent
+            L'équipe d'Agence Mirna : {agents.length} agent
             {agents.length > 1 ? "s" : ""}. Glissez-déposez pour réorganiser.
           </p>
         </div>

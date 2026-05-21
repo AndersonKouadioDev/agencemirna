@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { getActiveAgents } from "@/src/actions/public";
 
 export const metadata = {
-  title: "Notre équipe — Agence Mirna",
+  title: "Notre équipe : Agence Mirna",
   description:
     "Rencontrez l'équipe d'Agence Mirna : conseillers et experts immobiliers à Abidjan.",
 };
@@ -192,7 +192,7 @@ function EmptyAgents() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.1fr] gap-10 lg:gap-16 items-center">
-      {/* Colonne gauche — éditorial + CTAs */}
+      {/* Colonne gauche : éditorial + CTAs */}
       <div>
         <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-primary mb-6">
           <Sparkles className="h-3 w-3" />
@@ -205,7 +205,7 @@ function EmptyAgents() {
 
         <p className="text-base sm:text-lg text-neutral-700 leading-relaxed mb-8">
           Nos conseillers préparent leur arrivée sur le site. En attendant,
-          nous restons à votre écoute — par WhatsApp, téléphone ou en
+          nous restons à votre écoute : par WhatsApp, téléphone ou en
           rendez-vous dans nos bureaux de Marcory Zone 4.
         </p>
 
@@ -258,7 +258,7 @@ function EmptyAgents() {
         </div>
       </div>
 
-      {/* Colonne droite — grille "silhouettes" en attente */}
+      {/* Colonne droite : grille "silhouettes" en attente */}
       <div className="relative">
         {/* Décor blur background */}
         <div

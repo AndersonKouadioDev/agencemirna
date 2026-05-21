@@ -10,6 +10,8 @@ import {
   Megaphone,
   Users,
   Settings,
+  MessageSquareQuote,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +27,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Services", href: "/admin/services", icon: Sparkles },
   { label: "Promotions", href: "/admin/promotions", icon: Megaphone },
   { label: "Agents", href: "/admin/agents", icon: Users },
+  { label: "Témoignages", href: "/admin/testimonials", icon: MessageSquareQuote },
+  { label: "FAQ", href: "/admin/faqs", icon: HelpCircle },
 ];
 
 const FOOTER_ITEMS: NavItem[] = [
@@ -32,7 +36,7 @@ const FOOTER_ITEMS: NavItem[] = [
 ];
 
 /**
- * Contenu de la sidebar — réutilisé dans la version desktop (sidebar fixe)
+ * Contenu de la sidebar : réutilisé dans la version desktop (sidebar fixe)
  * et mobile (Sheet drawer).
  * @param onNavigate callback appelé quand un item est cliqué (utile pour
  *   fermer le drawer mobile après navigation).
@@ -114,7 +118,7 @@ function NavLink({
       href={item.href}
       onClick={onNavigate}
       className={cn(
-        // IMPORTANT : ne PAS utiliser bg-muted/bg-accent ici — ces tokens
+        // IMPORTANT : ne PAS utiliser bg-muted/bg-accent ici : ces tokens
         // sont définis en marron foncé dans globals.css (couleurs de marque)
         // → hover devient un bloc presque noir.
         // On utilise bg-primary/5 pour le hover : très subtil orange, cohérent

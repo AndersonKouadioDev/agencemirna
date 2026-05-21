@@ -15,7 +15,7 @@ export type PosterItem = {
 };
 
 /**
- * Carousel horizontal "Affiches & Créas" — défilé à la Instagram Stories.
+ * Carousel horizontal "Affiches & Créas" : défilé à la Instagram Stories.
  * - Cards aspect 4/5 (format poster Facebook/IG)
  * - Embla autoplay-like (interval simple) + boutons prev/next
  * - Hover : overlay gradient + "Voir l'offre"
