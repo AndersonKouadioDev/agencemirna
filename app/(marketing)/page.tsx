@@ -1,12 +1,7 @@
 import AdresseSection from "@/components/adresse-section";
 import AboutSection from "@/components/landing/about-section";
-import BlogSection from "@/components/landing/blog-section";
-import CategoryPillsSection from "@/components/landing/category-pills-section";
 import ClientSection from "@/components/client-section";
-import CommoditiesSection from "@/components/landing/commodities-section";
-import FAQSection from "@/components/landing/faq-section";
 import FeaturedPropertiesServer from "@/components/landing/featured-properties-server";
-import FeaturesSection from "@/components/landing/features-section";
 import HeroSection from "@/components/landing/hero-section";
 import HomePromoBanner from "@/components/landing/home-promo-banner";
 import PostersCarousel from "@/components/landing/posters-carousel";
@@ -15,17 +10,27 @@ import SocialSection from "@/components/landing/social-section";
 import StatsSection from "@/components/landing/stats-section";
 import TestimonialsSection from "@/components/landing/testimonials-section";
 
+/**
+ * Home — 11 sections resserrées (avant : 14).
+ *
+ * Réorganisation (mai 2026) :
+ * - Retirés de la home : CategoryPills (redondant avec dropdown Type),
+ *   CommoditiesSection (déplacé vers /about), BlogSection (vers /actualites
+ *   ou /about future), FAQSection (vers /about)
+ * - AboutSection devient un teaser court qui renvoie vers /about pour le détail
+ *
+ * Flow logique : découverte (hero + créas + quartiers) → biens (featured + promo)
+ * → preuves sociales (stats + témoignages) → identité (about teaser + partenaires)
+ * → connexion (social + adresse).
+ */
 export default async function Page() {
   return (
     <>
-      {/* Hero avec recherche intégrée */}
+      {/* Hero avec recherche premium intégrée */}
       <HeroSection />
 
       {/* Carousel horizontal des dernières affiches/créas (depuis Supabase) */}
       <PostersCarousel />
-
-      {/* Catégories rapides */}
-      <CategoryPillsSection />
 
       {/* Nos quartiers — cards cliquables → /properties préfiltré */}
       <QuartiersSection />
@@ -33,34 +38,25 @@ export default async function Page() {
       {/* Carousel des biens vedettes (depuis Supabase) */}
       <FeaturedPropertiesServer />
 
-      {/* Bandeau promo dynamique (depuis Supabase) */}
+      {/* Bandeau promo dynamique (depuis Supabase, si show_on_home) */}
       <HomePromoBanner />
 
-      {/* Chiffres clés animés */}
+      {/* Chiffres clés animés (count-up scroll-triggered) */}
       <StatsSection />
 
       {/* Témoignages clients (carousel) */}
       <TestimonialsSection />
 
-      {/* Commodités / amenities */}
-      <CommoditiesSection />
-
-      {/* À propos / pourquoi nous */}
+      {/* Teaser éditorial "Pourquoi nous" → CTA /about */}
       <AboutSection />
 
-      {/* Actualités & Conseils du marché (3 articles) */}
-      <BlogSection />
-
-      {/* FAQ accordion */}
-      <FAQSection />
-
-      {/* Clients / partenaires */}
+      {/* Partenaires (marquee logos) */}
       <ClientSection />
 
-      {/* Suivez-nous (réseaux sociaux + Instagram preview) */}
+      {/* Suivez-nous + aside "On parle de nous" */}
       <SocialSection />
 
-      {/* Adresse / map */}
+      {/* Adresse + map */}
       <AdresseSection />
     </>
   );

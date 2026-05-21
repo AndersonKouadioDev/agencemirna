@@ -10,7 +10,7 @@ export default function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative isolate overflow-hidden bg-[#FAF5EE] pt-28 pb-16 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24"
+      className="relative isolate overflow-x-clip bg-[#FAF5EE] pt-28 pb-16 sm:pt-32 sm:pb-20 lg:pt-36 lg:pb-24"
     >
       {/* Décoration de fond */}
       <div

@@ -6,7 +6,7 @@ export default function AdresseSection() {
   return (
     <section
       id="hero"
-      className="relative bg-primary/5 overflow-hidden isolate py-32 mx-auto max-w-screen-2xl"
+      className="relative bg-primary/5 overflow-hidden isolate py-20 sm:py-28 w-full"
     >
       <div className="container relative">
         <Motion variant="verticalSlideIn">

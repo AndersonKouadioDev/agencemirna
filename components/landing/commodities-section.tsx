@@ -18,9 +18,9 @@ export default function CommoditiesSection() {
   return (
     <section
       id="commodities"
-      className="relative bg-secondary overflow-hidden isolate py-32 mx-auto max-w-screen-2xl"
+      className="relative bg-secondary overflow-hidden isolate py-20 sm:py-28 w-full"
     >
-      <div className="container mx-auto px-4">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
           <div className="mx-auto flex flex-col items-center gap-8">
             <Motion>

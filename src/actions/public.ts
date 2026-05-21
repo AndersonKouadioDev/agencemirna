@@ -3,6 +3,51 @@
 import { createClient } from "../supabase/server";
 
 // ============================================================================
+// Quartiers (configurables via admin, charge la section "Nos quartiers")
+// ============================================================================
+
+export type PublicQuartier = {
+  id: string;
+  name: string;
+  commune: string;
+  badge: string | null;
+  tagline: string | null;
+  description: string | null;
+  image: string;
+  search_query: string | null;
+  ordre: number;
+  is_featured: boolean;
+};
+
+/**
+ * Retourne tous les quartiers actifs, triés par ordre.
+ * `featured=true` pour ne récupérer que ceux mis en avant sur la home.
+ */
+export async function getActiveQuartiers(opts?: {
+  featured?: boolean;
+  limit?: number;
+}): Promise<PublicQuartier[]> {
+  const supabase = await createClient();
+  let q = supabase
+    .from("quartiers")
+    .select(
+      "id, name, commune, badge, tagline, description, image, search_query, ordre, is_featured",
+    )
+    // RLS filtre déjà is_active=true
+    .order("ordre", { ascending: true });
+
+  if (opts?.featured) q = q.eq("is_featured", true);
+  if (opts?.limit) q = q.limit(opts.limit);
+
+  const { data, error } = await q;
+  if (error || !data) {
+    if (error) console.error("getActiveQuartiers error:", error);
+    return [];
+  }
+  return data as PublicQuartier[];
+}
+
+// ============================================================================
 // Données de référence pour filtres publics (types, services, catégories)
 // ============================================================================
 
