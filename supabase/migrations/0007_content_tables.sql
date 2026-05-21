@@ -224,7 +224,7 @@ FROM (VALUES
     'location-meublee-vs-vide-cote-ivoire',
     'Location meublée vs vide : quelle stratégie en Côte d''Ivoire ?',
     'Fiscalité, rentabilité, profil de locataire, charges récurrentes : on compare les deux modèles pour vous aider à choisir.',
-    '/images/biens/bien33.jpg',
+    '/images/biens/bien8.jpg',
     'Stratégie', 5, '2026-04-15', 3
   )
 ) AS v(slug, title, excerpt, image, category, read_time_minutes, published_at, ordre)

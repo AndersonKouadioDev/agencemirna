@@ -47,7 +47,7 @@ const FALLBACK_ARTICLES: PublicArticle[] = [
     excerpt:
       "Fiscalité, rentabilité, profil de locataire, charges récurrentes : on compare les deux modèles pour vous aider à choisir.",
     content_md: null,
-    image: "/images/biens/bien33.jpg",
+    image: "/images/biens/bien8.jpg",
     category: "Stratégie",
     read_time_minutes: 5,
     published_at: "2026-04-15T00:00:00Z",
@@ -84,7 +84,7 @@ export default async function BlogSection() {
             </p>
           </div>
           <Link
-            href="/contact_us"
+            href="/about#actualites"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:gap-2.5 transition-all shrink-0"
           >
             Tous les conseils
@@ -96,7 +96,7 @@ export default async function BlogSection() {
           {articles.map((article) => (
             <MotionStaggerChild key={article.id}>
               <Link
-                href={`/contact_us`}
+                href={`/actualites/${article.slug}`}
                 className="group block h-full focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:ring-offset-[#FAF5EE] rounded-2xl"
               >
                 <article className="h-full flex flex-col bg-white rounded-2xl overflow-hidden border border-stone-200 group-hover:shadow-xl group-hover:-translate-y-1 transition-all duration-300">

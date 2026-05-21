@@ -304,6 +304,18 @@ export type PublicArticle = {
   ordre: number;
 };
 
+export async function getArticleBySlug(slug: string): Promise<PublicArticle | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("articles")
+    .select(
+      "id, slug, title, excerpt, content_md, image, category, read_time_minutes, published_at, ordre",
+    )
+    .eq("slug", slug)
+    .maybeSingle();
+  return (data as PublicArticle) ?? null;
+}
+
 export async function getActiveArticles(opts?: {
   limit?: number;
 }): Promise<PublicArticle[]> {
