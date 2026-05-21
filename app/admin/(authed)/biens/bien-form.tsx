@@ -44,6 +44,8 @@ type FormState = {
   ville_commune: string;
   pays: string;
   localisation: string;
+  latitude: string;
+  longitude: string;
   type_bien_id: string;
   service_bien_id: string;
   categorie_bien_id: string;
@@ -67,6 +69,8 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
     ville_commune: bien?.ville_commune ?? "Marcory-Abidjan",
     pays: bien?.pays ?? "Côte d'Ivoire",
     localisation: bien?.localisation ?? "",
+    latitude: bien?.latitude?.toString() ?? "",
+    longitude: bien?.longitude?.toString() ?? "",
     type_bien_id: bien?.type_bien_id?.toString() ?? "",
     service_bien_id: bien?.service_bien_id?.toString() ?? "",
     categorie_bien_id: bien?.categorie_bien_id?.toString() ?? "",
@@ -119,6 +123,8 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
       ville_commune: form.ville_commune || null,
       pays: form.pays || null,
       localisation: form.localisation || null,
+      latitude: parseNumber(form.latitude),
+      longitude: parseNumber(form.longitude),
       type_bien_id: parseInt(form.type_bien_id, 10) || null,
       service_bien_id: parseInt(form.service_bien_id, 10) || null,
       categorie_bien_id: parseInt(form.categorie_bien_id, 10) || null,
@@ -258,6 +264,36 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
                 placeholder="https://maps.google.com/..."
               />
             </Field>
+
+            {/* Coordonnées GPS pour la vue carte sur /properties */}
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Latitude">
+                <Input
+                  type="number"
+                  step="0.000001"
+                  value={form.latitude}
+                  onChange={(e) => update("latitude", e.target.value)}
+                  placeholder="5.3360"
+                  inputMode="decimal"
+                />
+              </Field>
+              <Field label="Longitude">
+                <Input
+                  type="number"
+                  step="0.000001"
+                  value={form.longitude}
+                  onChange={(e) => update("longitude", e.target.value)}
+                  placeholder="-4.0083"
+                  inputMode="decimal"
+                />
+              </Field>
+            </div>
+            <p className="text-xs text-neutral-500 -mt-1">
+              Coordonnées GPS pour la vue carte. Astuce : sur Google Maps,
+              clic droit sur le point exact → copier les coordonnées.
+              Le bien n&apos;apparaît sur la carte que si les deux champs sont
+              renseignés.
+            </p>
           </Section>
         </div>
 

@@ -11,7 +11,10 @@ import {
   Building2,
   Briefcase,
   ArrowDownUp,
+  Map as MapIcon,
+  List,
 } from "lucide-react";
+import { PropertiesMap } from "./properties-map";
 import {
   Header,
   Label as HeroLabel,
@@ -100,6 +103,7 @@ export default function ListPropertiesSection({
     ...EMPTY_FILTERS,
     ...initialFilters,
   });
+  const [viewMode, setViewMode] = React.useState<"list" | "map">("list");
 
   const filteredBiens = React.useMemo(() => {
     let list = initialBiens.filter((bien: any) => {
@@ -189,19 +193,71 @@ export default function ListPropertiesSection({
                 </>
               )}
             </div>
-            <SortSelect
-              value={filters.sort}
-              onChange={(v) =>
-                setFilters({ ...filters, sort: v === "recent" ? "" : v })
-              }
-            />
+            <div className="flex items-center gap-2">
+              <ViewModeToggle
+                value={viewMode}
+                onChange={setViewMode}
+              />
+              <SortSelect
+                value={filters.sort}
+                onChange={(v) =>
+                  setFilters({ ...filters, sort: v === "recent" ? "" : v })
+                }
+              />
+            </div>
           </div>
-          <PropertySection biens={filteredBiens} />
+          {viewMode === "map" ? (
+            <PropertiesMap biens={filteredBiens} />
+          ) : (
+            <PropertySection biens={filteredBiens} />
+          )}
         </>
       ) : (
         <NoPropertyFound />
       )}
     </section>
+  );
+}
+
+// ─── Toggle Vue liste / Vue carte ──────────────────────────────────────────
+function ViewModeToggle({
+  value,
+  onChange,
+}: {
+  value: "list" | "map";
+  onChange: (v: "list" | "map") => void;
+}) {
+  return (
+    <div className="inline-flex rounded-full border border-stone-200 bg-white p-0.5">
+      <button
+        type="button"
+        onClick={() => onChange("list")}
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+          value === "list"
+            ? "bg-secondary text-white"
+            : "text-neutral-600 hover:text-secondary",
+        )}
+        aria-pressed={value === "list"}
+      >
+        <List className="h-3.5 w-3.5" />
+        Liste
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange("map")}
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+          value === "map"
+            ? "bg-secondary text-white"
+            : "text-neutral-600 hover:text-secondary",
+        )}
+        aria-pressed={value === "map"}
+      >
+        <MapIcon className="h-3.5 w-3.5" />
+        Carte
+      </button>
+    </div>
   );
 }
 

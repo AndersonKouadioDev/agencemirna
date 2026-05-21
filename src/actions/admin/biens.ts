@@ -37,6 +37,8 @@ export type BienAdminRow = {
   ville_commune: string | null;
   pays: string | null;
   localisation: string | null;
+  latitude: number | null;
+  longitude: number | null;
   folder: string | null;
   type_bien_id: number | null;
   service_bien_id: number | null;
@@ -81,7 +83,7 @@ export async function listBiensAdmin(): Promise<BienAdminRow[]> {
     .select(`
       id, name, short_description, description, image, prix, prix_month,
       chambre, salon, salle_bains, capacity, address, ville_commune, pays,
-      localisation, folder, type_bien_id, service_bien_id, categorie_bien_id,
+      localisation, latitude, longitude, folder, type_bien_id, service_bien_id, categorie_bien_id,
       is_active, created_at,
       types_bien:type_bien_id (id, name),
       services_bien:service_bien_id (id, name),
@@ -136,7 +138,7 @@ export async function getBienAdmin(
     .select(`
       id, name, short_description, description, image, prix, prix_month,
       chambre, salon, salle_bains, capacity, address, ville_commune, pays,
-      localisation, folder, type_bien_id, service_bien_id, categorie_bien_id,
+      localisation, latitude, longitude, folder, type_bien_id, service_bien_id, categorie_bien_id,
       is_active, created_at,
       types_bien:type_bien_id (id, name),
       services_bien:service_bien_id (id, name),
@@ -231,6 +233,8 @@ export type BienFormData = {
   ville_commune?: string | null;
   pays?: string | null;
   localisation?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   type_bien_id?: number | null;
   service_bien_id?: number | null;
   categorie_bien_id?: number | null;
@@ -267,6 +271,8 @@ export async function upsertBien(
     ville_commune: input.ville_commune?.trim() || null,
     pays: input.pays?.trim() || null,
     localisation: input.localisation?.trim() || null,
+    latitude: input.latitude ?? null,
+    longitude: input.longitude ?? null,
     type_bien_id: input.type_bien_id ?? null,
     service_bien_id: input.service_bien_id ?? null,
     categorie_bien_id: input.categorie_bien_id ?? null,
