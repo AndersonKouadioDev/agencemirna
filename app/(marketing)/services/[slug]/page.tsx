@@ -6,6 +6,7 @@ import { Breadcrumbs, Card, Chip } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { getServiceBySlug, getActiveServices } from "@/src/actions/public";
 import { ServiceIcon } from "../service-icon";
+import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>;
@@ -33,6 +34,13 @@ export default async function ServiceDetailPage(props: {
 
   return (
     <main className="bg-[#FAF5EE]">
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Accueil", url: "/" },
+          { name: "Services", url: "/services" },
+          { name: service.name, url: `/services/${service.slug}` },
+        ]}
+      />
       {/* HERO IMMERSIF (image full-bleed si dispo, sinon dégradé) */}
       <section className="relative isolate overflow-hidden">
         {service.image ? (

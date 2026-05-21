@@ -9,6 +9,10 @@ import QuartiersSection from "@/components/landing/quartiers-section";
 import SocialSection from "@/components/landing/social-section";
 import StatsSection from "@/components/landing/stats-section";
 import TestimonialsSection from "@/components/landing/testimonials-section";
+import {
+  OrganizationJsonLd,
+  WebsiteJsonLd,
+} from "@/components/seo/structured-data";
 
 /**
  * Home : 11 sections resserrées (avant : 14).
@@ -26,6 +30,10 @@ import TestimonialsSection from "@/components/landing/testimonials-section";
 export default async function Page() {
   return (
     <>
+      {/* JSON-LD : Organization + WebSite avec SearchAction */}
+      <OrganizationJsonLd />
+      <WebsiteJsonLd />
+
       {/* Hero avec recherche premium intégrée */}
       <HeroSection />
 

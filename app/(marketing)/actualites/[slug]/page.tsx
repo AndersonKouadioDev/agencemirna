@@ -14,6 +14,7 @@ import {
   getActiveArticles,
   getArticleBySlug,
 } from "@/src/actions/public";
+import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", {
@@ -53,6 +54,13 @@ export default async function ArticlePage({
 
   return (
     <main className="bg-[#FAF5EE]">
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Accueil", url: "/" },
+          { name: "Actualités", url: "/about#actualites" },
+          { name: article.title, url: `/actualites/${article.slug}` },
+        ]}
+      />
       {/* HERO ARTICLE */}
       <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16">
         <div className="mx-auto max-w-3xl px-6 lg:px-8">

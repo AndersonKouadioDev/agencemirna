@@ -3,6 +3,7 @@ import GallerySection from "@/components/properties/[property_id]/gallery-sectio
 import { getBienWithImages } from "@/src/actions/bien.actions";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
+import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.agencemirna.com";
@@ -134,6 +135,13 @@ export default async function Page(props: {
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <BreadcrumbJsonLd
+        items={[
+          { name: "Accueil", url: "/" },
+          { name: "Propriétés", url: "/properties" },
+          { name: bien.name ?? "Bien", url: `/properties/${params.property_id}` },
+        ]}
       />
       <DescriptionSection bien={bien} />
       <GallerySection bien={bien} />
