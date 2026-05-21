@@ -41,25 +41,22 @@ export function SiteFooter() {
   const onSubmit: SubmitHandler<IFormInput> = async (data) => {
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/contact-email", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...data,
-          to: "andersonkouadio0118@gmail.com",
-        }),
+      // Import dynamique pour éviter d'embarquer le module server dans le bundle client si non utilisé
+      const { createLead } = await import("@/src/actions/leads");
+      const result = await createLead({
+        source: "newsletter",
+        email: data.email,
+        source_url:
+          typeof window !== "undefined" ? window.location.pathname : null,
       });
-
-      if (response.ok) {
-        toast.success("Message envoyé avec succès!");
+      if (result.ok) {
+        toast.success("Inscription enregistrée. Nous vous tiendrons informé.");
         reset();
       } else {
-        throw new Error("Erreur lors de l'envoi du message");
+        toast.error(result.error);
       }
     } catch (error) {
-      toast.error("Erreur lors de l'envoi du message. Veuillez réessayer.");
+      toast.error("Une erreur est survenue. Veuillez réessayer.");
     } finally {
       setIsSubmitting(false);
     }
