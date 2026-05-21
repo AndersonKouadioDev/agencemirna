@@ -255,3 +255,261 @@ export async function upsertFaqAndRedirect(input: FaqFormData) {
   if (result.ok) redirect("/admin/faqs?flash=saved");
   return result;
 }
+
+// ============================================================================
+// ARTICLES (blog)
+// ============================================================================
+
+export type ArticleRow = {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  content_md: string | null;
+  image: string;
+  category: string | null;
+  read_time_minutes: number | null;
+  published_at: string;
+  ordre: number;
+  is_active: boolean;
+  updated_at: string;
+};
+
+export type ArticleFormData = {
+  id?: string;
+  slug: string;
+  title: string;
+  excerpt?: string | null;
+  content_md?: string | null;
+  image: string;
+  category?: string | null;
+  read_time_minutes?: number | null;
+  published_at?: string | null;
+  ordre?: number;
+  is_active?: boolean;
+};
+
+export async function listArticlesAdmin(): Promise<ArticleRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("articles")
+    .select("id, slug, title, excerpt, content_md, image, category, read_time_minutes, published_at, ordre, is_active, updated_at")
+    .order("published_at", { ascending: false });
+  return (data as ArticleRow[]) ?? [];
+}
+
+export async function getArticleAdmin(id: string): Promise<ArticleRow | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("articles")
+    .select("id, slug, title, excerpt, content_md, image, category, read_time_minutes, published_at, ordre, is_active, updated_at")
+    .eq("id", id)
+    .maybeSingle();
+  return (data as ArticleRow) ?? null;
+}
+
+function slugify(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "")
+    .slice(0, 100);
+}
+
+export async function upsertArticle(
+  input: ArticleFormData,
+): Promise<ActionResult<{ id: string }>> {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, error: "Non autorisé." };
+
+  if (!input.title?.trim()) return { ok: false, error: "Le titre est obligatoire." };
+  if (!input.image?.trim()) return { ok: false, error: "L'image est obligatoire." };
+  const slug = input.slug?.trim() || slugify(input.title);
+  if (!slug) return { ok: false, error: "Le slug est obligatoire." };
+
+  const supabase = await createClient();
+  const data = {
+    slug,
+    title: input.title.trim(),
+    excerpt: input.excerpt?.trim() || null,
+    content_md: input.content_md?.trim() || null,
+    image: input.image.trim(),
+    category: input.category?.trim() || null,
+    read_time_minutes: input.read_time_minutes ?? null,
+    published_at: input.published_at || new Date().toISOString(),
+    ordre: input.ordre ?? 0,
+    is_active: input.is_active ?? true,
+  };
+
+  if (input.id) {
+    const { error } = await supabase.from("articles").update(data).eq("id", input.id);
+    if (error) return { ok: false, error: error.message };
+    REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+    revalidatePath("/admin/articles");
+    return { ok: true, data: { id: input.id } };
+  }
+  const { data: existing } = await supabase
+    .from("articles")
+    .select("ordre")
+    .order("ordre", { ascending: false })
+    .limit(1);
+  const nextOrdre = ((existing?.[0]?.ordre as number | undefined) ?? 0) + 1;
+  const { data: created, error } = await supabase
+    .from("articles")
+    .insert({ ...data, ordre: nextOrdre })
+    .select("id")
+    .single();
+  if (error || !created) return { ok: false, error: error?.message ?? "Erreur." };
+  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revalidatePath("/admin/articles");
+  return { ok: true, data: { id: created.id as string } };
+}
+
+export async function deleteArticle(id: string): Promise<ActionResult> {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, error: "Non autorisé." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("articles").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revalidatePath("/admin/articles");
+  return { ok: true, data: undefined };
+}
+
+export async function toggleArticleActive(
+  id: string,
+  isActive: boolean,
+): Promise<ActionResult> {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, error: "Non autorisé." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("articles").update({ is_active: isActive }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revalidatePath("/admin/articles");
+  return { ok: true, data: undefined };
+}
+
+// ============================================================================
+// SOCIAL MENTIONS
+// ============================================================================
+
+export type SocialMentionRow = {
+  id: string;
+  network: string;
+  author_name: string;
+  author_handle: string | null;
+  text: string;
+  date_label: string | null;
+  likes: number | null;
+  rating: number | null;
+  ordre: number;
+  is_active: boolean;
+  updated_at: string;
+};
+
+export type SocialMentionFormData = {
+  id?: string;
+  network: string;
+  author_name: string;
+  author_handle?: string | null;
+  text: string;
+  date_label?: string | null;
+  likes?: number | null;
+  rating?: number | null;
+  ordre?: number;
+  is_active?: boolean;
+};
+
+export async function listSocialMentionsAdmin(): Promise<SocialMentionRow[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("social_mentions")
+    .select("id, network, author_name, author_handle, text, date_label, likes, rating, ordre, is_active, updated_at")
+    .order("ordre", { ascending: true });
+  return (data as SocialMentionRow[]) ?? [];
+}
+
+export async function getSocialMentionAdmin(id: string): Promise<SocialMentionRow | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("social_mentions")
+    .select("id, network, author_name, author_handle, text, date_label, likes, rating, ordre, is_active, updated_at")
+    .eq("id", id)
+    .maybeSingle();
+  return (data as SocialMentionRow) ?? null;
+}
+
+export async function upsertSocialMention(
+  input: SocialMentionFormData,
+): Promise<ActionResult<{ id: string }>> {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, error: "Non autorisé." };
+
+  if (!input.author_name?.trim()) return { ok: false, error: "Le nom de l'auteur est obligatoire." };
+  if (!input.text?.trim()) return { ok: false, error: "Le texte de la mention est obligatoire." };
+  if (!input.network) return { ok: false, error: "Le réseau est obligatoire." };
+
+  const supabase = await createClient();
+  const data = {
+    network: input.network,
+    author_name: input.author_name.trim(),
+    author_handle: input.author_handle?.trim() || null,
+    text: input.text.trim(),
+    date_label: input.date_label?.trim() || null,
+    likes: input.likes ?? null,
+    rating: input.rating ?? null,
+    ordre: input.ordre ?? 0,
+    is_active: input.is_active ?? true,
+  };
+
+  if (input.id) {
+    const { error } = await supabase.from("social_mentions").update(data).eq("id", input.id);
+    if (error) return { ok: false, error: error.message };
+    REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+    revalidatePath("/admin/social-mentions");
+    return { ok: true, data: { id: input.id } };
+  }
+  const { data: existing } = await supabase
+    .from("social_mentions")
+    .select("ordre")
+    .order("ordre", { ascending: false })
+    .limit(1);
+  const nextOrdre = ((existing?.[0]?.ordre as number | undefined) ?? 0) + 1;
+  const { data: created, error } = await supabase
+    .from("social_mentions")
+    .insert({ ...data, ordre: nextOrdre })
+    .select("id")
+    .single();
+  if (error || !created) return { ok: false, error: error?.message ?? "Erreur." };
+  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revalidatePath("/admin/social-mentions");
+  return { ok: true, data: { id: created.id as string } };
+}
+
+export async function deleteSocialMention(id: string): Promise<ActionResult> {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, error: "Non autorisé." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("social_mentions").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revalidatePath("/admin/social-mentions");
+  return { ok: true, data: undefined };
+}
+
+export async function toggleSocialMentionActive(
+  id: string,
+  isActive: boolean,
+): Promise<ActionResult> {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, error: "Non autorisé." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("social_mentions").update({ is_active: isActive }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revalidatePath("/admin/social-mentions");
+  return { ok: true, data: undefined };
+}

@@ -12,6 +12,9 @@ import {
   Settings,
   MessageSquareQuote,
   HelpCircle,
+  Newspaper,
+  MessageCircle,
+  MapPin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -24,11 +27,14 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { label: "Tableau de bord", href: "/admin", icon: LayoutDashboard },
   { label: "Biens", href: "/admin/biens", icon: Home },
+  { label: "Quartiers", href: "/admin/quartiers", icon: MapPin },
   { label: "Services", href: "/admin/services", icon: Sparkles },
   { label: "Promotions", href: "/admin/promotions", icon: Megaphone },
   { label: "Agents", href: "/admin/agents", icon: Users },
   { label: "Témoignages", href: "/admin/testimonials", icon: MessageSquareQuote },
+  { label: "Articles", href: "/admin/articles", icon: Newspaper },
   { label: "FAQ", href: "/admin/faqs", icon: HelpCircle },
+  { label: "Mentions sociales", href: "/admin/social-mentions", icon: MessageCircle },
 ];
 
 const FOOTER_ITEMS: NavItem[] = [
