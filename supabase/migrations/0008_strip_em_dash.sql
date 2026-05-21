@@ -16,8 +16,9 @@ UPDATE public.promotions SET cta_label   = REPLACE(cta_label,   '—', ':') WHER
 
 -- ─── BIENS ──────────────────────────────────────────────────────────────────
 UPDATE public.biens SET name              = REPLACE(name,              '—', ':') WHERE name              LIKE '%—%';
-UPDATE public.biens SET description_courte = REPLACE(description_courte, '—', ':') WHERE description_courte LIKE '%—%';
+UPDATE public.biens SET short_description = REPLACE(short_description, '—', ':') WHERE short_description LIKE '%—%';
 UPDATE public.biens SET description       = REPLACE(description,       '—', ':') WHERE description       LIKE '%—%';
+UPDATE public.biens SET address           = REPLACE(address,           '—', ':') WHERE address           LIKE '%—%';
 
 -- ─── SERVICES ──────────────────────────────────────────────────────────────
 UPDATE public.services SET name              = REPLACE(name,              '—', ':') WHERE name              LIKE '%—%';
