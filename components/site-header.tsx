@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getMenuList } from "@/config/site";
+import { getMenuList, type MenuItem } from "@/config/site";
 import { cn } from "@/lib/utils";
 import {
   AnimatePresence,
@@ -12,16 +12,10 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
-
-// Définition des types
-interface MenuItem {
-  id: number;
-  label: string;
-  href: string;
-  active: boolean;
-}
+import { MegaMenu } from "./mega-menu";
 
 interface MobileMenuButtonProps {
   isOpen: boolean;
@@ -97,15 +91,12 @@ export const Header = () => {
                     </Link>
                   </div>
 
-                  <nav className="hidden md:block w-full">
-                    <ul
-                      className="gap-y-6 tracking-wide 
-                    text-gray-500 dark:text-gray-300 font-medium flex flex-col md:flex-row md:gap-y-0"
-                    >
-                      {menuItems.map((item: MenuItem) => (
-                        <NavItem key={item.id} {...item} />
+                  <nav className="hidden md:flex w-full items-center justify-center">
+                    <div className="flex items-center gap-1">
+                      {menuItems.map((item) => (
+                        <MegaMenu key={item.id} item={item} />
                       ))}
-                    </ul>
+                    </div>
                   </nav>
                 </div>
                 <Link
@@ -134,29 +125,8 @@ export const Header = () => {
   );
 };
 
-const NavItem: React.FC<MenuItem> = ({ href, label, active }) => (
-  <li>
-    <Link href={href} className="block font-medium md:px-4">
-      <div
-        className={cn(
-          "relative  before:absolute before:-bottom-2 md:before:-bottom-7 before:w-full",
-          active
-            ? "before:h-1 before:mx-auto before:mt-auto before:rounded-t-full before:bg-primary"
-            : "group before:h-0.5 before:origin-left before:mt-auto before:rounded-full before:bg-orange-400 before:transition before:scale-x-0 group-hover:before:scale-x-100"
-        )}
-      >
-        <span
-          className={cn(
-            "",
-            active ? "text-secondary" : "group-hover:text-secondary"
-          )}
-        >
-          {label}
-        </span>
-      </div>
-    </Link>
-  </li>
-);
+// NavItem retiré : remplacé par <MegaMenu /> qui gère les items simples
+// et les items avec sous-menus.
 
 const MobileMenuButton: React.FC<MobileMenuButtonProps> = ({
   isOpen,
@@ -202,7 +172,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
         transition={{ duration: 0.3 }}
-        className="fixed top-20 left-0 w-full bg-primary shadow-lg md:hidden z-50"
+        className="fixed top-20 left-0 w-full max-h-[calc(100vh-5rem)] overflow-y-auto bg-primary shadow-lg md:hidden z-50"
       >
         <nav className="flex flex-col py-4">
           {menuItems.map((item: MenuItem) => (
@@ -212,18 +182,7 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.3, delay: item.id * 0.1 }}
             >
-              <Link
-                href={item.href}
-                className={cn(
-                  "block px-4 py-2 transition-colors",
-                  item.active
-                    ? "text-white font-bold underline underline-offset-4"
-                    : "text-secondary hover:text-white"
-                )}
-                onClick={closeMenu}
-              >
-                {item.label}
-              </Link>
+              <MobileMenuEntry item={item} closeMenu={closeMenu} />
             </motion.div>
           ))}
         </nav>
@@ -231,3 +190,162 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
     )}
   </AnimatePresence>
 );
+
+/**
+ * Une entrée du menu mobile. Trois cas :
+ *  - Item simple (pas de sous-menu) → <Link> direct
+ *  - Item avec sous-menu → accordéon (bouton qui toggle, liste imbriquée)
+ *  - Item mega (colonnes) → on aplatit les colonnes en sections avec titre
+ */
+const MobileMenuEntry: React.FC<{
+  item: MenuItem;
+  closeMenu: () => void;
+}> = ({ item, closeMenu }) => {
+  const [expanded, setExpanded] = useState(false);
+  const hasSubmenu = !!(item.columns?.length || item.simpleItems?.length);
+
+  // Cas 1 : item simple → lien direct
+  if (!hasSubmenu) {
+    return (
+      <Link
+        href={item.href ?? "#"}
+        className={cn(
+          "block px-4 py-3 transition-colors text-base",
+          item.active
+            ? "text-white font-bold underline underline-offset-4"
+            : "text-secondary hover:text-white"
+        )}
+        onClick={closeMenu}
+      >
+        {item.label}
+      </Link>
+    );
+  }
+
+  // Cas 2 & 3 : item avec sous-menu → accordéon
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className={cn(
+          "w-full flex items-center justify-between px-4 py-3 text-base transition-colors",
+          item.active
+            ? "text-white font-bold"
+            : "text-secondary hover:text-white"
+        )}
+      >
+        <span>{item.label}</span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 transition-transform duration-200",
+            expanded && "rotate-180"
+          )}
+        />
+      </button>
+
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="overflow-hidden bg-primary/80"
+          >
+            <div className="py-2">
+              {/* Lien parent vers la page principale (si défini) */}
+              {item.href && (
+                <Link
+                  href={item.href}
+                  onClick={closeMenu}
+                  className="block px-6 py-2 text-sm font-semibold text-white/90 hover:text-white"
+                >
+                  → Voir tout
+                </Link>
+              )}
+
+              {/* Mega menu : colonnes avec titres */}
+              {item.columns?.map((col) => (
+                <div key={col.title} className="mt-2">
+                  <div className="px-6 py-1 text-[10px] font-bold uppercase tracking-wider text-white/60">
+                    {col.title}
+                  </div>
+                  <ul>
+                    {col.items.map((sub) => {
+                      const Icon = sub.icon;
+                      return (
+                        <li key={sub.href}>
+                          <Link
+                            href={sub.href}
+                            onClick={closeMenu}
+                            className="flex items-center gap-2 px-6 py-2 text-sm text-secondary hover:text-white hover:bg-primary/60 transition-colors"
+                          >
+                            {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
+                            <span>{sub.label}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+
+              {/* Simple dropdown : items avec icône + description */}
+              {item.simpleItems && (
+                <ul className="mt-1">
+                  {item.simpleItems.map((sub) => {
+                    const Icon = sub.icon;
+                    return (
+                      <li key={sub.href}>
+                        <Link
+                          href={sub.href}
+                          onClick={closeMenu}
+                          className="flex items-start gap-3 px-6 py-2.5 hover:bg-primary/60 transition-colors"
+                        >
+                          {Icon && (
+                            <Icon className="h-4 w-4 text-white/80 shrink-0 mt-0.5" />
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-white">
+                              {sub.label}
+                            </div>
+                            {sub.description && (
+                              <div className="text-xs text-white/70 mt-0.5">
+                                {sub.description}
+                              </div>
+                            )}
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+
+              {/* Featured card en bas (uniquement pour mega) */}
+              {item.featured && (
+                <Link
+                  href={item.featured.href}
+                  onClick={closeMenu}
+                  className="mx-4 mt-3 mb-2 block rounded-lg bg-secondary p-3"
+                >
+                  <div className="text-xs font-bold uppercase tracking-wider text-primary mb-1">
+                    {item.featured.title}
+                  </div>
+                  <div className="text-xs text-white/80 mb-2">
+                    {item.featured.description}
+                  </div>
+                  <div className="text-xs font-semibold text-primary">
+                    {item.featured.cta} →
+                  </div>
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
