@@ -8,7 +8,7 @@ export const getMenuList = (pathname: string): menuItem[] => {
     },
     {
       id: 2,
-      label: "Propriétés",
+      label: "Biens",
       href: "/properties",
       active: pathname.startsWith("/properties"),
     },

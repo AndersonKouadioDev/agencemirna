@@ -245,24 +245,38 @@ function Lightbox({
       className="fixed inset-0 z-50 flex flex-col bg-black/95"
       role="dialog"
       aria-label="Galerie plein écran"
+      onClick={(e) => {
+        // Click sur le fond ferme. Les enfants interactifs (image, boutons,
+        // topbar) doivent stopper la propagation pour ne pas déclencher.
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
-      {/* Topbar lightbox */}
-      <div className="flex items-center justify-between px-4 py-3 text-white">
-        <span className="text-sm tabular-nums">
+      {/* Topbar lightbox : toujours au-dessus, bouton X bien visible */}
+      <div
+        className="relative z-10 flex items-center justify-between px-4 py-3 text-white bg-gradient-to-b from-black/50 to-transparent"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className="text-sm tabular-nums font-medium">
           {index + 1} / {images.length}
         </span>
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/10"
-          aria-label="Fermer"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 backdrop-blur border border-white/20 text-white hover:bg-white/30 transition-colors"
+          aria-label="Fermer la galerie"
         >
           <X className="h-5 w-5" />
         </button>
       </div>
 
-      {/* Image carrousel */}
-      <div ref={emblaRef} className="flex-1 overflow-hidden">
+      {/* Image carrousel : click sur l'image NE ferme PAS (sinon impossible
+          de swiper). Pour fermer : bouton X, touche Escape, ou click sur
+          le fond noir hors image. */}
+      <div
+        ref={emblaRef}
+        className="flex-1 overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="flex h-full">
           {images.map((url, i) => (
             <div
@@ -282,21 +296,27 @@ function Lightbox({
         </div>
       </div>
 
-      {/* Navigation prev/next */}
+      {/* Navigation prev/next : stopPropagation pour ne pas fermer */}
       {images.length > 1 && (
         <>
           <button
             type="button"
-            onClick={() => emblaApi?.scrollPrev()}
-            className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            onClick={(e) => {
+              e.stopPropagation();
+              emblaApi?.scrollPrev();
+            }}
+            className="absolute left-3 top-1/2 -translate-y-1/2 inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/15 backdrop-blur border border-white/20 text-white hover:bg-white/30 z-10"
             aria-label="Précédent"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
           <button
             type="button"
-            onClick={() => emblaApi?.scrollNext()}
-            className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            onClick={(e) => {
+              e.stopPropagation();
+              emblaApi?.scrollNext();
+            }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 inline-flex h-12 w-12 items-center justify-center rounded-full bg-white/15 backdrop-blur border border-white/20 text-white hover:bg-white/30 z-10"
             aria-label="Suivant"
           >
             <ChevronRight className="h-6 w-6" />

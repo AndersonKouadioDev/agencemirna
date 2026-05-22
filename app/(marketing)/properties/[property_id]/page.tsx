@@ -139,7 +139,7 @@ export default async function Page(props: {
       <BreadcrumbJsonLd
         items={[
           { name: "Accueil", url: "/" },
-          { name: "Propriétés", url: "/properties" },
+          { name: "Biens", url: "/properties" },
           { name: bien.name ?? "Bien", url: `/properties/${params.property_id}` },
         ]}
       />

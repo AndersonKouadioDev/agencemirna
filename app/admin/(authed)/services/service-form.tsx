@@ -3,13 +3,17 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import * as Lucide from "lucide-react";
 import {
   ArrowLeft,
+  CheckCircle2,
   ExternalLink,
   Loader2,
   Plus,
   Save,
+  Sparkles as SparklesIcon,
   Trash2,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -261,15 +265,19 @@ export function ServiceForm({ service }: { service: ServiceAdminRow }) {
 
           <Section
             title="Icône"
-            subtitle="Nom d'icône Lucide React (ex: Home, Building2, KeyRound, Palette, HardHat, Landmark)"
+            subtitle="Nom d'icône Lucide React (sensible à la casse, ex: Home, Building2, KeyRound, Palette, HardHat, Landmark)"
           >
             <Field label="Nom de l'icône">
-              <Input
-                value={icon}
-                onChange={(e) => setIcon(e.target.value)}
-                placeholder="Home"
-                className="font-mono"
-              />
+              <div className="flex items-center gap-3">
+                <Input
+                  value={icon}
+                  onChange={(e) => setIcon(e.target.value)}
+                  placeholder="Home"
+                  className="font-mono flex-1"
+                />
+                <IconPreview name={icon} />
+              </div>
+              <IconStatus name={icon} />
               <Hint>
                 Voir{" "}
                 <a
@@ -280,7 +288,27 @@ export function ServiceForm({ service }: { service: ServiceAdminRow }) {
                 >
                   lucide.dev/icons
                 </a>{" "}
-                pour la liste complète
+                pour la liste complète. Suggestions rapides :{" "}
+                {[
+                  "Home",
+                  "Building2",
+                  "KeyRound",
+                  "Palette",
+                  "HardHat",
+                  "Landmark",
+                  "Calculator",
+                  "Briefcase",
+                  "Wrench",
+                ].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setIcon(s)}
+                    className="inline-block rounded bg-stone-100 px-1.5 py-0.5 mr-1 mb-1 font-mono text-[10px] hover:bg-primary/10 hover:text-primary transition-colors"
+                  >
+                    {s}
+                  </button>
+                ))}
               </Hint>
             </Field>
           </Section>
@@ -380,4 +408,57 @@ function Field({
 
 function Hint({ children }: { children: React.ReactNode }) {
   return <p className="text-[11px] text-neutral-500 mt-1">{children}</p>;
+}
+
+/**
+ * Preview live de l'icône Lucide à côté du champ texte.
+ * Si la valeur ne matche aucune icône, fallback sur Sparkles (idem composant
+ * ServiceIcon côté public).
+ */
+function IconPreview({ name }: { name: string }) {
+  if (!name.trim()) {
+    return (
+      <div className="flex h-10 w-10 items-center justify-center rounded-md border border-stone-200 bg-stone-50 text-neutral-400">
+        <SparklesIcon className="h-5 w-5" />
+      </div>
+    );
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const Icon = (Lucide as any)[name];
+  if (!Icon) {
+    return (
+      <div className="flex h-10 w-10 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-600">
+        <SparklesIcon className="h-5 w-5" />
+      </div>
+    );
+  }
+  return (
+    <div className="flex h-10 w-10 items-center justify-center rounded-md border border-green-200 bg-green-50 text-green-700">
+      <Icon className="h-5 w-5" />
+    </div>
+  );
+}
+
+/**
+ * Message de statut sous le champ icône : OK trouvée, ou Non trouvée (fallback).
+ */
+function IconStatus({ name }: { name: string }) {
+  if (!name.trim()) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const found = !!(Lucide as any)[name];
+  if (found) {
+    return (
+      <p className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-green-700">
+        <CheckCircle2 className="h-3 w-3" />
+        Icône trouvée. Elle s&apos;affichera correctement côté site.
+      </p>
+    );
+  }
+  return (
+    <p className="mt-1.5 inline-flex items-center gap-1 text-[11px] text-red-700">
+      <XCircle className="h-3 w-3" />
+      Icône introuvable, attention à la casse (Home, pas home). Côté site,
+      l&apos;icône par défaut Sparkles sera affichée.
+    </p>
+  );
 }

@@ -83,7 +83,7 @@ export async function listBiensAdmin(): Promise<BienAdminRow[]> {
     .select(`
       id, name, short_description, description, image, prix, prix_month,
       chambre, salon, salle_bains, capacity, address, ville_commune, pays,
-      localisation, latitude, longitude, folder, type_bien_id, service_bien_id, categorie_bien_id,
+      localisation, folder, type_bien_id, service_bien_id, categorie_bien_id,
       is_active, created_at,
       types_bien:type_bien_id (id, name),
       services_bien:service_bien_id (id, name),
@@ -117,11 +117,36 @@ export async function listBiensAdmin(): Promise<BienAdminRow[]> {
     countByBien.set(img.bien_id, (countByBien.get(img.bien_id) ?? 0) + 1);
   }
 
-  return biens.map((b) => ({
-    ...(b as unknown as BienAdminRow),
-    cover_url: coverByBien.get(b.id) ?? b.image ?? null,
-    images_count: countByBien.get(b.id) ?? 0,
-  }));
+  // 3. Coords GPS (tentative tolérante : si la migration 0012 n'a pas
+  //    encore tourné, les colonnes lat/lng n'existent pas et on retourne
+  //    juste vide. Le module bien continue de fonctionner sans coords.)
+  const coordsByBien = new Map<string, { latitude: number | null; longitude: number | null }>();
+  try {
+    const { data: coords } = await supabase
+      .from("biens")
+      .select("id, latitude, longitude")
+      .in("id", bienIds);
+    for (const c of coords ?? []) {
+      coordsByBien.set(c.id, {
+        latitude: (c as any).latitude ?? null,
+        longitude: (c as any).longitude ?? null,
+      });
+    }
+  } catch {
+    // Colonnes lat/lng absentes : migration 0012 pas encore exécutée.
+    // Le module bien fonctionne quand même, juste sans coords.
+  }
+
+  return biens.map((b) => {
+    const coords = coordsByBien.get(b.id);
+    return {
+      ...(b as unknown as BienAdminRow),
+      latitude: coords?.latitude ?? null,
+      longitude: coords?.longitude ?? null,
+      cover_url: coverByBien.get(b.id) ?? b.image ?? null,
+      images_count: countByBien.get(b.id) ?? 0,
+    };
+  });
 }
 
 // ============================================================================
@@ -138,7 +163,7 @@ export async function getBienAdmin(
     .select(`
       id, name, short_description, description, image, prix, prix_month,
       chambre, salon, salle_bains, capacity, address, ville_commune, pays,
-      localisation, latitude, longitude, folder, type_bien_id, service_bien_id, categorie_bien_id,
+      localisation, folder, type_bien_id, service_bien_id, categorie_bien_id,
       is_active, created_at,
       types_bien:type_bien_id (id, name),
       services_bien:service_bien_id (id, name),
@@ -150,6 +175,21 @@ export async function getBienAdmin(
   if (error || !bien) {
     if (error) console.error("getBienAdmin error:", error);
     return null;
+  }
+
+  // Tentative tolérante de récupérer lat/lng (migration 0012)
+  let latitude: number | null = null;
+  let longitude: number | null = null;
+  try {
+    const { data: coords } = await supabase
+      .from("biens")
+      .select("latitude, longitude")
+      .eq("id", id)
+      .maybeSingle();
+    latitude = (coords as any)?.latitude ?? null;
+    longitude = (coords as any)?.longitude ?? null;
+  } catch {
+    // Migration 0012 pas encore exécutée, on continue sans coords
   }
 
   // Auto-import des images legacy : tente d'importer depuis le folder
@@ -165,7 +205,11 @@ export async function getBienAdmin(
     .order("ordre", { ascending: true });
 
   return {
-    bien: bien as unknown as BienAdminRow,
+    bien: {
+      ...(bien as unknown as BienAdminRow),
+      latitude,
+      longitude,
+    },
     images: (images as BienImage[]) ?? [],
   };
 }
@@ -271,8 +315,8 @@ export async function upsertBien(
     ville_commune: input.ville_commune?.trim() || null,
     pays: input.pays?.trim() || null,
     localisation: input.localisation?.trim() || null,
-    latitude: input.latitude ?? null,
-    longitude: input.longitude ?? null,
+    // latitude / longitude écrits séparément en best-effort plus bas
+    // pour tolérer l'absence de la migration 0012_biens_geocoords.sql
     type_bien_id: input.type_bien_id ?? null,
     service_bien_id: input.service_bien_id ?? null,
     categorie_bien_id: input.categorie_bien_id ?? null,
@@ -305,6 +349,23 @@ export async function upsertBien(
       return { ok: false, error: error?.message ?? "Erreur création." };
     }
     bienId = data.id;
+  }
+
+  // Best-effort : tente de persister lat/lng. Si la migration 0012 n'a
+  // pas tourné, les colonnes n'existent pas → on swallow l'erreur pour
+  // ne pas bloquer la création/édition du bien.
+  if (input.latitude != null || input.longitude != null) {
+    try {
+      await supabase
+        .from("biens")
+        .update({
+          latitude: input.latitude ?? null,
+          longitude: input.longitude ?? null,
+        } as any)
+        .eq("id", bienId);
+    } catch {
+      // Colonnes lat/lng absentes : ignoré, le bien est créé sans coords.
+    }
   }
 
   // Sync des images : on récupère les anciennes URLs, on calcule diff
