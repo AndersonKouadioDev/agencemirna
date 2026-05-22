@@ -16,6 +16,7 @@ import {
   MessageCircle,
   MapPin,
   Inbox,
+  Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Quartiers", href: "/admin/quartiers", icon: MapPin },
   { label: "Services", href: "/admin/services", icon: Sparkles },
   { label: "Promotions", href: "/admin/promotions", icon: Megaphone },
+  { label: "Vidéos", href: "/admin/videos", icon: Video },
   { label: "Agents", href: "/admin/agents", icon: Users },
   { label: "Témoignages", href: "/admin/testimonials", icon: MessageSquareQuote },
   { label: "Articles", href: "/admin/articles", icon: Newspaper },

@@ -93,19 +93,6 @@ export default function HeroSection() {
                 className="object-cover"
               />
             </div>
-            {/* Mini card flottante */}
-            <div className="absolute top-1/2 right-4 -translate-y-1/2 bg-white rounded-2xl shadow-2xl p-4 max-w-[180px] hidden lg:block">
-              <div className="text-xs text-neutral-500 font-medium uppercase tracking-wider mb-1">
-                Dernier ajout
-              </div>
-              <div className="font-agate text-lg font-bold text-secondary leading-tight">
-                Villa Cocody
-              </div>
-              <div className="mt-2 flex items-baseline gap-1">
-                <span className="text-primary font-semibold">250 000</span>
-                <span className="text-xs text-neutral-500">FCFA/nuit</span>
-              </div>
-            </div>
           </div>
 
           {/* Photo mobile only */}

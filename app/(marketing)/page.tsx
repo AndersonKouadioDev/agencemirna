@@ -9,6 +9,7 @@ import QuartiersSection from "@/components/landing/quartiers-section";
 import SocialSection from "@/components/landing/social-section";
 import StatsSection from "@/components/landing/stats-section";
 import TestimonialsSection from "@/components/landing/testimonials-section";
+import VideoSection from "@/components/landing/video-section";
 import {
   OrganizationJsonLd,
   WebsiteJsonLd,
@@ -45,6 +46,9 @@ export default async function Page() {
 
       {/* Carousel des biens vedettes (depuis Supabase) */}
       <FeaturedPropertiesServer />
+
+      {/* Vidéo (depuis Supabase, si show_on_home) — ne se rend pas si aucune */}
+      <VideoSection />
 
       {/* Bandeau promo dynamique (depuis Supabase, si show_on_home) */}
       <HomePromoBanner />

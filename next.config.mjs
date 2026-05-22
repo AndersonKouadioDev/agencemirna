@@ -21,6 +21,14 @@ const nextConfig = {
         port: "",
         pathname: "/storage/**",
       },
+      // Miniatures auto YouTube (utilisées par VideoSection / videos-table
+      // quand l'admin n'a pas uploadé de poster custom)
+      {
+        protocol: "https",
+        hostname: "i.ytimg.com",
+        port: "",
+        pathname: "/vi/**",
+      },
     ],
   },
 };

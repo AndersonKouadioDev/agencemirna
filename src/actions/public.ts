@@ -361,6 +361,39 @@ export async function getActiveFaqs(): Promise<PublicFaq[]> {
 }
 
 // ============================================================================
+// Videos (section vidéo home, gérée depuis /admin/videos)
+// ============================================================================
+
+export type PublicVideo = {
+  id: string;
+  title: string;
+  description: string | null;
+  url: string;
+  poster: string | null;
+  ordre: number;
+};
+
+/**
+ * Retourne la vidéo à afficher sur la home (1 seule, la 1ère trouvée
+ * avec show_on_home=true ET is_active=true, triée par ordre). Null sinon
+ * → la section vidéo ne se rendra pas.
+ */
+export async function getHomeVideo(): Promise<PublicVideo | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("videos")
+    .select("id, title, description, url, poster, ordre")
+    // RLS filtre déjà is_active=true côté public
+    .eq("show_on_home", true)
+    .order("ordre", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return data as PublicVideo;
+}
+
+// ============================================================================
 // Social mentions (feed "On parle de nous" dans SocialSection)
 // ============================================================================
 
