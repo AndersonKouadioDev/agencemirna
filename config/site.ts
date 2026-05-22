@@ -7,30 +7,29 @@ import {
   Landmark,
   HardHat,
   Sparkles,
-  Calculator,
   MapPin,
   Megaphone,
-  Map as MapIcon,
   Users,
   Newspaper,
-  HelpCircle,
-  MessageCircle,
   FileText,
-  Building,
   Briefcase,
+  Warehouse,
 } from "lucide-react";
 
 /**
- * Structure du menu Header — version mega menu (max 4 items principaux).
+ * Structure du menu Header — 5 items principaux max.
  *
- * 4 items :
- *   1. Biens (mega menu : Types + Services + Quartiers + Actions)
- *   2. Services (dropdown simple, 6 services métier)
- *   3. L'agence (dropdown : À propos, Notre équipe, Blog, FAQ)
- *   4. Contact (lien direct)
+ * 5 items :
+ *   1. Biens       (mega menu : Types + Services + Quartiers + featured)
+ *   2. Services    (dropdown simple, 6 services métier)
+ *   3. Promotions  (lien direct, page promotions)
+ *   4. L'agence    (dropdown : À propos, Notre équipe, Blog)
+ *   5. Contact     (lien direct)
  *
- * Les sous-items pointent vers les pages publiques existantes avec, pour
- * Biens, des filtres préappliqués via query params (?type=&service=&q=).
+ * IMPORTANT : les valeurs `type` et `service` dans les URLs doivent
+ * correspondre **exactement** aux noms en base (services_bien / types_bien
+ * seedés dans migration 0006) pour que le Select de /properties les
+ * pré-sélectionne après navigation. Voir `list-properties-section.tsx`.
  */
 
 export type MenuSubItem = {
@@ -72,20 +71,23 @@ export const getMenuList = (pathname: string): MenuItem[] => {
           title: "Par type",
           items: [
             { label: "Tous les biens", href: "/properties", icon: Home },
-            { label: "Appartements", href: "/properties?type=Appartement", icon: Building2 },
-            { label: "Studios", href: "/properties?type=Studio", icon: Building },
             { label: "Villas", href: "/properties?type=Villa", icon: Home },
+            { label: "Duplex", href: "/properties?type=Duplex", icon: Building2 },
+            { label: "Maisons", href: "/properties?type=Maison", icon: Home },
             { label: "Terrains", href: "/properties?type=Terrain", icon: MapPin },
-            { label: "Locaux commerciaux", href: "/properties?type=Local+commercial", icon: Briefcase },
+            { label: "Locaux commerciaux", href: "/properties?type=Local%20commercial", icon: Briefcase },
+            { label: "Bureaux", href: "/properties?type=Bureau", icon: Building2 },
+            { label: "Entrepôts", href: "/properties?type=Entrep%C3%B4t", icon: Warehouse },
           ],
         },
         {
           title: "Par service",
           items: [
-            { label: "À louer", href: "/properties?service=location", icon: KeyRound },
-            { label: "À vendre", href: "/properties?service=vente", icon: FileText },
-            { label: "Meublé courte durée", href: "/properties?service=meublée", icon: Sparkles },
-            { label: "Bail commercial", href: "/properties?service=Bail+commercial", icon: Briefcase },
+            { label: "Vente", href: "/properties?service=Vente", icon: FileText },
+            { label: "Location nue", href: "/properties?service=Location%20nue", icon: KeyRound },
+            { label: "Location meublée", href: "/properties?service=Location%20meubl%C3%A9e%20longue%20dur%C3%A9e", icon: Sparkles },
+            { label: "Bail commercial", href: "/properties?service=Bail%20commercial", icon: Briefcase },
+            { label: "Gestion locative", href: "/properties?service=Gestion%20locative", icon: Building2 },
           ],
         },
         {
@@ -151,11 +153,17 @@ export const getMenuList = (pathname: string): MenuItem[] => {
     },
     {
       id: 3,
+      label: "Promotions",
+      href: "/promotions",
+      active: pathname.startsWith("/promotions"),
+    },
+    {
+      id: 4,
       label: "L'agence",
       active:
         pathname === "/about" ||
         pathname.startsWith("/agents") ||
-        pathname.startsWith("/promotions") ||
+        pathname.startsWith("/blog") ||
         pathname.startsWith("/actualites"),
       simpleItems: [
         {
@@ -172,26 +180,14 @@ export const getMenuList = (pathname: string): MenuItem[] => {
         },
         {
           label: "Blog",
-          href: "/about#actualites",
+          href: "/blog",
           description: "Conseils et actualités du marché.",
           icon: Newspaper,
-        },
-        {
-          label: "Promotions",
-          href: "/promotions",
-          description: "Offres et programmes en cours.",
-          icon: Megaphone,
-        },
-        {
-          label: "FAQ",
-          href: "/about#faq",
-          description: "Réponses aux questions fréquentes.",
-          icon: HelpCircle,
         },
       ],
     },
     {
-      id: 4,
+      id: 5,
       label: "Contact",
       href: "/contact_us",
       active: pathname === "/contact_us",

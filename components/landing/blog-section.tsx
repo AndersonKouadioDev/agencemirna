@@ -84,7 +84,7 @@ export default async function BlogSection() {
             </p>
           </div>
           <Link
-            href="/about#actualites"
+            href="/blog"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:gap-2.5 transition-all shrink-0"
           >
             Tous les conseils

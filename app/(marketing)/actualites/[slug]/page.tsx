@@ -57,7 +57,7 @@ export default async function ArticlePage({
       <BreadcrumbJsonLd
         items={[
           { name: "Accueil", url: "/" },
-          { name: "Actualités", url: "/about#actualites" },
+          { name: "Blog", url: "/blog" },
           { name: article.title, url: `/actualites/${article.slug}` },
         ]}
       />
@@ -65,11 +65,11 @@ export default async function ArticlePage({
       <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16">
         <div className="mx-auto max-w-3xl px-6 lg:px-8">
           <Link
-            href="/about"
+            href="/blog"
             className="inline-flex items-center gap-1.5 text-sm text-neutral-600 hover:text-primary transition-colors mb-8"
           >
             <ArrowLeft className="h-4 w-4" />
-            Retour aux actualités
+            Retour au blog
           </Link>
 
           {article.category && (

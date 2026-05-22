@@ -129,13 +129,19 @@ export default function ListPropertiesSection({
         if (!hay.includes(loc)) return false;
       }
       if (filters.type && bien.types_bien?.name) {
-        if (bien.types_bien.name.toLowerCase() !== filters.type.toLowerCase())
+        // Match tolérant : si l'un contient l'autre (case-insensitive),
+        // on accepte. Évite d'exclure quand l'URL et la DB diffèrent
+        // légèrement (singulier/pluriel, accent, etc.).
+        const t = filters.type.toLowerCase().trim();
+        const name = bien.types_bien.name.toLowerCase();
+        if (name !== t && !name.includes(t) && !t.includes(name))
           return false;
       }
       if (filters.service && bien.services_bien?.name) {
         const svc = filters.service.toLowerCase().trim();
         const name = bien.services_bien.name.toLowerCase();
-        if (!name.includes(svc) && !svc.includes(name)) return false;
+        if (name !== svc && !name.includes(svc) && !svc.includes(name))
+          return false;
       }
       const priceMin = filters.priceMin ? parseInt(filters.priceMin, 10) : null;
       const priceMax = filters.priceMax ? parseInt(filters.priceMax, 10) : null;
