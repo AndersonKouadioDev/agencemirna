@@ -33,7 +33,7 @@ export default async function ServicesGridSection() {
       as="section"
       className="relative isolate overflow-hidden bg-white py-20 sm:py-28"
     >
-      {/* Décor de fond */}
+      {/* Décor de fond : blobs flous */}
       <div
         aria-hidden="true"
         className="absolute -right-32 -top-24 h-96 w-96 rounded-full bg-primary/10 blur-3xl"
@@ -43,16 +43,45 @@ export default async function ServicesGridSection() {
         className="absolute -bottom-24 -left-32 h-96 w-96 rounded-full bg-secondary/5 blur-3xl"
       />
 
+      {/* Motifs décoratifs : pointillés + anneaux (cachés sur mobile) */}
+      <div
+        aria-hidden="true"
+        className="absolute right-10 top-24 hidden h-28 w-44 lg:block"
+        style={{
+          backgroundImage:
+            "radial-gradient(hsl(var(--primary)) 1.6px, transparent 1.6px)",
+          backgroundSize: "18px 18px",
+          opacity: 0.22,
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="absolute bottom-20 left-[44%] hidden h-24 w-28 lg:block"
+        style={{
+          backgroundImage:
+            "radial-gradient(hsl(var(--secondary)) 1.6px, transparent 1.6px)",
+          backgroundSize: "18px 18px",
+          opacity: 0.16,
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="absolute -right-12 top-1/3 hidden h-44 w-44 rounded-full border border-primary/20 lg:block"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute right-2 top-1/3 hidden h-24 w-24 translate-y-10 rounded-full border border-secondary/10 lg:block"
+      />
+
       <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_1.05fr] lg:gap-16">
           {/* Colonne gauche : intro + illustration */}
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
               Nos expertises
             </p>
-            <h2 className="font-agate text-3xl font-bold leading-tight text-secondary sm:text-4xl md:text-5xl">
-              Un accompagnement complet,
-              <br className="hidden sm:block" /> de A à Z
+            <h2 className="font-agate text-3xl font-bold leading-tight text-secondary text-balance sm:text-4xl md:text-5xl">
+              Un accompagnement complet, de A à Z
             </h2>
             <p className="mt-5 max-w-md text-base leading-relaxed text-neutral-600">
               De la recherche du bien à la gestion locative, en passant par la
