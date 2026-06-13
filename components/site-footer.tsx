@@ -68,28 +68,6 @@ export function SiteFooter() {
       className="relative overflow-hidden isolate py-32 mx-auto"
     >
       <div className="container mx-auto px-4 z-[1]">
-        {/* Questions */}
-        <div className="relative z-[1] flex flex-col items-center justify-center gap-y-3 border-b border-dashed border-slate-400/20 py-10 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-col gap-4 justify-center max-w-xl ">
-            <h3 className="text-xl text-neutral-900 md:text-start md:text-3xl">
-              Vous avez encore des questions ?
-            </h3>
-            <p className="text-sm text-primary md:text-start md:text-base">
-              Discuter avec un agent sur WhatsApp.
-            </p>
-          </div>
-          <div className="flex flex-col items-center justify-center gap-x-5 gap-y-2 py-4 sm:flex-row">
-            <Link
-              href={process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "#"}
-              target="_blank"
-              className="flex h-10 w-44 items-center justify-center rounded-full bg-green-700 text-base font-semibold text-white transition ease-out hover:ring-2 hover:ring-green-500 hover:ring-offset-2 dark:bg-white lg:h-12 lg:text-base"
-            >
-              <span className="tracking-tight">WhatsApp</span>
-              <ChevronRightIcon className="ml-2 text-primary" />
-            </Link>
-          </div>
-        </div>
-
         {/* Newsletter */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 py-8 md:py-16">
           <div className="order-2 max-w-xl mx-auto lg:order-1 relative z-[1] flex items-center justify-center overflow-hidden rounded-3xl">

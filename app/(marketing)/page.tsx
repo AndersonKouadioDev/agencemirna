@@ -1,4 +1,3 @@
-import AdresseSection from "@/components/adresse-section";
 import ClientSection from "@/components/client-section";
 import FeaturedPropertiesServer from "@/components/landing/featured-properties-server";
 import HeroSection from "@/components/landing/hero-section";
@@ -73,9 +72,6 @@ export default async function Page() {
 
       {/* Suivez-nous + aside "On parle de nous" */}
       <SocialSection />
-
-      {/* Adresse + map */}
-      <AdresseSection />
     </>
   );
 }
