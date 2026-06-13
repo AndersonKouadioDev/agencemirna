@@ -12,7 +12,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, KeyRound, Phone } from "lucide-react";
+import { ChevronDown, KeyRound } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { MegaMenu } from "./mega-menu";
@@ -142,35 +142,18 @@ export const Header = () => {
                   </nav>
                 </div>
 
-                {/* Actions : téléphone (desktop) + CTA Réserver */}
-                <div className="flex items-center gap-3">
-                  <a
-                    href="tel:+2250143483131"
-                    aria-label="Appelez-nous"
-                    className={cn(
-                      "hidden items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors lg:inline-flex",
-                      transparent
-                        ? "border-white/30 text-white hover:bg-white/10"
-                        : "border-stone-200 text-secondary hover:border-primary/40 hover:text-primary",
-                    )}
-                  >
-                    <Phone className="h-4 w-4 text-primary" />
-                    <span className="hidden xl:inline">01 43 483 131</span>
-                  </a>
-
-                  {/* CTA Réserver : pilule orange + icône clé (esprit
-                      immobilier), cohérent avec les CTA arrondis du hero. */}
-                  <Link
-                    href={"/properties"}
-                    className={cn(
-                      buttonVariants(),
-                      "h-10 gap-2 rounded-full px-5 shadow-lg shadow-primary/25 ring-1 ring-primary/30 transition-transform hover:scale-[1.03] xl:h-12 xl:px-7",
-                    )}
-                  >
-                    <KeyRound className="h-4 w-4" />
-                    <span>Réserver</span>
-                  </Link>
-                </div>
+                {/* CTA Réserver : pilule orange + icône clé (esprit
+                    immobilier), cohérent avec les CTA arrondis du hero. */}
+                <Link
+                  href={"/properties"}
+                  className={cn(
+                    buttonVariants(),
+                    "h-10 gap-2 rounded-full px-5 shadow-lg shadow-primary/25 ring-1 ring-primary/30 transition-transform hover:scale-[1.03] xl:h-12 xl:px-7",
+                  )}
+                >
+                  <KeyRound className="h-4 w-4" />
+                  <span>Réserver</span>
+                </Link>
               </div>
             </div>
           </div>
