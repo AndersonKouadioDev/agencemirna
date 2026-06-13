@@ -3,26 +3,37 @@
 import * as React from "react";
 import Link from "next/link";
 import { useReducedMotion } from "framer-motion";
-import { Sparkles, ArrowRight, Star } from "lucide-react";
+import {
+  Sparkles,
+  ArrowRight,
+  Star,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { buttonVariants } from "../ui/button";
 import { cn } from "@/lib/utils";
 import HeroSearchBar from "./hero-search-bar";
 import { HeroBgCarousel } from "./hero-bg-carousel";
 
 /**
- * Hero plein écran avec carousel de fond SYNCHRONISÉ texte + image.
+ * Hero plein écran avec carousel de fond SYNCHRONISÉ texte + image, contrôlable.
  *
  * Chaque slide a son image, son titre et sa description : ils cross-fadent
  * ensemble (même index, piloté ici). Le badge, les CTA, la barre de recherche
  * et les trust signals restent statiques.
  *
- * Overlay noir léger (façon maquette) : on garde l'image bien visible tout en
- * assurant la lisibilité du texte blanc (renforcée par un text-shadow).
+ * Contrôles : flèches précédent/suivant + points cliquables. Toute interaction
+ * manuelle réinitialise le timer auto (setTimeout relancé à chaque changement
+ * d'index).
+ *
+ * Overlay noir léger (façon maquette) : image bien visible, lisibilité du
+ * texte blanc renforcée par un text-shadow.
  *
  * Accessibilité :
- *  - Seule la slide active porte le <h1> (les autres = <div> aria-hidden) →
- *    un seul titre dans l'arbre d'accessibilité.
- *  - Respecte prefers-reduced-motion : fige sur la 1ère slide, sans zoom.
+ *  - Seule la slide active porte le <h1> (les autres = <div> aria-hidden).
+ *  - Contrôles avec aria-label + aria-current, cibles tactiles ≥ 44px.
+ *  - Respecte prefers-reduced-motion : pas d'auto-défilement ni zoom (les
+ *    contrôles manuels restent fonctionnels).
  */
 
 type HeroSlide = {
@@ -91,24 +102,31 @@ const SLIDES: HeroSlide[] = [
 ];
 
 const IMAGES = SLIDES.map((s) => s.image);
+const COUNT = SLIDES.length;
 const INTERVAL = 6000;
 
 export default function HeroSection() {
   const reduceMotion = useReducedMotion();
   const [index, setIndex] = React.useState(0);
 
+  const goTo = React.useCallback((i: number) => {
+    setIndex(((i % COUNT) + COUNT) % COUNT);
+  }, []);
+  const prev = React.useCallback(() => goTo(index - 1), [goTo, index]);
+  const next = React.useCallback(() => goTo(index + 1), [goTo, index]);
+
+  // Auto-défilement : setTimeout relancé à chaque changement d'index → toute
+  // navigation manuelle réinitialise le délai. Coupé sous reduced-motion.
   React.useEffect(() => {
-    if (reduceMotion || SLIDES.length <= 1) return;
-    const id = setInterval(() => {
-      setIndex((i) => (i + 1) % SLIDES.length);
-    }, INTERVAL);
-    return () => clearInterval(id);
-  }, [reduceMotion]);
+    if (reduceMotion || COUNT <= 1) return;
+    const id = setTimeout(() => setIndex((i) => (i + 1) % COUNT), INTERVAL);
+    return () => clearTimeout(id);
+  }, [index, reduceMotion]);
 
   return (
     <section
       id="hero"
-      className="relative isolate flex min-h-[90vh] items-center overflow-hidden"
+      className="relative isolate flex min-h-[88vh] items-center overflow-hidden"
     >
       {/* Carousel d'images en fond (contrôlé : même index que le texte) */}
       <HeroBgCarousel
@@ -117,29 +135,27 @@ export default function HeroSection() {
         animate={!reduceMotion}
       />
 
-      {/* Overlay noir léger (façon maquette) : dégradé gauche→droite pour
-          garder l'image visible à droite, lisibilité du texte à gauche */}
+      {/* Overlay noir léger (façon maquette) */}
       <div
         aria-hidden="true"
         className="absolute inset-0 -z-10 bg-gradient-to-r from-black/70 via-black/45 to-black/10"
       />
-      {/* Vignette bas pour ancrer la barre de recherche */}
       <div
         aria-hidden="true"
         className="absolute inset-x-0 bottom-0 -z-10 h-1/3 bg-gradient-to-t from-black/55 to-transparent"
       />
 
-      <div className="relative mx-auto w-full max-w-7xl px-6 lg:px-8 pt-36 pb-20">
+      <div className="relative mx-auto w-full max-w-7xl px-6 lg:px-8 pt-32 pb-16 sm:pt-36 sm:pb-20">
         <div className="max-w-3xl">
           {/* Badge statique */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-white backdrop-blur">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-white backdrop-blur sm:px-4 sm:text-xs">
             <Sparkles className="h-3.5 w-3.5 text-primary" />
             Votre partenaire immobilier depuis 2022
           </div>
 
           {/* Titre + description rotatifs (cross-fade synchro avec l'image).
-              Hauteur réservée pour éviter tout décalage des CTA en dessous. */}
-          <div className="relative mt-6 min-h-[260px] sm:min-h-[240px] lg:min-h-[260px]">
+              Hauteur réservée (responsive) pour éviter tout décalage des CTA. */}
+          <div className="relative mt-5 min-h-[230px] sm:mt-6 sm:min-h-[240px] lg:min-h-[260px]">
             {SLIDES.map((slide, i) => {
               const active = i === index;
               const TitleTag = active ? "h1" : "div";
@@ -153,10 +169,10 @@ export default function HeroSection() {
                     !active && "pointer-events-none",
                   )}
                 >
-                  <TitleTag className="font-agate text-5xl font-bold leading-[1.03] tracking-tight text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.45)] sm:text-6xl lg:text-7xl">
+                  <TitleTag className="font-agate text-4xl font-bold leading-[1.05] tracking-tight text-white [text-shadow:0_2px_24px_rgba(0,0,0,0.45)] sm:text-5xl md:text-6xl lg:text-7xl">
                     {slide.title}
                   </TitleTag>
-                  <p className="mt-6 max-w-xl text-lg leading-relaxed text-white/90 [text-shadow:0_1px_12px_rgba(0,0,0,0.5)]">
+                  <p className="mt-4 max-w-xl text-base leading-relaxed text-white/90 [text-shadow:0_1px_12px_rgba(0,0,0,0.5)] sm:mt-6 sm:text-lg">
                     {slide.description}
                   </p>
                 </div>
@@ -164,11 +180,60 @@ export default function HeroSection() {
             })}
           </div>
 
+          {/* Contrôles du carousel : flèches + points */}
+          <div className="mt-6 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={prev}
+              aria-label="Slide précédente"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black/30"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+
+            <div className="flex items-center">
+              {SLIDES.map((_, i) => {
+                const active = i === index;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => goTo(i)}
+                    aria-label={`Aller à la slide ${i + 1}`}
+                    aria-current={active ? "true" : undefined}
+                    className="group flex h-11 items-center px-1 focus:outline-none"
+                  >
+                    <span
+                      className={cn(
+                        "block h-1.5 rounded-full transition-all duration-300",
+                        active
+                          ? "w-8 bg-primary"
+                          : "w-2.5 bg-white/40 group-hover:bg-white/70 group-focus-visible:bg-white/70",
+                      )}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={next}
+              aria-label="Slide suivante"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/10 text-white backdrop-blur transition-colors hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-black/30"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+
           {/* CTA statiques */}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <Link
               href="/properties"
-              className={cn(buttonVariants(), "h-12 px-7 text-base shadow-xl")}
+              className={cn(
+                buttonVariants(),
+                "h-12 w-full px-7 text-base shadow-xl sm:w-auto",
+              )}
             >
               Voir les biens
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -177,7 +242,7 @@ export default function HeroSection() {
               href="/estimation"
               className={cn(
                 buttonVariants({ variant: "outline" }),
-                "h-12 px-7 text-base border-white/50 bg-white/5 text-white backdrop-blur hover:bg-white hover:text-secondary",
+                "h-12 w-full px-7 text-base border-white/50 bg-white/5 text-white backdrop-blur hover:bg-white hover:text-secondary sm:w-auto",
               )}
             >
               Estimation gratuite
@@ -185,7 +250,7 @@ export default function HeroSection() {
           </div>
 
           {/* Barre de recherche intégrée */}
-          <div className="mt-10">
+          <div className="mt-8 sm:mt-10">
             <HeroSearchBar />
           </div>
 
