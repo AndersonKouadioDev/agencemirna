@@ -1,7 +1,10 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { getActiveServices } from "@/src/actions/public";
 import { ServiceIcon } from "@/app/(marketing)/services/service-icon";
+import { buttonVariants } from "../ui/button";
+import { cn } from "@/lib/utils";
 import {
   MotionSection,
   MotionStagger,
@@ -9,11 +12,15 @@ import {
 } from "./motion-section";
 
 /**
- * Section "Nos services" sur la home, façon landing premium :
- *   - Fond marron foncé (secondary) pour trancher avec les sections cream
- *   - Grille des services métier (depuis Supabase via getActiveServices)
- *   - Chaque carte : icône (résolue depuis le nom string), titre, description
- *     courte, lien vers /services/{slug}
+ * Section "Nos services" — version claire & éditoriale (fond blanc).
+ *
+ * Layout 2 colonnes :
+ *   - Gauche : intro (eyebrow, titre, texte) + illustration + CTA
+ *   - Droite : grille des services (depuis Supabase)
+ *
+ * Chaque carte : tuile d'icône dégradée (ou image du service si renseignée
+ * en admin via le champ `image`), nom, description courte, lien.
+ * Décor : blobs flous tintés (orange / marron) pour habiller le blanc.
  *
  * Si la table services est vide → la section ne se rend pas (return null).
  */
@@ -22,59 +29,103 @@ export default async function ServicesGridSection() {
   if (services.length === 0) return null;
 
   return (
-    <MotionSection as="section" className="bg-secondary py-20 sm:py-28">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        {/* En-tête */}
-        <div className="mb-12 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-2xl">
+    <MotionSection
+      as="section"
+      className="relative isolate overflow-hidden bg-white py-20 sm:py-28"
+    >
+      {/* Décor de fond */}
+      <div
+        aria-hidden="true"
+        className="absolute -right-32 -top-24 h-96 w-96 rounded-full bg-primary/10 blur-3xl"
+      />
+      <div
+        aria-hidden="true"
+        className="absolute -bottom-24 -left-32 h-96 w-96 rounded-full bg-secondary/5 blur-3xl"
+      />
+
+      <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
+          {/* Colonne gauche : intro + illustration */}
+          <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">
               Nos expertises
             </p>
-            <h2 className="font-agate text-3xl font-bold leading-tight text-white sm:text-4xl md:text-5xl">
+            <h2 className="font-agate text-3xl font-bold leading-tight text-secondary sm:text-4xl md:text-5xl">
               Un accompagnement complet,
               <br className="hidden sm:block" /> de A à Z
             </h2>
-          </div>
-          <Link
-            href="/services"
-            className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-primary transition-all hover:gap-2.5"
-          >
-            Tous nos services
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </div>
+            <p className="mt-5 max-w-md text-base leading-relaxed text-neutral-600">
+              De la recherche du bien à la gestion locative, en passant par la
+              construction et la décoration : nos experts couvrent tout votre
+              projet immobilier à Abidjan.
+            </p>
 
-        {/* Grille services */}
-        <MotionStagger className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {services.map((service) => (
-            <MotionStaggerChild key={service.id}>
+            {/* Illustration */}
+            <div className="relative mt-8 aspect-[4/3] w-full max-w-md">
+              <Image
+                src="/images/illustrations/service3.svg"
+                alt="Illustration des services Agence Mirna"
+                fill
+                unoptimized
+                className="object-contain object-left"
+              />
+            </div>
+
+            <div className="mt-8">
               <Link
-                href={`/services/${service.slug}`}
-                className="group relative flex h-full flex-col rounded-2xl border border-white/10 bg-white/5 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-secondary"
+                href="/services"
+                className={cn(buttonVariants(), "h-12 px-6 text-base")}
               >
-                {/* Icône */}
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 text-primary transition-colors group-hover:bg-primary group-hover:text-secondary">
-                  <ServiceIcon name={service.icon} className="h-6 w-6" />
-                </div>
-
-                <h3 className="font-agate text-xl font-bold leading-snug text-white">
-                  {service.name}
-                </h3>
-                {service.short_description && (
-                  <p className="mt-2 flex-1 text-sm leading-relaxed text-white/65">
-                    {service.short_description}
-                  </p>
-                )}
-
-                {/* Flèche coin */}
-                <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                  Découvrir
-                  <ArrowUpRight className="h-3.5 w-3.5" />
-                </span>
+                Tous nos services
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
-            </MotionStaggerChild>
-          ))}
-        </MotionStagger>
+            </div>
+          </div>
+
+          {/* Colonne droite : grille de services */}
+          <MotionStagger className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {services.map((service) => (
+              <MotionStaggerChild key={service.id}>
+                <Link
+                  href={`/services/${service.slug}`}
+                  className="group relative flex h-full flex-col rounded-2xl border border-stone-200 bg-white p-5 transition-all duration-300 hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                >
+                  {/* Visuel : image du service si dispo, sinon tuile d'icône */}
+                  {service.image ? (
+                    <div className="mb-4 h-20 w-20 overflow-hidden rounded-xl bg-primary/5">
+                      <Image
+                        src={service.image}
+                        alt={service.name}
+                        width={80}
+                        height={80}
+                        className="h-full w-full object-cover"
+                        unoptimized={service.image.startsWith("http")}
+                      />
+                    </div>
+                  ) : (
+                    <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary transition-colors group-hover:from-primary group-hover:to-primary group-hover:text-white">
+                      <ServiceIcon name={service.icon} className="h-6 w-6" />
+                    </div>
+                  )}
+
+                  <h3 className="font-agate text-lg font-bold leading-snug text-secondary">
+                    {service.name}
+                  </h3>
+                  {service.short_description && (
+                    <p className="mt-1.5 flex-1 text-sm leading-relaxed text-neutral-600">
+                      {service.short_description}
+                    </p>
+                  )}
+
+                  <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-primary opacity-0 transition-opacity group-hover:opacity-100">
+                    Découvrir
+                    <ArrowUpRight className="h-3.5 w-3.5" />
+                  </span>
+                </Link>
+              </MotionStaggerChild>
+            ))}
+          </MotionStagger>
+        </div>
       </div>
     </MotionSection>
   );
