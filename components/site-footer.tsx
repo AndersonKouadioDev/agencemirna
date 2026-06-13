@@ -1,7 +1,12 @@
 "use client";
 
-import { InstagramLogoIcon } from "@radix-ui/react-icons";
-import { ChevronRightIcon, FacebookIcon } from "lucide-react";
+import {
+  ChevronRightIcon,
+  FacebookIcon,
+  InstagramIcon,
+  LinkedinIcon,
+  YoutubeIcon,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -14,6 +19,29 @@ interface IFormInput {
   email: string;
 }
 type FooterLink = { id: number; title: string; url: string };
+
+const SOCIALS = [
+  {
+    name: "Instagram",
+    icon: InstagramIcon,
+    url: "https://instagram.com/agencemirna",
+  },
+  {
+    name: "Facebook",
+    icon: FacebookIcon,
+    url: "https://facebook.com/agencemirna",
+  },
+  {
+    name: "LinkedIn",
+    icon: LinkedinIcon,
+    url: "https://linkedin.com/company/agencemirna",
+  },
+  {
+    name: "YouTube",
+    icon: YoutubeIcon,
+    url: "https://youtube.com/@agencemirna",
+  },
+];
 
 const footerLinks: FooterLink[][] = [
   [
@@ -157,18 +185,21 @@ export function SiteFooter() {
               <h1 className="text-xl text-white">AGENCE MIRNA</h1>
             </a>
             <div className="flex items-center gap-2">
-              <Link
-                href="#"
-                className="text-white hover:text-primary group bg-black rounded-full p-2"
-              >
-                <InstagramLogoIcon className="h-4 w-4 transition-all duration-300 ease-out group-hover:scale-125 group-hover:rotate-12" />
-              </Link>
-              <Link
-                href="#"
-                className="text-white hover:text-primary group bg-black rounded-full p-2"
-              >
-                <FacebookIcon className="h-4 w-4 transition-all duration-300 ease-out group-hover:scale-125 group-hover:rotate-12" />
-              </Link>
+              {SOCIALS.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <Link
+                    key={s.name}
+                    href={s.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={s.name}
+                    className="text-white hover:text-primary group bg-black rounded-full p-2"
+                  >
+                    <Icon className="h-4 w-4 transition-all duration-300 ease-out group-hover:scale-125 group-hover:rotate-12" />
+                  </Link>
+                );
+              })}
             </div>
             <p className="text-sm tracking-tight text-white hover:text-primary sm:text-center transition-all duration-300 ease-out">
               © AGENCE MIRNA 2024. Tous droits réservés. | Développé par{" "}

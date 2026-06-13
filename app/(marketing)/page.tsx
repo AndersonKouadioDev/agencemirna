@@ -4,7 +4,6 @@ import HeroSection from "@/components/landing/hero-section";
 import HomePromoBanner from "@/components/landing/home-promo-banner";
 import QuartiersSection from "@/components/landing/quartiers-section";
 import ServicesGridSection from "@/components/landing/services-grid-section";
-import SocialSection from "@/components/landing/social-section";
 import TestimonialsSection from "@/components/landing/testimonials-section";
 import VideoSection from "@/components/landing/video-section";
 import WhyChooseSection from "@/components/landing/why-choose-section";
@@ -28,13 +27,14 @@ import {
  *   8. Témoignages (preuve sociale — avis)
  *   9. CTA final (conversion)
  *   10. Partenaires (logos)
- *   11. Suivez-nous (réseaux)
  *
  * Nettoyage cohérence :
  *  - StatsSection fusionnée dans WhyChooseSection (une seule section
  *    réassurance au lieu de deux).
  *  - PostersCarousel retiré (doublon de la promo "Studios Cocody").
  *  - "On parle de nous" retiré de SocialSection (doublon des témoignages).
+ *  - SocialSection "Restons connectés" retirée (trop volumineuse) : les
+ *    réseaux sont fusionnés dans le footer.
  *  - AdresseSection retirée de la home (reste sur /about).
  */
 export default async function Page() {
@@ -73,9 +73,6 @@ export default async function Page() {
 
       {/* 10. Partenaires (marquee logos) */}
       <ClientSection />
-
-      {/* 11. Suivez-nous (réseaux + Instagram) */}
-      <SocialSection />
     </>
   );
 }
