@@ -1,32 +1,32 @@
 import AdresseSection from "@/components/adresse-section";
-import AboutSection from "@/components/landing/about-section";
 import ClientSection from "@/components/client-section";
 import FeaturedPropertiesServer from "@/components/landing/featured-properties-server";
 import HeroSection from "@/components/landing/hero-section";
 import HomePromoBanner from "@/components/landing/home-promo-banner";
 import PostersCarousel from "@/components/landing/posters-carousel";
 import QuartiersSection from "@/components/landing/quartiers-section";
+import ServicesGridSection from "@/components/landing/services-grid-section";
 import SocialSection from "@/components/landing/social-section";
 import StatsSection from "@/components/landing/stats-section";
 import TestimonialsSection from "@/components/landing/testimonials-section";
 import VideoSection from "@/components/landing/video-section";
+import WhyChooseSection from "@/components/landing/why-choose-section";
+import CtaBannerSection from "@/components/landing/cta-banner-section";
 import {
   OrganizationJsonLd,
   WebsiteJsonLd,
 } from "@/components/seo/structured-data";
 
 /**
- * Home : 11 sections resserrées (avant : 14).
+ * Home refondue (mai 2026) — narration façon landing premium, alignée sur
+ * le mockup validé :
  *
- * Réorganisation (mai 2026) :
- * - Retirés de la home : CategoryPills (redondant avec dropdown Type),
- *   CommoditiesSection (déplacé vers /about), BlogSection (vers /actualites
- *   ou /about future), FAQSection (vers /about)
- * - AboutSection devient un teaser court qui renvoie vers /about pour le détail
+ *   Hero plein écran → Nos services → Pourquoi nous → (créas, quartiers)
+ *   → Biens vedettes → Vidéo → Promo → Stats → Témoignages → CTA final
+ *   → Partenaires → Social → Adresse
  *
- * Flow logique : découverte (hero + créas + quartiers) → biens (featured + promo)
- * → preuves sociales (stats + témoignages) → identité (about teaser + partenaires)
- * → connexion (social + adresse).
+ * AboutSection retirée : remplacée par WhyChooseSection (même rôle "Pourquoi
+ * Agence Mirna", même CTA /about).
  */
 export default async function Page() {
   return (
@@ -35,8 +35,14 @@ export default async function Page() {
       <OrganizationJsonLd />
       <WebsiteJsonLd />
 
-      {/* Hero avec recherche premium intégrée */}
+      {/* Hero plein écran : image + overlay marron + recherche intégrée */}
       <HeroSection />
+
+      {/* Nos services : grille métier (fond marron) */}
+      <ServicesGridSection />
+
+      {/* Pourquoi nous choisir : image + atouts */}
+      <WhyChooseSection />
 
       {/* Carousel horizontal des dernières affiches/créas (depuis Supabase) */}
       <PostersCarousel />
@@ -59,8 +65,8 @@ export default async function Page() {
       {/* Témoignages clients (carousel) */}
       <TestimonialsSection />
 
-      {/* Teaser éditorial "Pourquoi nous" → CTA /about */}
-      <AboutSection />
+      {/* Bandeau CTA final : estimation / contact */}
+      <CtaBannerSection />
 
       {/* Partenaires (marquee logos) */}
       <ClientSection />
