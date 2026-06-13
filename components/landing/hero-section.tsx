@@ -1,9 +1,21 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Sparkles, ArrowRight, Star } from "lucide-react";
 import { buttonVariants } from "../ui/button";
 import { cn } from "@/lib/utils";
 import HeroSearchBar from "./hero-search-bar";
+import { HeroBgCarousel } from "./hero-bg-carousel";
+
+/**
+ * Images du carousel de fond du hero. Set curé d'immeubles / biens.
+ * Pour modifier : ajoute/retire des chemins ici (la 1ère sert de LCP/priority).
+ */
+const HERO_IMAGES = [
+  "/images/photos/immeuble1.jpg",
+  "/images/photos/immeuble.jpeg",
+  "/images/biens/bien15.jpg",
+  "/images/biens/bien1.jpg",
+  "/images/biens/bien21.jpg",
+];
 
 /**
  * Hero plein écran (refonte inspirée des landing pages premium) :
@@ -22,15 +34,9 @@ export default function HeroSection() {
       id="hero"
       className="relative isolate flex min-h-[90vh] items-center overflow-hidden"
     >
-      {/* Image de fond plein cadre */}
-      <Image
-        src="/images/photos/immeuble1.jpg"
-        alt="Immeuble résidentiel à Abidjan"
-        fill
-        priority
-        sizes="100vw"
-        className="object-cover object-center -z-20"
-      />
+      {/* Carousel d'images en fond plein cadre (cross-fade auto + Ken Burns) */}
+      <HeroBgCarousel images={HERO_IMAGES} interval={6000} />
+
       {/* Overlay marron : dégradé gauche→droite pour garder l'image visible à
           droite tout en assurant la lisibilité du texte à gauche */}
       <div
