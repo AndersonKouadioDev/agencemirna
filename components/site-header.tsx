@@ -12,7 +12,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, KeyRound } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { MegaMenu } from "./mega-menu";
@@ -69,11 +69,16 @@ export const Header = () => {
         animate={{ y: isVisible ? 0 : "-140%" }}
         transition={{ duration: 0.3 }}
       >
-        <nav className="relative z-[1000] w-full bg-white">
+        <nav className="relative z-[1000] w-full border-b border-stone-200/80 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.02),0_8px_24px_-12px_rgba(0,0,0,0.12)]">
+          {/* Fine ligne d'accent orange en haut (rappel des accents du hero) */}
+          <div
+            aria-hidden="true"
+            className="h-0.5 w-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-70"
+          />
           <div className="relative z-30">
             <div className="container mx-auto md:px-12 lg:py-0 lg:px-10">
-              <div className="flex items-center justify-between py-4 gap-6 md:gap-0">
-                <div className="px-2 sm:px-6 flex justify-between gap-4 items-center w-full">
+              <div className="flex items-center justify-between gap-6 py-3 md:gap-0">
+                <div className="flex w-full items-center justify-between gap-4 px-2 sm:px-6">
                   <div className="flex items-center gap-4">
                     <MobileMenuButton
                       isOpen={isOpen}
@@ -84,37 +89,40 @@ export const Header = () => {
                       <Image
                         src="/images/logo.png"
                         className="w-24 md:w-36"
-                        alt="tailus logo"
+                        alt="Agence Mirna"
                         width="144"
                         height="68"
                       />
                     </Link>
                   </div>
 
+                  {/* Menu dans une capsule bordée : rappel de la carte de
+                      recherche bordée du hero (cohérence visuelle). */}
                   <nav className="hidden md:flex w-full items-center justify-center">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5 rounded-full border border-stone-200 bg-stone-50/60 px-1.5 py-1">
                       {menuItems.map((item) => (
                         <MegaMenu key={item.id} item={item} />
                       ))}
                     </div>
                   </nav>
                 </div>
+
+                {/* CTA Réserver : pilule orange + icône clé (esprit immobilier),
+                    cohérent avec les CTA arrondis du hero. */}
                 <Link
                   href={"/properties"}
-                  className={buttonVariants({
-                    className: "h-9 sm:h-10 xl:h-12 w-40",
-                  })}
+                  className={cn(
+                    buttonVariants(),
+                    "h-10 gap-2 rounded-full px-5 shadow-lg shadow-primary/25 ring-1 ring-primary/30 transition-transform hover:scale-[1.03] xl:h-12 xl:px-7",
+                  )}
                 >
-                  Réserver
+                  <KeyRound className="h-4 w-4" />
+                  <span>Réserver</span>
                 </Link>
               </div>
             </div>
           </div>
         </nav>
-        <div
-          aria-hidden="true"
-          className="container max-w-screen-2xl h-4 -mt-6 mx-auto bg-primary/30 dark:bg-green-900/30 blur md:-mt-4"
-        ></div>
       </motion.header>
       <MobileMenu
         isOpen={isOpen}
