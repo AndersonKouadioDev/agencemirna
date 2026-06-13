@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { buttonVariants } from "../ui/button";
 import { cn } from "@/lib/utils";
+import { getSiteStats } from "@/src/actions/admin/taxonomy";
 import {
   MotionSection,
   MotionStagger,
@@ -18,12 +19,16 @@ import {
 } from "./motion-section";
 
 /**
- * Section "Pourquoi nous choisir" (inspirée du bloc "Why Choose Us") :
- *   - Image à gauche (équipe / agent)
- *   - Grille d'atouts à droite, chaque atout en pill avec icône
- *   - CTA vers /about
+ * Section "Pourquoi nous choisir" — fusionne les atouts qualitatifs ET les
+ * chiffres clés (ex-section "Notre impact") pour une seule section de
+ * réassurance cohérente, au lieu de deux blocs redondants.
  *
- * Fond cream (primary/5) cohérent avec le design Editorial Luxury.
+ *   - Image (équipe)
+ *   - Atouts en pills
+ *   - Rangée de chiffres clés (depuis Supabase via getSiteStats)
+ *
+ * Fond cream (primary/5). Chiffre "clients" unifié à 100+ (cohérent avec le
+ * hero et la section partenaires).
  */
 
 const ATOUTS = [
@@ -35,7 +40,17 @@ const ATOUTS = [
   { icon: HeartHandshake, label: "Accompagnement de A à Z" },
 ];
 
-export default function WhyChooseSection() {
+export default async function WhyChooseSection() {
+  const counts = await getSiteStats();
+  const ageAgence = Math.max(new Date().getFullYear() - 2022, 1);
+
+  const STATS = [
+    { value: String(ageAgence), suffix: " ans", label: "D'expérience" },
+    { value: "100", suffix: "+", label: "Clients accompagnés" },
+    { value: String(counts.biens_actifs), suffix: "", label: "Biens au catalogue" },
+    { value: String(counts.services_actifs), suffix: "", label: "Services métier" },
+  ];
+
   return (
     <MotionSection as="section" className="bg-primary/5 py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -50,15 +65,6 @@ export default function WhyChooseSection() {
                 sizes="(max-width: 1024px) 100vw, 45vw"
                 className="object-cover transition-transform duration-700 hover:scale-105"
               />
-            </div>
-            {/* Badge flottant */}
-            <div className="absolute -bottom-5 -right-3 rounded-2xl border border-stone-100 bg-white p-4 shadow-xl sm:-right-6">
-              <p className="font-agate text-3xl font-bold leading-none text-primary">
-                100<span className="text-secondary">+</span>
-              </p>
-              <p className="mt-1 text-xs font-medium text-neutral-500">
-                clients accompagnés
-              </p>
             </div>
           </div>
 
@@ -104,6 +110,19 @@ export default function WhyChooseSection() {
               </Link>
             </div>
           </div>
+        </div>
+
+        {/* Chiffres clés (fusionnés depuis l'ex-section "Notre impact") */}
+        <div className="mt-16 grid grid-cols-2 gap-6 border-t border-stone-200/80 pt-12 lg:grid-cols-4 lg:gap-8">
+          {STATS.map((stat) => (
+            <div key={stat.label} className="text-center">
+              <div className="font-agate text-4xl font-bold leading-none text-secondary tabular-nums sm:text-5xl">
+                {stat.value}
+                <span className="text-primary">{stat.suffix}</span>
+              </div>
+              <div className="mt-2 text-sm text-neutral-600">{stat.label}</div>
+            </div>
+          ))}
         </div>
       </div>
     </MotionSection>

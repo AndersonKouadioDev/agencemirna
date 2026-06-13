@@ -28,7 +28,7 @@ export default function ClientSection() {
         {/* Header */}
         <div className="text-center mb-12 max-w-2xl mx-auto">
           <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
-            Ils nous font confiance
+            Nos partenaires
           </p>
           <h2 className="font-agate text-3xl sm:text-4xl md:text-5xl font-bold text-secondary leading-tight">
             Plus de 100 clients & partenaires
