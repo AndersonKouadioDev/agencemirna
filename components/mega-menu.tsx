@@ -17,7 +17,13 @@ import type { MenuItem } from "@/config/site";
  * - Click-outside + ESC pour fermer
  * - Open au hover (delay 150ms in/out) ET au focus clavier
  */
-export function MegaMenu({ item }: { item: MenuItem }) {
+export function MegaMenu({
+  item,
+  onDark = false,
+}: {
+  item: MenuItem;
+  onDark?: boolean;
+}) {
   const [open, setOpen] = React.useState(false);
   const closeTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const openTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -60,9 +66,13 @@ export function MegaMenu({ item }: { item: MenuItem }) {
         href={item.href ?? "#"}
         className={cn(
           "relative px-4 py-2 text-sm font-medium transition-colors",
-          item.active
-            ? "text-secondary"
-            : "text-neutral-600 hover:text-secondary",
+          onDark
+            ? item.active
+              ? "text-white"
+              : "text-white/80 hover:text-white"
+            : item.active
+              ? "text-secondary"
+              : "text-neutral-600 hover:text-secondary",
         )}
       >
         {item.label}
@@ -91,9 +101,13 @@ export function MegaMenu({ item }: { item: MenuItem }) {
         aria-haspopup="true"
         className={cn(
           "relative inline-flex items-center gap-1 px-4 py-2 text-sm font-medium transition-colors focus:outline-none",
-          item.active || open
-            ? "text-secondary"
-            : "text-neutral-600 hover:text-secondary",
+          onDark
+            ? item.active || open
+              ? "text-white"
+              : "text-white/80 hover:text-white"
+            : item.active || open
+              ? "text-secondary"
+              : "text-neutral-600 hover:text-secondary",
         )}
       >
         {item.label}

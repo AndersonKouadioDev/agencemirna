@@ -12,7 +12,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, KeyRound } from "lucide-react";
+import { ChevronDown, KeyRound, Phone } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { MegaMenu } from "./mega-menu";
@@ -20,6 +20,7 @@ import { MegaMenu } from "./mega-menu";
 interface MobileMenuButtonProps {
   isOpen: boolean;
   toggle: () => void;
+  onDark?: boolean;
 }
 
 interface MobileMenuProps {
@@ -32,9 +33,17 @@ export const Header = () => {
   const menuItems = getMenuList(pathname);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [isVisible, setIsVisible] = useState<boolean>(true);
+  const [scrolled, setScrolled] = useState<boolean>(false);
   const { scrollY } = useScroll();
 
+  // Sur la home, le hero est sombre → navbar transparent tant qu'on n'a pas
+  // scrollé, puis blanc au scroll. Sur les autres pages (fond clair), le
+  // navbar reste toujours solide pour rester lisible.
+  const isHome = pathname === "/";
+  const transparent = isHome && !scrolled;
+
   useMotionValueEvent(scrollY, "change", (latest) => {
+    setScrolled(latest > 24);
     const previous = scrollY.getPrevious();
     if (previous !== undefined) {
       if (latest > previous && latest > 150) {
@@ -69,11 +78,21 @@ export const Header = () => {
         animate={{ y: isVisible ? 0 : "-140%" }}
         transition={{ duration: 0.3 }}
       >
-        <nav className="relative z-[1000] w-full border-b border-stone-200/80 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.02),0_8px_24px_-12px_rgba(0,0,0,0.12)]">
-          {/* Fine ligne d'accent orange en haut (rappel des accents du hero) */}
+        <nav
+          className={cn(
+            "relative z-[1000] w-full transition-colors duration-300",
+            transparent
+              ? "border-b border-transparent bg-gradient-to-b from-black/35 via-black/10 to-transparent"
+              : "border-b border-stone-200/80 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.02),0_8px_24px_-12px_rgba(0,0,0,0.12)]",
+          )}
+        >
+          {/* Fine ligne d'accent orange en haut (masquée en mode transparent) */}
           <div
             aria-hidden="true"
-            className="h-0.5 w-full bg-gradient-to-r from-transparent via-primary to-transparent opacity-70"
+            className={cn(
+              "h-0.5 w-full bg-gradient-to-r from-transparent via-primary to-transparent transition-opacity duration-300",
+              transparent ? "opacity-0" : "opacity-70",
+            )}
           />
           <div className="relative z-30">
             <div className="container mx-auto md:px-12 lg:py-0 lg:px-10">
@@ -83,12 +102,16 @@ export const Header = () => {
                     <MobileMenuButton
                       isOpen={isOpen}
                       toggle={() => setIsOpen(!isOpen)}
+                      onDark={transparent}
                     />
 
                     <Link href="/" aria-label="logo">
                       <Image
                         src="/images/logo.png"
-                        className="w-24 md:w-36"
+                        className={cn(
+                          "w-24 transition md:w-36",
+                          transparent && "brightness-0 invert",
+                        )}
                         alt="Agence Mirna"
                         width="144"
                         height="68"
@@ -96,29 +119,58 @@ export const Header = () => {
                     </Link>
                   </div>
 
-                  {/* Menu dans une capsule bordée : rappel de la carte de
-                      recherche bordée du hero (cohérence visuelle). */}
+                  {/* Menu dans une capsule bordée (rappel de la carte de
+                      recherche du hero). En mode transparent : capsule claire
+                      translucide + texte blanc (via onDark). */}
                   <nav className="hidden md:flex w-full items-center justify-center">
-                    <div className="flex items-center gap-0.5 rounded-full border border-stone-200 bg-stone-50/60 px-1.5 py-1">
+                    <div
+                      className={cn(
+                        "flex items-center gap-0.5 rounded-full border px-1.5 py-1 transition-colors",
+                        transparent
+                          ? "border-white/25 bg-white/10 backdrop-blur"
+                          : "border-stone-200 bg-stone-50/60",
+                      )}
+                    >
                       {menuItems.map((item) => (
-                        <MegaMenu key={item.id} item={item} />
+                        <MegaMenu
+                          key={item.id}
+                          item={item}
+                          onDark={transparent}
+                        />
                       ))}
                     </div>
                   </nav>
                 </div>
 
-                {/* CTA Réserver : pilule orange + icône clé (esprit immobilier),
-                    cohérent avec les CTA arrondis du hero. */}
-                <Link
-                  href={"/properties"}
-                  className={cn(
-                    buttonVariants(),
-                    "h-10 gap-2 rounded-full px-5 shadow-lg shadow-primary/25 ring-1 ring-primary/30 transition-transform hover:scale-[1.03] xl:h-12 xl:px-7",
-                  )}
-                >
-                  <KeyRound className="h-4 w-4" />
-                  <span>Réserver</span>
-                </Link>
+                {/* Actions : téléphone (desktop) + CTA Réserver */}
+                <div className="flex items-center gap-3">
+                  <a
+                    href="tel:+2250143483131"
+                    aria-label="Appelez-nous"
+                    className={cn(
+                      "hidden items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors lg:inline-flex",
+                      transparent
+                        ? "border-white/30 text-white hover:bg-white/10"
+                        : "border-stone-200 text-secondary hover:border-primary/40 hover:text-primary",
+                    )}
+                  >
+                    <Phone className="h-4 w-4 text-primary" />
+                    <span className="hidden xl:inline">01 43 483 131</span>
+                  </a>
+
+                  {/* CTA Réserver : pilule orange + icône clé (esprit
+                      immobilier), cohérent avec les CTA arrondis du hero. */}
+                  <Link
+                    href={"/properties"}
+                    className={cn(
+                      buttonVariants(),
+                      "h-10 gap-2 rounded-full px-5 shadow-lg shadow-primary/25 ring-1 ring-primary/30 transition-transform hover:scale-[1.03] xl:h-12 xl:px-7",
+                    )}
+                  >
+                    <KeyRound className="h-4 w-4" />
+                    <span>Réserver</span>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -139,10 +191,14 @@ export const Header = () => {
 const MobileMenuButton: React.FC<MobileMenuButtonProps> = ({
   isOpen,
   toggle,
+  onDark,
 }) => (
   <button
     onClick={toggle}
-    className="md:hidden w-10 h-10 relative focus:outline-none"
+    className={cn(
+      "md:hidden w-10 h-10 relative focus:outline-none transition-colors",
+      onDark ? "text-white" : "text-secondary",
+    )}
   >
     <span className="sr-only">Open main menu</span>
     <div className="block w-5 absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
