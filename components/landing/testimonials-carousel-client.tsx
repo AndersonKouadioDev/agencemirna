@@ -54,14 +54,16 @@ export default function TestimonialsCarouselClient({
       />
 
       <div className="relative mx-auto max-w-5xl px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
+        <div className="text-center mb-14">
+          <span className="inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
+            <span className="h-px w-8 bg-primary/50" />
             Témoignages
-          </p>
-          <h2 className="font-agate text-3xl sm:text-4xl md:text-5xl font-bold leading-tight">
+            <span className="h-px w-8 bg-primary/50" />
+          </span>
+          <h2 className="mt-5 font-agate text-4xl sm:text-5xl lg:text-[3.5rem] font-bold leading-[1.02] tracking-tight">
             Ils nous font confiance
           </h2>
-          <p className="mt-4 text-base text-white/75 max-w-xl mx-auto">
+          <p className="mt-5 text-base text-white/70 max-w-xl mx-auto leading-relaxed">
             Propriétaires, locataires, investisseurs : ce qu&apos;ils disent de
             leur expérience avec l&apos;Agence Mirna.
           </p>

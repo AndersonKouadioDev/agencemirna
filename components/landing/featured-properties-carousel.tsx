@@ -65,10 +65,11 @@ export default function FeaturedPropertiesCarousel({
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
+            <span className="inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
+              <span className="h-px w-8 bg-primary/50" />
               Catalogue
-            </p>
-            <h2 className="font-agate text-3xl sm:text-4xl md:text-5xl font-bold text-secondary leading-tight">
+            </span>
+            <h2 className="mt-5 font-agate text-4xl sm:text-5xl lg:text-[3.5rem] font-bold text-secondary leading-[1.02] tracking-tight">
               Nos biens disponibles
             </h2>
           </div>
