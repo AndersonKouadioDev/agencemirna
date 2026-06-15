@@ -126,7 +126,7 @@ export default function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative isolate flex min-h-[88vh] items-center overflow-hidden"
+      className="relative isolate flex min-h-[82vh] items-center overflow-hidden"
     >
       {/* Carousel d'images en fond (contrôlé : même index que le texte) */}
       <HeroBgCarousel
@@ -254,8 +254,31 @@ export default function HeroSection() {
             <HeroSearchBar />
           </div>
 
+          {/* Accès rapides (densifie + utile) */}
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-white/55">Populaire :</span>
+            {[
+              { label: "Villas", href: "/properties?type=Villa" },
+              { label: "Studios", href: "/properties?type=Studio" },
+              { label: "Terrains", href: "/properties?type=Terrain" },
+              {
+                label: "Meublés",
+                href: "/properties?service=Location%20meubl%C3%A9e%20longue%20dur%C3%A9e",
+              },
+              { label: "Bureaux", href: "/properties?type=Bureau" },
+            ].map((c) => (
+              <Link
+                key={c.label}
+                href={c.href}
+                className="rounded-full border border-white/25 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/90 backdrop-blur transition-colors hover:border-primary hover:bg-white/10"
+              >
+                {c.label}
+              </Link>
+            ))}
+          </div>
+
           {/* Trust signals */}
-          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-white/85">
+          <div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3 text-sm text-white/85">
             <div className="flex items-center gap-2">
               <div className="flex -space-x-2">
                 {[1, 2, 3, 4].map((i) => (
