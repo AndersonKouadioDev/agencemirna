@@ -26,30 +26,32 @@ import {
  * Séquence "grands services" de la home : chaque grand service de l'agence a
  * sa propre section vitrine, qui se suivent de haut en bas.
  *
- *   01. Vente de biens immobiliers (Maison | Terrain)
- *   02. Gestion locative
- *   03. Appartements meublés (galerie + mention Airbnb)
- *   04. Construction
+ *   01. Construction
+ *   02. Vente de biens immobiliers (Maison | Terrain)
+ *   03. Gestion locative
+ *   04. Appartements meublés (galerie + mention Airbnb)
+ *
+ * Fonds alternés (blanc / cream) en démarrant sur blanc.
  *
  * ⚠️ IMAGES PLACEHOLDER : toutes les images ci-dessous sont des photos de
  * biens existantes utilisées en attendant les vrais visuels. À remplacer :
+ *   - Construction : la photo de chantier
  *   - Vente : photo maison + photo terrain
  *   - Gestion locative : photo d'illustration
  *   - Appartements meublés : chambre, salle d'eau, balcon, salon
- *   - Construction : la photo de chantier
  */
 export default function ServicesShowcase() {
   return (
     <>
+      <ConstructionSection />
       <VenteSection />
       <GestionLocativeSection />
       <AppartementsMeublesSection />
-      <ConstructionSection />
     </>
   );
 }
 
-// ─── Eyebrow commun "Service 0X · Nom" ─────────────────────────────────────
+// ─── Eyebrow commun "0X · Nom" ─────────────────────────────────────────────
 function Eyebrow({ num, label }: { num: string; label: string }) {
   return (
     <p className="mb-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-primary">
@@ -60,7 +62,53 @@ function Eyebrow({ num, label }: { num: string; label: string }) {
   );
 }
 
-// ─── 01. Vente de biens immobiliers (Maison | Terrain) ─────────────────────
+// ─── 01. Construction ──────────────────────────────────────────────────────
+function ConstructionSection() {
+  return (
+    <MotionSection as="section" className="bg-white py-20 sm:py-28">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
+          {/* Texte */}
+          <div className="lg:order-1">
+            <Eyebrow num="01" label="Construction" />
+            <h2 className="font-agate text-3xl font-bold leading-tight text-secondary sm:text-4xl md:text-5xl">
+              De la conception{" "}
+              <span className="italic text-primary">à la livraison</span>
+            </h2>
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-neutral-700">
+              Nos équipes pilotent votre projet de construction de A à Z :
+              études, gros œuvre, finitions et livraison clés en main, dans le
+              respect des délais et du budget.
+            </p>
+
+            <div className="mt-9">
+              <Link
+                href="/services/construction"
+                className={cn(buttonVariants(), "h-12 px-6 text-base")}
+              >
+                Découvrir le service
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+
+          {/* Image chantier */}
+          <div className="relative aspect-[4/3] overflow-hidden rounded-3xl shadow-2xl lg:order-2">
+            <Image
+              src="/images/others/3d-electric-car-building.jpg" // PLACEHOLDER → photo chantier
+              alt="Chantier de construction (image à remplacer)"
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover transition-transform duration-700 hover:scale-105"
+            />
+          </div>
+        </div>
+      </div>
+    </MotionSection>
+  );
+}
+
+// ─── 02. Vente de biens immobiliers (Maison | Terrain) ─────────────────────
 function VenteSection() {
   const cards = [
     {
@@ -80,10 +128,10 @@ function VenteSection() {
   ];
 
   return (
-    <MotionSection as="section" className="bg-white py-20 sm:py-28">
+    <MotionSection as="section" className="bg-primary/5 py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto mb-12 max-w-2xl text-center">
-          <Eyebrow num="01" label="Vente" />
+          <Eyebrow num="02" label="Vente" />
           <h2 className="font-agate text-3xl font-bold leading-tight text-secondary text-balance sm:text-4xl md:text-5xl">
             Vente de biens immobiliers
           </h2>
@@ -132,7 +180,7 @@ function VenteSection() {
   );
 }
 
-// ─── 02. Gestion locative ──────────────────────────────────────────────────
+// ─── 03. Gestion locative ──────────────────────────────────────────────────
 function GestionLocativeSection() {
   const points = [
     { icon: ShieldCheck, t: "Locataires sélectionnés", d: "Dossiers vérifiés, solvabilité contrôlée." },
@@ -142,7 +190,7 @@ function GestionLocativeSection() {
   ];
 
   return (
-    <MotionSection as="section" className="bg-primary/5 py-20 sm:py-28">
+    <MotionSection as="section" className="bg-white py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
           {/* Image */}
@@ -158,7 +206,7 @@ function GestionLocativeSection() {
 
           {/* Texte */}
           <div>
-            <Eyebrow num="02" label="Gestion locative" />
+            <Eyebrow num="03" label="Gestion locative" />
             <h2 className="font-agate text-3xl font-bold leading-tight text-secondary sm:text-4xl md:text-5xl">
               Vos biens entre{" "}
               <span className="italic text-primary">de bonnes mains</span>
@@ -205,7 +253,7 @@ function GestionLocativeSection() {
   );
 }
 
-// ─── 03. Appartements meublés (galerie + Airbnb) ───────────────────────────
+// ─── 04. Appartements meublés (galerie + Airbnb) ───────────────────────────
 function AppartementsMeublesSection() {
   const gallery = [
     { label: "Chambre à coucher", img: "/images/biens/bien1.jpg", icon: BedDouble },
@@ -215,12 +263,12 @@ function AppartementsMeublesSection() {
   ];
 
   return (
-    <MotionSection as="section" className="bg-white py-20 sm:py-28">
+    <MotionSection as="section" className="bg-primary/5 py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-[1fr_1.15fr] lg:gap-16">
           {/* Texte */}
           <div>
-            <Eyebrow num="03" label="Appartements meublés" />
+            <Eyebrow num="04" label="Appartements meublés" />
             <h2 className="font-agate text-3xl font-bold leading-tight text-secondary sm:text-4xl md:text-5xl">
               Nous sommes spécialisés dans les{" "}
               <span className="italic text-primary">appartements meublés</span>
@@ -283,52 +331,6 @@ function AppartementsMeublesSection() {
               );
             })}
           </MotionStagger>
-        </div>
-      </div>
-    </MotionSection>
-  );
-}
-
-// ─── 04. Construction ──────────────────────────────────────────────────────
-function ConstructionSection() {
-  return (
-    <MotionSection as="section" className="bg-primary/5 py-20 sm:py-28">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-2 lg:gap-16">
-          {/* Texte */}
-          <div className="lg:order-1">
-            <Eyebrow num="04" label="Construction" />
-            <h2 className="font-agate text-3xl font-bold leading-tight text-secondary sm:text-4xl md:text-5xl">
-              De la conception{" "}
-              <span className="italic text-primary">à la livraison</span>
-            </h2>
-            <p className="mt-5 max-w-xl text-base leading-relaxed text-neutral-700">
-              Nos équipes pilotent votre projet de construction de A à Z :
-              études, gros œuvre, finitions et livraison clés en main, dans le
-              respect des délais et du budget.
-            </p>
-
-            <div className="mt-9">
-              <Link
-                href="/services/construction"
-                className={cn(buttonVariants(), "h-12 px-6 text-base")}
-              >
-                Découvrir le service
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Image chantier */}
-          <div className="relative aspect-[4/3] overflow-hidden rounded-3xl shadow-2xl lg:order-2">
-            <Image
-              src="/images/others/3d-electric-car-building.jpg" // PLACEHOLDER → photo chantier
-              alt="Chantier de construction (image à remplacer)"
-              fill
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover transition-transform duration-700 hover:scale-105"
-            />
-          </div>
         </div>
       </div>
     </MotionSection>
