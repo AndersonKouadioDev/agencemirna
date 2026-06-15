@@ -66,10 +66,10 @@ export default function FeaturedPropertiesCarousel({
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-2">
-              Notre sélection
+              Catalogue
             </p>
             <h2 className="font-agate text-3xl sm:text-4xl md:text-5xl font-bold text-secondary leading-tight">
-              Biens d'exception
+              Nos biens disponibles
             </h2>
           </div>
           <div className="flex items-center gap-2">
