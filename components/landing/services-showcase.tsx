@@ -6,7 +6,6 @@ import {
   Home,
   BedDouble,
   Building2,
-  Palette,
 } from "lucide-react";
 import {
   MotionSection,
@@ -70,8 +69,9 @@ const CARDS: Bento[] = [
     slug: "vente",
     img: "/images/biens/bien15.jpg", // PLACEHOLDER → vente
     icon: Home,
-    label: "Vente",
-    span: "col-span-1 row-span-1",
+    label: "Vente de biens",
+    desc: "Vendez avec un mandat sérieux, du mandat à la signature.",
+    span: "col-span-2 row-span-1",
     secondary: { label: "Voir les biens", href: "/properties?service=Vente" },
   },
   {
@@ -79,20 +79,12 @@ const CARDS: Bento[] = [
     img: "/images/biens/bien3.jpg", // PLACEHOLDER → gestion
     icon: Building2,
     label: "Gestion locative",
-    span: "col-span-1 row-span-1",
+    desc: "Loyers à date fixe, zéro souci.",
+    span: "col-span-2 row-span-1",
     secondary: {
       label: "Voir les biens",
       href: "/properties?service=Gestion%20locative",
     },
-  },
-  {
-    slug: "decoration-amenagement",
-    img: "/images/biens/bien6.jpg", // PLACEHOLDER → décoration
-    icon: Palette,
-    label: "Décoration & aménagement",
-    desc: "Donnez une nouvelle vie à vos espaces.",
-    span: "col-span-2 row-span-1",
-    secondary: { label: "Demander un devis", href: "/contact_us" },
   },
 ];
 
@@ -122,7 +114,7 @@ export default function ServicesShowcase() {
         </div>
 
         {/* Grille bento (entrée en cascade) */}
-        <MotionStagger className="grid auto-rows-[9rem] grid-cols-2 gap-3 sm:auto-rows-[11rem] sm:gap-4 lg:grid-cols-4">
+        <MotionStagger className="grid auto-rows-[10rem] grid-cols-2 gap-3 sm:auto-rows-[12rem] sm:gap-4 lg:grid-cols-4">
           {CARDS.map((c) => (
             <MotionStaggerChild key={c.slug} className={c.span}>
               <BentoCard card={c} />
