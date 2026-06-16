@@ -7,214 +7,398 @@ import {
   Home,
   BedDouble,
   Building2,
+  Check,
 } from "lucide-react";
 import { buttonVariants } from "../ui/button";
 import { cn } from "@/lib/utils";
 import { MotionSection } from "./motion-section";
 
 /**
- * "Nos métiers" — 4 grands services en RANGÉES ALTERNÉES compactes
- * (image gauche / infos droite, puis inversé). Chaque rangée tient sur une
- * hauteur raisonnable (image 4/3), pas plein écran.
+ * "Nos métiers" — section éditoriale élégante : une BANDE par service,
+ * chacune avec son fond, ses motifs décoratifs (trames, anneaux, points
+ * flottants — SVG animés en motion-safe) et une composition d'images
+ * différente (1, 2 ou 3 images).
  *
- * Chaque service :
- *   - Image + bouton "Découvrir le service" → /services/{slug}
- *   - Bouton secondaire → listings filtrés (/properties?service=…) ou devis
+ *   01. Construction        → 1 image + caption (fond blanc, trame plan + anneau)
+ *   02. Appartements meublés→ 3 images (fond cream, trame pointillés)
+ *   03. Vente               → 2 images chevauchées (fond tinté, points flottants)
+ *   04. Gestion locative    → 1 image + carte info (fond blanc, blob)
  *
  * ⚠️ Images PLACEHOLDER (photos de biens existantes) à remplacer.
  */
 
-type Service = {
-  slug: string;
-  img: string;
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  desc: string;
-  tags: string[];
-  badge?: string;
-  secondary: { label: string; href: string };
-};
-
-const SERVICES: Service[] = [
-  {
-    slug: "construction",
-    img: "/images/others/3d-electric-car-building.jpg", // PLACEHOLDER → chantier
-    icon: HardHat,
-    label: "Construction",
-    desc: "Nous bâtissons votre projet de A à Z : études, gros œuvre, finitions et livraison clés en main, délais et budget maîtrisés.",
-    tags: ["Études", "Gros œuvre", "Clés en main"],
-    secondary: { label: "Demander un devis", href: "/contact_us" },
-  },
-  {
-    slug: "location-meublee",
-    img: "/images/biens/bien21.jpg", // PLACEHOLDER → appartement meublé
-    icon: BedDouble,
-    label: "Appartements meublés",
-    desc: "Logements neufs clé en main, balcons avec belle vue en bordure de mer : un séjour haut de gamme à Abidjan.",
-    tags: ["Vue mer", "Tout équipé", "Airbnb 24/7"],
-    badge: "Airbnb",
-    secondary: {
-      label: "Voir les biens",
-      href: "/properties?service=Location%20meubl%C3%A9e%20longue%20dur%C3%A9e",
-    },
-  },
-  {
-    slug: "vente",
-    img: "/images/biens/bien15.jpg", // PLACEHOLDER → vente
-    icon: Home,
-    label: "Vente de biens",
-    desc: "Vendez votre bien avec un partenaire de confiance : estimation, mise en valeur, diffusion et accompagnement jusqu'à la signature.",
-    tags: ["Estimation", "Mandat sérieux", "Notaire"],
-    secondary: { label: "Voir les biens", href: "/properties?service=Vente" },
-  },
-  {
-    slug: "gestion-immobiliere",
-    img: "/images/biens/bien3.jpg", // PLACEHOLDER → gestion
-    icon: Building2,
-    label: "Gestion locative",
-    desc: "Nous prenons en charge tout le cycle locatif pour que vous perceviez vos revenus sans aucune contrainte.",
-    tags: ["Locataires vérifiés", "Loyers à date fixe", "Suivi technique"],
-    secondary: {
-      label: "Voir les biens",
-      href: "/properties?service=Gestion%20locative",
-    },
-  },
-];
-
-export default function ServicesShowcase() {
+// ─── Motifs décoratifs (aria-hidden, animés en motion-safe) ────────────────
+function DotGrid({ className }: { className?: string }) {
   return (
-    <section className="bg-[#FAF5EE] py-16 sm:py-20">
-      <div className="mx-auto max-w-6xl px-6 lg:px-8">
-        {/* En-tête compact */}
-        <div className="mb-12 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <span className="inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
-              <span className="h-px w-8 bg-primary/50" />
-              Nos métiers
-            </span>
-            <h2 className="mt-3 max-w-xl font-agate text-3xl font-bold leading-[1.05] tracking-tight text-secondary sm:text-4xl">
-              Tout votre projet immobilier,
-              <span className="text-primary"> sous un même toit</span>
-            </h2>
-          </div>
-          <Link
-            href="/services"
-            className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-secondary transition-colors hover:border-primary/40 hover:text-primary"
-          >
-            Tous nos services
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        </div>
-
-        {/* Rangées alternées */}
-        <div className="space-y-12 sm:space-y-16">
-          {SERVICES.map((s, i) => (
-            <ServiceRow key={s.slug} service={s} index={i + 1} reversed={i % 2 === 1} />
-          ))}
-        </div>
-      </div>
-    </section>
+    <div
+      aria-hidden="true"
+      className={cn("pointer-events-none absolute text-primary/15", className)}
+      style={{
+        backgroundImage:
+          "radial-gradient(currentColor 1.3px, transparent 1.3px)",
+        backgroundSize: "18px 18px",
+      }}
+    />
   );
 }
 
-function ServiceRow({
-  service,
-  index,
-  reversed,
-}: {
-  service: Service;
-  index: number;
-  reversed: boolean;
-}) {
-  const { icon: Icon } = service;
+function LineGrid({ className }: { className?: string }) {
   return (
-    <MotionSection
-      as="div"
-      className="grid grid-cols-1 items-center gap-7 lg:grid-cols-2 lg:gap-14"
+    <div
+      aria-hidden="true"
+      className={cn("pointer-events-none absolute text-secondary/[0.05]", className)}
+      style={{
+        backgroundImage:
+          "linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)",
+        backgroundSize: "34px 34px",
+      }}
+    />
+  );
+}
+
+function Ring({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 200 200"
+      className={cn(
+        "pointer-events-none absolute text-primary/25 motion-safe:animate-[spin_40s_linear_infinite]",
+        className,
+      )}
     >
-      {/* Image (→ page service) */}
-      <Link
-        href={`/services/${service.slug}`}
-        aria-label={`${service.label} — découvrir le service`}
-        className={cn(
-          "group relative block overflow-hidden rounded-3xl shadow-lg ring-1 ring-black/5 transition-all duration-300 hover:shadow-2xl hover:ring-primary/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-          reversed && "lg:order-2",
-        )}
-      >
-        <div className="relative aspect-[4/3]">
-          <Image
-            src={service.img}
-            alt={`${service.label} (image à remplacer)`}
-            fill
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover transition-transform duration-[1.1s] ease-out group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-          {service.badge && (
-            <div className="absolute left-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-black/45 px-3 py-1 text-[11px] font-semibold text-white backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#FF385C]" />
-              {service.badge}
-            </div>
+      <circle
+        cx="100"
+        cy="100"
+        r="92"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeDasharray="3 12"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function FloatBlob({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={cn(
+        "pointer-events-none absolute rounded-full blur-3xl motion-safe:animate-float-slow",
+        className,
+      )}
+    />
+  );
+}
+
+// ─── En-tête ───────────────────────────────────────────────────────────────
+function SectionHeader() {
+  return (
+    <div className="mx-auto mb-4 max-w-6xl px-6 lg:px-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <span className="inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">
+            <span className="h-px w-8 bg-primary/50" />
+            Nos métiers
+          </span>
+          <h2 className="mt-3 max-w-xl font-agate text-3xl font-bold leading-[1.05] tracking-tight text-secondary sm:text-4xl">
+            Tout votre projet immobilier,
+            <span className="text-primary"> sous un même toit</span>
+          </h2>
+        </div>
+        <Link
+          href="/services"
+          className="group inline-flex shrink-0 items-center gap-1.5 rounded-full border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-secondary transition-colors hover:border-primary/40 hover:text-primary"
+        >
+          Tous nos services
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ─── Colonne texte (commune) ───────────────────────────────────────────────
+function TextCol({
+  index,
+  icon: Icon,
+  label,
+  paragraphs,
+  features,
+  slug,
+  secondary,
+  className,
+}: {
+  index: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  paragraphs: string[];
+  features: string[];
+  slug: string;
+  secondary: { label: string; href: string };
+  className?: string;
+}) {
+  return (
+    <div className={className}>
+      <div className="flex items-center gap-3">
+        <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <Icon className="h-5 w-5" />
+        </span>
+        <span className="font-agate text-3xl font-bold text-primary/25">
+          {index}
+        </span>
+      </div>
+
+      <h3 className="mt-5 font-agate text-3xl font-bold leading-tight tracking-tight text-secondary sm:text-4xl">
+        {label}
+      </h3>
+
+      <div className="mt-4 max-w-md space-y-3 text-[15px] leading-relaxed text-neutral-600">
+        {paragraphs.map((p, i) => (
+          <p key={i}>{p}</p>
+        ))}
+      </div>
+
+      <ul className="mt-5 space-y-2">
+        {features.map((f) => (
+          <li key={f} className="flex items-center gap-2.5 text-sm text-secondary">
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/15 text-primary">
+              <Check className="h-3 w-3" />
+            </span>
+            {f}
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-7 flex flex-wrap items-center gap-3">
+        <Link
+          href={`/services/${slug}`}
+          className={cn(buttonVariants(), "h-11 gap-2 px-5 text-sm")}
+        >
+          Découvrir le service
+          <ArrowUpRight className="h-4 w-4" />
+        </Link>
+        <Link
+          href={secondary.href}
+          className={cn(
+            buttonVariants({ variant: "outline" }),
+            "h-11 gap-2 border-stone-300 px-5 text-sm text-secondary hover:border-primary/40 hover:text-primary",
           )}
-          {/* Pastille icône en coin */}
-          <div className="absolute bottom-4 left-4 inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/90 text-primary shadow-md backdrop-blur transition-colors group-hover:bg-primary group-hover:text-secondary">
-            <Icon className="h-5 w-5" />
+        >
+          {secondary.label}
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+const GRID = "mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-6 lg:grid-cols-2 lg:gap-16 lg:px-8";
+const FRAME = "relative overflow-hidden rounded-[2rem] shadow-xl ring-1 ring-black/5";
+
+export default function ServicesShowcase() {
+  return (
+    <div className="overflow-x-clip">
+      {/* En-tête sur fond cream */}
+      <div className="bg-[#FAF5EE] pt-16 sm:pt-20">
+        <SectionHeader />
+      </div>
+
+      {/* 01 — Construction (fond blanc, trame plan + anneau, 1 image) */}
+      <MotionSection as="section" className="relative bg-white py-16 sm:py-20">
+        <LineGrid className="inset-y-0 right-0 w-1/2" />
+        <Ring className="-right-16 top-8 h-64 w-64" />
+        <div className={GRID}>
+          <div className="relative lg:order-2">
+            <div className={cn(FRAME, "aspect-[4/3]")}>
+              <Image
+                src="/images/others/3d-electric-car-building.jpg" // PLACEHOLDER → chantier
+                alt="Construction (image à remplacer)"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover transition-transform duration-[1.2s] ease-out hover:scale-105"
+              />
+            </div>
+            <div className="absolute -bottom-5 left-5 rounded-2xl border border-stone-100 bg-white/95 px-5 py-3 shadow-xl backdrop-blur">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+                Clés en main
+              </p>
+              <p className="mt-0.5 font-agate text-lg font-bold text-secondary">
+                Délais maîtrisés
+              </p>
+            </div>
+          </div>
+          <TextCol
+            className="lg:order-1"
+            index="01"
+            icon={HardHat}
+            label="Construction"
+            paragraphs={[
+              "Nous concevons et bâtissons votre projet de A à Z : études techniques, gros œuvre, second œuvre et finitions.",
+              "Livraison clés en main, dans le respect des délais et du budget convenus.",
+            ]}
+            features={["Études & plans", "Gros œuvre & finitions", "Livraison clés en main"]}
+            slug="construction"
+            secondary={{ label: "Demander un devis", href: "/contact_us" }}
+          />
+        </div>
+      </MotionSection>
+
+      {/* 02 — Appartements meublés (fond cream, pointillés, 3 images) */}
+      <MotionSection
+        as="section"
+        className="relative bg-[#FAF5EE] py-16 sm:py-20"
+      >
+        <DotGrid className="left-0 top-0 h-40 w-1/3" />
+        <div className={GRID}>
+          <TextCol
+            index="02"
+            icon={BedDouble}
+            label="Appartements meublés"
+            paragraphs={[
+              "Des logements neufs entièrement équipés, avec balcons offrant une belle vue en bordure de mer.",
+              "Ménage, wifi haut débit et parking sécurisé inclus. Réservez aussi sur Airbnb, 24h/24.",
+            ]}
+            features={["Vue mer", "Clé en main", "Airbnb 24/7"]}
+            slug="location-meublee"
+            secondary={{
+              label: "Voir les biens",
+              href: "/properties?service=Location%20meubl%C3%A9e%20longue%20dur%C3%A9e",
+            }}
+          />
+          {/* Trio d'images */}
+          <div className="relative grid h-[22rem] grid-cols-2 gap-3 sm:h-[26rem] sm:gap-4">
+            <div className={cn(FRAME, "h-full")}>
+              <Image
+                src="/images/biens/bien21.jpg" // PLACEHOLDER → balcon vue mer
+                alt="Balcon vue mer (image à remplacer)"
+                fill
+                sizes="(max-width: 1024px) 50vw, 25vw"
+                className="object-cover transition-transform duration-[1.2s] ease-out hover:scale-105"
+              />
+              <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/45 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#FF385C]" />
+                Airbnb
+              </div>
+            </div>
+            <div className="grid grid-rows-2 gap-3 sm:gap-4">
+              <div className={cn(FRAME)}>
+                <Image
+                  src="/images/biens/bien1.jpg" // PLACEHOLDER → chambre
+                  alt="Chambre (image à remplacer)"
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 25vw"
+                  className="object-cover transition-transform duration-[1.2s] ease-out hover:scale-105"
+                />
+              </div>
+              <div className={cn(FRAME)}>
+                <Image
+                  src="/images/biens/bien6.jpg" // PLACEHOLDER → salon
+                  alt="Salon (image à remplacer)"
+                  fill
+                  sizes="(max-width: 1024px) 50vw, 25vw"
+                  className="object-cover transition-transform duration-[1.2s] ease-out hover:scale-105"
+                />
+              </div>
+            </div>
           </div>
         </div>
-      </Link>
+      </MotionSection>
 
-      {/* Infos */}
-      <div className={cn(reversed && "lg:order-1")}>
-        <div className="flex items-baseline gap-4">
-          <span className="font-agate text-4xl font-bold leading-none text-primary/25 sm:text-5xl">
-            0{index}
-          </span>
-          <span className="inline-flex items-center gap-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary">
-            <span className="h-px w-6 bg-primary/50" />
-            Service
-          </span>
-        </div>
-
-        <h3 className="mt-4 font-agate text-2xl font-bold leading-tight tracking-tight text-secondary sm:text-3xl lg:text-4xl">
-          {service.label}
-        </h3>
-        <p className="mt-3 max-w-md text-[15px] leading-relaxed text-neutral-600">
-          {service.desc}
-        </p>
-
-        {/* Tags */}
-        <div className="mt-5 flex flex-wrap gap-2">
-          {service.tags.map((t) => (
-            <span
-              key={t}
-              className="inline-flex items-center rounded-full border border-stone-200 bg-white px-3 py-1 text-xs font-medium text-neutral-600"
+      {/* 03 — Vente (fond tinté, points flottants, 2 images chevauchées) */}
+      <MotionSection
+        as="section"
+        className="relative overflow-hidden bg-primary/[0.04] py-16 sm:py-24"
+      >
+        <FloatBlob className="-left-10 top-10 h-72 w-72 bg-primary/10" />
+        <DotGrid className="bottom-6 right-6 h-28 w-40 motion-safe:animate-float" />
+        <div className={GRID}>
+          <div className="relative lg:order-2 lg:pb-10 lg:pr-10">
+            <div className={cn(FRAME, "aspect-[4/3]")}>
+              <Image
+                src="/images/biens/bien15.jpg" // PLACEHOLDER → vente (extérieur)
+                alt="Vente (image à remplacer)"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover transition-transform duration-[1.2s] ease-out hover:scale-105"
+              />
+            </div>
+            {/* Image chevauchée */}
+            <div
+              className={cn(
+                FRAME,
+                "absolute -bottom-6 -left-6 aspect-square w-2/5 ring-4 ring-[#FAF5EE] sm:w-1/3",
+              )}
             >
-              {t}
-            </span>
-          ))}
+              <Image
+                src="/images/biens/bien8.jpg" // PLACEHOLDER → vente (intérieur)
+                alt="Vente intérieur (image à remplacer)"
+                fill
+                sizes="200px"
+                className="object-cover"
+              />
+            </div>
+          </div>
+          <TextCol
+            className="lg:order-1"
+            index="03"
+            icon={Home}
+            label="Vente de biens"
+            paragraphs={[
+              "Vendez votre bien avec un partenaire de confiance : estimation juste, mise en valeur professionnelle et diffusion auprès de notre réseau d'acheteurs.",
+              "Nous vous accompagnons du mandat jusqu'à la signature chez le notaire.",
+            ]}
+            features={["Estimation gratuite", "Mandat sérieux", "Jusqu'au notaire"]}
+            slug="vente"
+            secondary={{ label: "Voir les biens", href: "/properties?service=Vente" }}
+          />
         </div>
+      </MotionSection>
 
-        {/* Actions */}
-        <div className="mt-7 flex flex-wrap items-center gap-3">
-          <Link
-            href={`/services/${service.slug}`}
-            className={cn(buttonVariants(), "h-11 gap-2 px-5 text-sm")}
-          >
-            Découvrir le service
-            <ArrowUpRight className="h-4 w-4" />
-          </Link>
-          <Link
-            href={service.secondary.href}
-            className={cn(
-              buttonVariants({ variant: "outline" }),
-              "h-11 gap-2 border-stone-300 px-5 text-sm text-secondary hover:border-primary/40 hover:text-primary",
-            )}
-          >
-            {service.secondary.label}
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+      {/* 04 — Gestion locative (fond blanc, blob, 1 image + carte info) */}
+      <MotionSection as="section" className="relative bg-white py-16 sm:py-20">
+        <FloatBlob className="-right-10 bottom-0 h-72 w-72 bg-secondary/[0.06]" />
+        <DotGrid className="left-6 top-8 h-28 w-36" />
+        <div className={GRID}>
+          <div className="relative lg:order-1">
+            <div className={cn(FRAME, "aspect-[4/3]")}>
+              <Image
+                src="/images/biens/bien3.jpg" // PLACEHOLDER → gestion
+                alt="Gestion locative (image à remplacer)"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover transition-transform duration-[1.2s] ease-out hover:scale-105"
+              />
+            </div>
+            {/* Carte info flottante */}
+            <div className="absolute -right-4 -top-4 hidden rounded-2xl border border-stone-100 bg-white px-5 py-4 shadow-xl sm:block">
+              <p className="font-agate text-3xl font-bold leading-none text-secondary">
+                0<span className="text-primary">%</span>
+              </p>
+              <p className="mt-1 text-xs font-medium text-neutral-500">
+                de souci pour vous
+              </p>
+            </div>
+          </div>
+          <TextCol
+            className="lg:order-2"
+            index="04"
+            icon={Building2}
+            label="Gestion locative"
+            paragraphs={[
+              "Confiez-nous la gestion complète de vos biens : sélection des locataires, encaissement des loyers, suivi technique et reporting.",
+              "Vous percevez vos revenus, l'esprit totalement tranquille.",
+            ]}
+            features={["Locataires vérifiés", "Loyers à date fixe", "Suivi technique"]}
+            slug="gestion-immobiliere"
+            secondary={{
+              label: "Voir les biens",
+              href: "/properties?service=Gestion%20locative",
+            }}
+          />
         </div>
-      </div>
-    </MotionSection>
+      </MotionSection>
+    </div>
   );
 }

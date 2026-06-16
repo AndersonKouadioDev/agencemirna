@@ -143,6 +143,14 @@
   --animate-marquee-x: marquee-x 40s linear infinite;
   --animate-count-up: count-up 800ms ease-out forwards;
   --animate-hero-zoom: hero-zoom 20s ease-in-out infinite alternate;
+  --animate-float: float 7s ease-in-out infinite;
+  --animate-float-slow: float 11s ease-in-out infinite;
+}
+
+/* Flottement décoratif discret (motifs / accents SVG) */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-12px); }
 }
 
 @keyframes marquee-x {
