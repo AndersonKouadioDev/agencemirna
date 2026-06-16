@@ -53,13 +53,13 @@ export function SiteFooter() {
   return (
     <section
       id="footer"
-      className="relative overflow-hidden isolate py-16 mx-auto"
+      className="relative isolate bg-secondary py-14 text-white"
     >
-      <div className="container mx-auto px-4 z-[1]">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* Footer */}
-        <div className="relative z-[1] flex flex-col py-10 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
           <div className="flex flex-col items-start justify-start gap-y-5">
-            <a href="#" className="flex items-center gap-3">
+            <a href="/" className="flex items-center gap-3">
               <Image
                 className="h-8 w-8"
                 alt="Logo"
@@ -86,7 +86,7 @@ export function SiteFooter() {
                 );
               })}
             </div>
-            <p className="text-sm tracking-tight text-white hover:text-primary sm:text-center transition-all duration-300 ease-out">
+            <p className="max-w-xs text-sm leading-relaxed text-white/70">
               © AGENCE MIRNA 2024. Tous droits réservés. | Développé par{" "}
               <Link
                 target="_blank"
@@ -97,8 +97,8 @@ export function SiteFooter() {
               </Link>
             </p>
           </div>
-          <div className="pt-5 md:w-1/2">
-            <div className="flex items-center justify-between gap-x-3 px-0 lg:px-10">
+          <div>
+            <div className="grid grid-cols-2 gap-x-12 gap-y-2">
               {footerLinks.map((column, columnIndex) => (
                 <ul key={columnIndex} className="flex flex-col gap-y-2">
                   {column.map((link) => (
@@ -116,7 +116,6 @@ export function SiteFooter() {
           </div>
         </div>
       </div>
-      <div className="w-full h-1/2 absolute bottom-0 left-0 right-0 bg-secondary overflow-hidden"></div>
     </section>
   );
 }
