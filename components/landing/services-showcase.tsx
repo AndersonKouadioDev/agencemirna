@@ -1,13 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  ArrowUpRight,
   ArrowRight,
   HardHat,
   Home,
-  MapPin,
   BedDouble,
   Building2,
+  Palette,
 } from "lucide-react";
 import {
   MotionSection,
@@ -17,70 +16,83 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * "Nos métiers" — grille BENTO dense (style Apple), raffinée :
- *   - Entrée en cascade (MotionStagger)
- *   - Hover premium : image zoom, overlay qui s'intensifie, contenu qui se
- *     soulève, badge flèche en coin, bordure orange
+ * "Nos métiers" — grille BENTO des GRANDS SERVICES de l'agence.
  *
- *   ┌───────────────┬───────────────┐
- *   │ Construction  │  Meublés      │   (2 grandes cartes 2×2)
- *   ├───────┬───────┼───────────────┤
- *   │ Maison│Terrain│ Gestion (2×1) │
- *   └───────┴───────┴───────────────┘
+ * Chaque carte :
+ *   - Clic principal (toute la carte) → page du service /services/{slug}
+ *   - Pastille secondaire → listings de biens filtrés (/properties?service=…)
+ *     OU demande de devis pour les services sans listing (construction, déco)
  *
- * ⚠️ Images PLACEHOLDER (photos de biens existantes) à remplacer :
- *   chantier · meublés · maison · terrain · gestion
+ * HTML valide : le lien "cover" (service) et la pastille (listings) sont
+ * frères (jamais imbriqués), gérés par z-index.
+ *
+ * ⚠️ Images PLACEHOLDER (photos de biens existantes) à remplacer.
+ * ⚠️ Le service "construction" doit exister dans /admin/services (slug
+ *    `construction`) sinon /services/construction renvoie 404.
  */
 
 type Bento = {
-  href: string;
+  slug: string;
   img: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   desc?: string;
   badge?: string;
   span: string;
+  /** Lien secondaire : listings filtrés OU devis. */
+  secondary: { label: string; href: string };
 };
 
 const CARDS: Bento[] = [
   {
-    href: "/contact_us",
+    slug: "construction",
     img: "/images/others/3d-electric-car-building.jpg", // PLACEHOLDER → chantier
     icon: HardHat,
     label: "Construction",
     desc: "De la conception à la livraison, clés en main.",
     span: "col-span-2 row-span-2",
+    secondary: { label: "Demander un devis", href: "/contact_us" },
   },
   {
-    href: "/properties?service=Location%20meubl%C3%A9e%20longue%20dur%C3%A9e",
+    slug: "location-meublee",
     img: "/images/biens/bien21.jpg", // PLACEHOLDER → appartement meublé
     icon: BedDouble,
     label: "Appartements meublés",
     desc: "Séjours haut de gamme, vue mer. Aussi sur Airbnb.",
     badge: "Airbnb · 24/7",
     span: "col-span-2 row-span-2",
+    secondary: {
+      label: "Voir les biens",
+      href: "/properties?service=Location%20meubl%C3%A9e%20longue%20dur%C3%A9e",
+    },
   },
   {
-    href: "/properties?type=Maison",
-    img: "/images/biens/bien15.jpg", // PLACEHOLDER → maison
+    slug: "vente",
+    img: "/images/biens/bien15.jpg", // PLACEHOLDER → vente
     icon: Home,
-    label: "Maison",
+    label: "Vente",
     span: "col-span-1 row-span-1",
+    secondary: { label: "Voir les biens", href: "/properties?service=Vente" },
   },
   {
-    href: "/properties?type=Terrain",
-    img: "/images/biens/bien7.jpg", // PLACEHOLDER → terrain
-    icon: MapPin,
-    label: "Terrain",
-    span: "col-span-1 row-span-1",
-  },
-  {
-    href: "/services/gestion-immobiliere",
-    img: "/images/biens/bien3.jpg", // PLACEHOLDER → gestion locative
+    slug: "gestion-immobiliere",
+    img: "/images/biens/bien3.jpg", // PLACEHOLDER → gestion
     icon: Building2,
     label: "Gestion locative",
-    desc: "Loyers à date fixe, zéro souci.",
+    span: "col-span-1 row-span-1",
+    secondary: {
+      label: "Voir les biens",
+      href: "/properties?service=Gestion%20locative",
+    },
+  },
+  {
+    slug: "decoration-amenagement",
+    img: "/images/biens/bien6.jpg", // PLACEHOLDER → décoration
+    icon: Palette,
+    label: "Décoration & aménagement",
+    desc: "Donnez une nouvelle vie à vos espaces.",
     span: "col-span-2 row-span-1",
+    secondary: { label: "Demander un devis", href: "/contact_us" },
   },
 ];
 
@@ -112,7 +124,7 @@ export default function ServicesShowcase() {
         {/* Grille bento (entrée en cascade) */}
         <MotionStagger className="grid auto-rows-[9rem] grid-cols-2 gap-3 sm:auto-rows-[11rem] sm:gap-4 lg:grid-cols-4">
           {CARDS.map((c) => (
-            <MotionStaggerChild key={c.label} className={c.span}>
+            <MotionStaggerChild key={c.slug} className={c.span}>
               <BentoCard card={c} />
             </MotionStaggerChild>
           ))}
@@ -126,10 +138,7 @@ function BentoCard({ card }: { card: Bento }) {
   const { icon: Icon } = card;
   const isBig = card.span.includes("row-span-2");
   return (
-    <Link
-      href={card.href}
-      className="group relative block h-full w-full overflow-hidden rounded-3xl shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-2xl hover:ring-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-    >
+    <div className="group relative h-full w-full overflow-hidden rounded-3xl shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-2xl hover:ring-primary/40">
       <Image
         src={card.img}
         alt={`${card.label} (image à remplacer)`}
@@ -139,21 +148,32 @@ function BentoCard({ card }: { card: Bento }) {
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent transition-colors duration-500 group-hover:from-black/90" />
 
+      {/* Lien "cover" : toute la carte → page du service */}
+      <Link
+        href={`/services/${card.slug}`}
+        aria-label={`${card.label} — découvrir le service`}
+        className="absolute inset-0 z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
+      />
+
       {/* Badge (ex. Airbnb) */}
       {card.badge && (
-        <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur">
+        <div className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur">
           <span className="h-1.5 w-1.5 rounded-full bg-[#FF385C]" />
           {card.badge}
         </div>
       )}
 
-      {/* Badge flèche en coin (apparaît au hover) */}
-      <span className="absolute right-3 top-3 inline-flex h-9 w-9 translate-y-1 items-center justify-center rounded-full bg-white/15 text-white opacity-0 backdrop-blur transition-all duration-300 group-hover:translate-y-0 group-hover:bg-primary group-hover:text-secondary group-hover:opacity-100">
-        <ArrowUpRight className="h-4 w-4" />
-      </span>
+      {/* Pastille secondaire (au-dessus du cover) : listings / devis */}
+      <Link
+        href={card.secondary.href}
+        className="absolute right-3 top-3 z-20 inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1.5 text-[11px] font-semibold text-white backdrop-blur transition-colors hover:bg-primary hover:text-secondary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
+        {card.secondary.label}
+        <ArrowRight className="h-3 w-3" />
+      </Link>
 
-      {/* Contenu (se soulève légèrement au hover) */}
-      <div className="absolute inset-x-0 bottom-0 p-4 text-white transition-transform duration-300 group-hover:-translate-y-1 sm:p-5">
+      {/* Contenu (décoratif, sous le cover) */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-0 p-4 text-white transition-transform duration-300 group-hover:-translate-y-1 sm:p-5">
         <div className="mb-2.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur transition-colors group-hover:bg-primary group-hover:text-secondary">
           <Icon className="h-5 w-5" />
         </div>
@@ -170,9 +190,11 @@ function BentoCard({ card }: { card: Bento }) {
             {card.desc}
           </p>
         )}
-        {/* Filet orange qui s'étire au hover */}
-        <span className="mt-3 block h-0.5 w-8 rounded-full bg-primary transition-all duration-300 group-hover:w-14" />
+        <span className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
+          <span className="h-0.5 w-8 rounded-full bg-primary transition-all duration-300 group-hover:w-14" />
+          Découvrir le service
+        </span>
       </div>
-    </Link>
+    </div>
   );
 }
