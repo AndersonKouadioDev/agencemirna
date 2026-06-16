@@ -8,6 +8,9 @@ import {
   Clock,
   HeartHandshake,
   ArrowUpRight,
+  CalendarDays,
+  Building2,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getSiteStats } from "@/src/actions/admin/taxonomy";
@@ -36,10 +39,10 @@ export default async function WhyChooseSection() {
   const ageAgence = Math.max(new Date().getFullYear() - 2022, 1);
 
   const STATS = [
-    { value: String(ageAgence), suffix: " ans", label: "D'expérience", accent: false },
-    { value: "100", suffix: "+", label: "Clients accompagnés", accent: true },
-    { value: String(counts.biens_actifs), suffix: "", label: "Biens au catalogue", accent: false },
-    { value: String(counts.services_actifs), suffix: "", label: "Services métier", accent: false },
+    { value: String(ageAgence), suffix: " ans", label: "D'expérience", accent: false, icon: CalendarDays },
+    { value: "100", suffix: "+", label: "Clients accompagnés", accent: true, icon: Users },
+    { value: String(counts.biens_actifs), suffix: "", label: "Biens au catalogue", accent: false, icon: Building2 },
+    { value: String(counts.services_actifs), suffix: "", label: "Services métier", accent: false, icon: Sparkles },
   ];
 
   return (
@@ -112,32 +115,43 @@ export default async function WhyChooseSection() {
           </div>
 
           {/* Cartes chiffres */}
-          {STATS.map((s) => (
-            <div
-              key={s.label}
-              className={cn(
-                "flex flex-col justify-center rounded-3xl p-5 shadow-sm ring-1",
-                s.accent
-                  ? "bg-primary text-secondary ring-primary/20"
-                  : "bg-[#FAF5EE] text-secondary ring-black/5",
-              )}
-            >
-              <div className="font-agate text-4xl font-bold leading-none tracking-tight tabular-nums sm:text-5xl">
-                {s.value}
-                <span className={s.accent ? "text-white" : "text-primary"}>
-                  {s.suffix}
-                </span>
-              </div>
+          {STATS.map((s) => {
+            const Icon = s.icon;
+            return (
               <div
+                key={s.label}
                 className={cn(
-                  "mt-2 text-[11px] font-semibold uppercase tracking-[0.12em]",
-                  s.accent ? "text-secondary/80" : "text-neutral-500",
+                  "group flex flex-col justify-between rounded-3xl p-5 shadow-sm ring-1 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg",
+                  s.accent
+                    ? "bg-primary text-secondary ring-primary/20"
+                    : "bg-[#FAF5EE] text-secondary ring-black/5 hover:ring-primary/30",
                 )}
               >
-                {s.label}
+                <Icon
+                  className={cn(
+                    "h-5 w-5",
+                    s.accent ? "text-secondary/70" : "text-primary",
+                  )}
+                />
+                <div className="mt-4">
+                  <div className="font-agate text-4xl font-bold leading-none tracking-tight tabular-nums sm:text-5xl">
+                    {s.value}
+                    <span className={s.accent ? "text-white" : "text-primary"}>
+                      {s.suffix}
+                    </span>
+                  </div>
+                  <div
+                    className={cn(
+                      "mt-2 text-[11px] font-semibold uppercase tracking-[0.12em]",
+                      s.accent ? "text-secondary/80" : "text-neutral-500",
+                    )}
+                  >
+                    {s.label}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </MotionSection>

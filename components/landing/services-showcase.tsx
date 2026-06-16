@@ -9,16 +9,21 @@ import {
   BedDouble,
   Building2,
 } from "lucide-react";
-import { MotionSection } from "./motion-section";
+import {
+  MotionSection,
+  MotionStagger,
+  MotionStaggerChild,
+} from "./motion-section";
 import { cn } from "@/lib/utils";
 
 /**
- * "Nos métiers" — grille BENTO dense (style Apple) au lieu de grandes
- * sections vides : cartes de tailles variées, remplies, scannables.
+ * "Nos métiers" — grille BENTO dense (style Apple), raffinée :
+ *   - Entrée en cascade (MotionStagger)
+ *   - Hover premium : image zoom, overlay qui s'intensifie, contenu qui se
+ *     soulève, badge flèche en coin, bordure orange
  *
  *   ┌───────────────┬───────────────┐
  *   │ Construction  │  Meublés      │   (2 grandes cartes 2×2)
- *   │   (2×2)       │   (2×2)       │
  *   ├───────┬───────┼───────────────┤
  *   │ Maison│Terrain│ Gestion (2×1) │
  *   └───────┴───────┴───────────────┘
@@ -104,12 +109,14 @@ export default function ServicesShowcase() {
           </Link>
         </div>
 
-        {/* Grille bento */}
-        <div className="grid auto-rows-[9rem] grid-cols-2 gap-3 sm:auto-rows-[11rem] sm:gap-4 lg:grid-cols-4">
+        {/* Grille bento (entrée en cascade) */}
+        <MotionStagger className="grid auto-rows-[9rem] grid-cols-2 gap-3 sm:auto-rows-[11rem] sm:gap-4 lg:grid-cols-4">
           {CARDS.map((c) => (
-            <BentoCard key={c.label} card={c} />
+            <MotionStaggerChild key={c.label} className={c.span}>
+              <BentoCard card={c} />
+            </MotionStaggerChild>
           ))}
-        </div>
+        </MotionStagger>
       </div>
     </MotionSection>
   );
@@ -121,20 +128,18 @@ function BentoCard({ card }: { card: Bento }) {
   return (
     <Link
       href={card.href}
-      className={cn(
-        "group relative overflow-hidden rounded-3xl shadow-sm ring-1 ring-black/5 transition-shadow duration-300 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-        card.span,
-      )}
+      className="group relative block h-full w-full overflow-hidden rounded-3xl shadow-sm ring-1 ring-black/5 transition-all duration-300 hover:shadow-2xl hover:ring-primary/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     >
       <Image
         src={card.img}
         alt={`${card.label} (image à remplacer)`}
         fill
         sizes="(max-width: 768px) 50vw, 25vw"
-        className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+        className="object-cover transition-transform duration-[1.1s] ease-out group-hover:scale-[1.06]"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent transition-colors duration-500 group-hover:from-black/90" />
 
+      {/* Badge (ex. Airbnb) */}
       {card.badge && (
         <div className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/40 px-2.5 py-1 text-[10px] font-semibold text-white backdrop-blur">
           <span className="h-1.5 w-1.5 rounded-full bg-[#FF385C]" />
@@ -142,8 +147,14 @@ function BentoCard({ card }: { card: Bento }) {
         </div>
       )}
 
-      <div className="absolute inset-x-0 bottom-0 p-4 text-white sm:p-5">
-        <div className="mb-2.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur">
+      {/* Badge flèche en coin (apparaît au hover) */}
+      <span className="absolute right-3 top-3 inline-flex h-9 w-9 translate-y-1 items-center justify-center rounded-full bg-white/15 text-white opacity-0 backdrop-blur transition-all duration-300 group-hover:translate-y-0 group-hover:bg-primary group-hover:text-secondary group-hover:opacity-100">
+        <ArrowUpRight className="h-4 w-4" />
+      </span>
+
+      {/* Contenu (se soulève légèrement au hover) */}
+      <div className="absolute inset-x-0 bottom-0 p-4 text-white transition-transform duration-300 group-hover:-translate-y-1 sm:p-5">
+        <div className="mb-2.5 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur transition-colors group-hover:bg-primary group-hover:text-secondary">
           <Icon className="h-5 w-5" />
         </div>
         <h3
@@ -155,14 +166,12 @@ function BentoCard({ card }: { card: Bento }) {
           {card.label}
         </h3>
         {card.desc && (
-          <p className="mt-1 line-clamp-2 max-w-xs text-xs text-white/75 sm:text-sm">
+          <p className="mt-1 line-clamp-2 max-w-xs text-xs text-white/80 sm:text-sm">
             {card.desc}
           </p>
         )}
-        <span className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-primary opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          Découvrir
-          <ArrowUpRight className="h-3.5 w-3.5" />
-        </span>
+        {/* Filet orange qui s'étire au hover */}
+        <span className="mt-3 block h-0.5 w-8 rounded-full bg-primary transition-all duration-300 group-hover:w-14" />
       </div>
     </Link>
   );
