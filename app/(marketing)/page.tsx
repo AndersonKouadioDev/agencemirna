@@ -54,11 +54,12 @@ export default async function Page() {
       {/* 6. Témoignages clients (carousel) */}
       <TestimonialsSection />
 
-      {/* 7. Bandeau CTA final : estimation / contact */}
-      <CtaBannerSection />
-
-      {/* 8. Partenaires (marquee logos) */}
+      {/* 7. Partenaires (marquee logos) */}
       <ClientSection />
+
+      {/* 8. Bandeau CTA final "Confiez-le à Agence Mirna" (juste avant le
+          footer, remplace l'ancienne section newsletter) */}
+      <CtaBannerSection />
     </>
   );
 }

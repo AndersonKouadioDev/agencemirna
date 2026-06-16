@@ -9,15 +9,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
-import { toast } from "sonner";
-import { Input } from "./ui/input";
-import { Button } from "./ui/button";
 
-interface IFormInput {
-  email: string;
-}
 type FooterLink = { id: number; title: string; url: string };
 
 const SOCIALS = [
@@ -58,119 +50,12 @@ const footerLinks: FooterLink[][] = [
 ];
 
 export function SiteFooter() {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-    reset,
-  } = useForm<IFormInput>();
-
-  const onSubmit: SubmitHandler<IFormInput> = async (data) => {
-    setIsSubmitting(true);
-    try {
-      // Import dynamique pour éviter d'embarquer le module server dans le bundle client si non utilisé
-      const { createLead } = await import("@/src/actions/leads");
-      const result = await createLead({
-        source: "newsletter",
-        email: data.email,
-        source_url:
-          typeof window !== "undefined" ? window.location.pathname : null,
-      });
-      if (result.ok) {
-        toast.success("Inscription enregistrée. Nous vous tiendrons informé.");
-        reset();
-      } else {
-        toast.error(result.error);
-      }
-    } catch (error) {
-      toast.error("Une erreur est survenue. Veuillez réessayer.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <section
       id="footer"
-      className="relative overflow-hidden isolate py-32 mx-auto"
+      className="relative overflow-hidden isolate py-16 mx-auto"
     >
       <div className="container mx-auto px-4 z-[1]">
-        {/* Newsletter */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 py-8 md:py-16">
-          <div className="order-2 max-w-xl mx-auto lg:order-1 relative z-[1] flex items-center justify-center overflow-hidden rounded-3xl">
-            <Image
-              src="/images/biens/bien3.jpg"
-              alt="Discover Exclusive Real Estate Opportunities - Houz X Webflow Template"
-              className="object-cover w-full h-full hover:scale-105 transition-all duration-300"
-              width={1000}
-              height={1000}
-            />
-          </div>
-          <div className="order-1 lg:order-2  max-w-2xl mx-auto relative z-[1] flex flex-col border border-primary justify-center items-start p-8 md:p-16 bg-white rounded-3xl shadow-xl">
-            <div className="relative z-10 max-w-lg">
-              <h2 className="text-2xl text-secondary md:text-3xl lg:text-4xl text-center lg:text-left font-agate font-bold mb-4">
-                Découvrez des opportunités immobilières exclusives !
-              </h2>
-              <div className="text-sm md:text-base mb-4">
-                <p>
-                  Abonnez-vous à la newsletter de l&apos;Agence Mirna et soyez
-                  le premier à découvrir :
-                </p>
-                <ul className="list-disc list-inside mt-2">
-                  <li>🏠 Nos nouvelles propriétés exclusives</li>
-                  <li>
-                    💡 Des conseils d&apos;experts pour vos projets immobiliers
-                  </li>
-                  <li>
-                    📊 Les dernières tendances du marché immobilier à Abidjan
-                  </li>
-                  <li>🎁 Des offres spéciales réservées à nos abonnés</li>
-                </ul>
-              </div>
-              <p className="text-sm md:text-base mb-4">
-                Rejoignez notre communauté d&apos;investisseurs et de
-                propriétaires avisés. Recevez chaque mois une sélection
-                soigneusement curatée d&apos;informations précieuses directement
-                dans votre boîte mail.
-              </p>
-              <form
-                id="wf-form-Footer-V1-Form"
-                name="wf-form-Footer-V1-Form"
-                method="get"
-                className="flex flex-col lg:flex-row items-center gap-4"
-              >
-                <Input
-                  className="w-full max-w-md p-4 text-black rounded-full"
-                  name="Email"
-                  placeholder="Enter your email"
-                  type="email"
-                  id="email-footer"
-                  required
-                />
-                <Button
-                  type="submit"
-                  variant="ghost"
-                  className="w-full max-w-md bg-white flex-1 rounded-full"
-                >
-                  Souscrire
-                </Button>
-              </form>
-              <div className="mt-4 text-left hidden">
-                <div className="flex items-center gap-2">
-                  <div className="text-green-500">✔</div>
-                  <div className="text-lg">
-                    Thanks for joining our newsletter.
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 hidden text-left text-red-500">
-                Oops! Something went wrong.
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Footer */}
         <div className="relative z-[1] flex flex-col py-10 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col items-start justify-start gap-y-5">
