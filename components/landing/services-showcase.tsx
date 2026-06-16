@@ -92,6 +92,74 @@ function FloatBlob({ className }: { className?: string }) {
   );
 }
 
+// Arcs concentriques (motif coin) — flottement discret
+function Arcs({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 120 120"
+      className={cn(
+        "pointer-events-none absolute text-primary/25 motion-safe:animate-float",
+        className,
+      )}
+    >
+      <path d="M8 112 A104 104 0 0 1 112 8" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M8 80 A72 72 0 0 1 80 8" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M8 48 A40 40 0 0 1 48 8" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+// Carré arrondi pointillé qui tourne lentement
+function SquareOutline({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 100 100"
+      className={cn(
+        "pointer-events-none absolute text-primary/25 motion-safe:animate-[spin_50s_linear_infinite]",
+        className,
+      )}
+    >
+      <rect
+        x="14"
+        y="14"
+        width="72"
+        height="72"
+        rx="14"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeDasharray="2 11"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+// Courbe ascendante qui se dessine (revenus) — visible si reduced-motion
+function TrendLine({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 120 64"
+      className={cn("pointer-events-none absolute text-primary/40", className)}
+    >
+      <path
+        d="M4 54 L34 34 L60 42 L92 16 L116 6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        pathLength={1}
+        className="motion-safe:[stroke-dasharray:1] motion-safe:[stroke-dashoffset:1] motion-safe:animate-draw"
+      />
+      <circle cx="116" cy="6" r="3.5" fill="currentColor" />
+    </svg>
+  );
+}
+
 // ─── En-tête ───────────────────────────────────────────────────────────────
 function SectionHeader() {
   return (
@@ -200,8 +268,8 @@ const FRAME = "relative overflow-hidden rounded-[2rem] shadow-xl ring-1 ring-bla
 export default function ServicesShowcase() {
   return (
     <div className="overflow-x-clip">
-      {/* En-tête sur fond cream */}
-      <div className="bg-[#FAF5EE] pt-16 sm:pt-20">
+      {/* En-tête sur fond blanc (continu avec la bande Construction) */}
+      <div className="bg-white pt-16 sm:pt-20">
         <SectionHeader />
       </div>
 
@@ -251,6 +319,7 @@ export default function ServicesShowcase() {
         className="relative bg-[#FAF5EE] py-16 sm:py-20"
       >
         <DotGrid className="left-0 top-0 h-40 w-1/3" />
+        <Arcs className="right-4 top-6 h-24 w-24 lg:h-32 lg:w-32" />
         <div className={GRID}>
           <TextCol
             index="02"
@@ -312,7 +381,8 @@ export default function ServicesShowcase() {
         className="relative overflow-hidden bg-primary/[0.04] py-16 sm:py-24"
       >
         <FloatBlob className="-left-10 top-10 h-72 w-72 bg-primary/10" />
-        <DotGrid className="bottom-6 right-6 h-28 w-40 motion-safe:animate-float" />
+        <SquareOutline className="-right-8 top-12 h-44 w-44" />
+        <DotGrid className="bottom-6 left-6 h-24 w-32" />
         <div className={GRID}>
           <div className="relative lg:order-2 lg:pb-10 lg:pr-10">
             <div className={cn(FRAME, "aspect-[4/3]")}>
@@ -360,6 +430,7 @@ export default function ServicesShowcase() {
       <MotionSection as="section" className="relative bg-white py-16 sm:py-20">
         <FloatBlob className="-right-10 bottom-0 h-72 w-72 bg-secondary/[0.06]" />
         <DotGrid className="left-6 top-8 h-28 w-36" />
+        <TrendLine className="right-8 top-10 hidden h-16 w-32 lg:block" />
         <div className={GRID}>
           <div className="relative lg:order-1">
             <div className={cn(FRAME, "aspect-[4/3]")}>

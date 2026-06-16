@@ -145,12 +145,19 @@
   --animate-hero-zoom: hero-zoom 20s ease-in-out infinite alternate;
   --animate-float: float 7s ease-in-out infinite;
   --animate-float-slow: float 11s ease-in-out infinite;
+  --animate-draw: draw 3.5s ease-in-out infinite alternate;
 }
 
 /* Flottement décoratif discret (motifs / accents SVG) */
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-12px); }
+}
+
+/* Trait SVG qui se dessine (pathLength normalisé à 1) */
+@keyframes draw {
+  from { stroke-dashoffset: 1; }
+  to { stroke-dashoffset: 0; }
 }
 
 @keyframes marquee-x {
