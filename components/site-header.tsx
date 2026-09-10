@@ -12,7 +12,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, KeyRound } from "lucide-react";
+import { ChevronDown, KeyRound, X } from "lucide-react";
 
 import { Button, buttonVariants } from "@/components/ui/button";
 import { MegaMenu } from "./mega-menu";
@@ -32,27 +32,6 @@ export const Header = () => {
   const pathname = usePathname();
   const menuItems = getMenuList(pathname);
   const [isOpen, setIsOpen] = useState<boolean>(false);
-  const [isVisible, setIsVisible] = useState<boolean>(true);
-  const [scrolled, setScrolled] = useState<boolean>(false);
-  const { scrollY } = useScroll();
-
-  // Sur la home, le hero est sombre → navbar transparent tant qu'on n'a pas
-  // scrollé, puis blanc au scroll. Sur les autres pages (fond clair), le
-  // navbar reste toujours solide pour rester lisible.
-  const isHome = pathname === "/";
-  const transparent = isHome && !scrolled;
-
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    setScrolled(latest > 24);
-    const previous = scrollY.getPrevious();
-    if (previous !== undefined) {
-      if (latest > previous && latest > 150) {
-        setIsVisible(false);
-      } else {
-        setIsVisible(true);
-      }
-    }
-  });
 
   useEffect(() => {
     const html = document.querySelector("html");
@@ -72,93 +51,59 @@ export const Header = () => {
 
   return (
     <>
-      <motion.header
-        className="fixed top-[40px] w-full z-50"
-        initial={{ y: 0 }}
-        animate={{ y: isVisible ? 0 : "-140%" }}
-        transition={{ duration: 0.3 }}
-      >
-        <nav
-          className={cn(
-            "relative z-[1000] w-full transition-colors duration-300",
-            transparent
-              ? "border-b border-transparent bg-gradient-to-b from-black/35 via-black/10 to-transparent"
-              : "border-b border-stone-200/80 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.02),0_8px_24px_-12px_rgba(0,0,0,0.12)]",
-          )}
-        >
-          {/* Fine ligne d'accent orange en haut (masquée en mode transparent) */}
-          <div
-            aria-hidden="true"
-            className={cn(
-              "h-0.5 w-full bg-gradient-to-r from-transparent via-primary to-transparent transition-opacity duration-300",
-              transparent ? "opacity-0" : "opacity-70",
-            )}
-          />
+      <header className="fixed top-[40px] w-full z-50">
+        <nav className="relative z-[1000] w-full border-b border-stone-200/80 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.02),0_8px_24px_-12px_rgba(0,0,0,0.12)]">
           <div className="relative z-30">
-            <div className="container mx-auto md:px-12 lg:py-0 lg:px-10">
-              <div className="flex items-center justify-between gap-6 py-3 md:gap-0">
-                <div className="flex w-full items-center justify-between gap-4 px-2 sm:px-6">
-                  <div className="flex items-center gap-4">
-                    <MobileMenuButton
-                      isOpen={isOpen}
-                      toggle={() => setIsOpen(!isOpen)}
-                      onDark={transparent}
+            <div className="container mx-auto px-4 md:px-12 lg:px-10">
+              <div className="flex items-center justify-between h-16 md:h-20">
+                {/* Gauche : Logo */}
+                <div className="flex items-center gap-4">
+                  <MobileMenuButton
+                    isOpen={isOpen}
+                    toggle={() => setIsOpen(!isOpen)}
+                    onDark={false}
+                  />
+
+                  <Link href="/" aria-label="logo">
+                    <Image
+                      src="/images/logo.png"
+                      className="w-24 transition md:w-32"
+                      alt="Agence Mirna"
+                      width="144"
+                      height="68"
                     />
-
-                    <Link href="/" aria-label="logo">
-                      <Image
-                        src="/images/logo.png"
-                        className={cn(
-                          "w-24 transition md:w-36",
-                          transparent && "brightness-0 invert",
-                        )}
-                        alt="Agence Mirna"
-                        width="144"
-                        height="68"
-                      />
-                    </Link>
-                  </div>
-
-                  {/* Menu dans une capsule bordée (rappel de la carte de
-                      recherche du hero). En mode transparent : capsule claire
-                      translucide + texte blanc (via onDark). */}
-                  <nav className="hidden md:flex w-full items-center justify-center">
-                    <div
-                      className={cn(
-                        "flex items-center gap-0.5 rounded-full border px-1.5 py-1 transition-colors",
-                        transparent
-                          ? "border-white/25 bg-white/10 backdrop-blur"
-                          : "border-stone-200 bg-stone-50/60",
-                      )}
-                    >
-                      {menuItems.map((item) => (
-                        <MegaMenu
-                          key={item.id}
-                          item={item}
-                          onDark={transparent}
-                        />
-                      ))}
-                    </div>
-                  </nav>
+                  </Link>
                 </div>
 
-                {/* CTA Réserver : pilule orange + icône clé (esprit
-                    immobilier), cohérent avec les CTA arrondis du hero. */}
-                <Link
-                  href={"/properties"}
-                  className={cn(
-                    buttonVariants(),
-                    "h-10 gap-2 rounded-full px-5 shadow-lg shadow-primary/25 ring-1 ring-primary/30 transition-transform hover:scale-[1.03] xl:h-12 xl:px-7",
-                  )}
-                >
-                  <KeyRound className="h-4 w-4" />
-                  <span>Réserver</span>
-                </Link>
+                {/* Centre : Liens purs (sans capsule) */}
+                <nav className="hidden lg:flex flex-1 items-center justify-center gap-8 relative">
+                  {menuItems.map((item) => (
+                    <MegaMenu
+                      key={item.id}
+                      item={item}
+                      onDark={false}
+                    />
+                  ))}
+                </nav>
+
+                {/* Droite : CTA Réserver */}
+                <div className="flex items-center">
+                  <Link
+                    href={"/properties"}
+                    className={cn(
+                      buttonVariants(),
+                      "h-10 gap-2 rounded-full px-5 shadow-lg shadow-primary/25 ring-1 ring-primary/30 transition-transform hover:scale-[1.03] xl:h-11 xl:px-6",
+                    )}
+                  >
+                    <KeyRound className="h-4 w-4" />
+                    <span className="hidden sm:inline">Réserver</span>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
         </nav>
-      </motion.header>
+      </header>
       <MobileMenu
         isOpen={isOpen}
         menuItems={menuItems}
@@ -179,7 +124,7 @@ const MobileMenuButton: React.FC<MobileMenuButtonProps> = ({
   <button
     onClick={toggle}
     className={cn(
-      "md:hidden w-10 h-10 relative focus:outline-none transition-colors",
+      "lg:hidden w-10 h-10 relative focus:outline-none transition-colors",
       onDark ? "text-white" : "text-secondary",
     )}
   >
@@ -207,6 +152,8 @@ const MobileMenuButton: React.FC<MobileMenuButtonProps> = ({
   </button>
 );
 
+
+
 const MobileMenu: React.FC<MobileMenuProps> = ({
   isOpen,
   menuItems,
@@ -215,24 +162,60 @@ const MobileMenu: React.FC<MobileMenuProps> = ({
   <AnimatePresence>
     {isOpen && (
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.3 }}
-        className="fixed top-20 left-0 w-full max-h-[calc(100vh-5rem)] overflow-y-auto bg-primary shadow-lg md:hidden z-50"
+        initial={{ opacity: 0, x: "100%" }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: "100%" }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        className="fixed inset-0 w-full h-[100dvh] bg-white lg:hidden z-[9999] flex flex-col"
       >
-        <nav className="flex flex-col py-4">
-          {menuItems.map((item: MenuItem) => (
-            <motion.div
-              key={item.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.3, delay: item.id * 0.1 }}
-            >
-              <MobileMenuEntry item={item} closeMenu={closeMenu} />
-            </motion.div>
-          ))}
+        {/* Header du menu mobile */}
+        <div className="flex items-center justify-between px-6 py-5 border-b border-stone-100">
+          <Link href="/" aria-label="logo" onClick={closeMenu}>
+            <Image
+              src="/images/logo.png"
+              className="w-24"
+              alt="Agence Mirna"
+              width="144"
+              height="68"
+            />
+          </Link>
+          <button
+            onClick={closeMenu}
+            className="h-10 w-10 bg-stone-100 rounded-full flex items-center justify-center text-stone-500 hover:bg-stone-200 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Corps du menu */}
+        <nav className="flex-1 overflow-y-auto flex flex-col px-6 py-4">
+          <div className="flex flex-col gap-2">
+            {menuItems.map((item: MenuItem, index: number) => (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 + 0.1 }}
+              >
+                <MobileMenuEntry item={item} closeMenu={closeMenu} />
+              </motion.div>
+            ))}
+          </div>
         </nav>
+
+        {/* Pied du menu avec contact direct */}
+        <div className="p-6 border-t border-stone-100 bg-stone-50">
+          <Link
+            href="/contact_us"
+            onClick={closeMenu}
+            className={cn(
+              buttonVariants(),
+              "w-full h-12 rounded-full text-base font-bold shadow-lg shadow-primary/20"
+            )}
+          >
+            Estimer mon bien
+          </Link>
+        </div>
       </motion.div>
     )}
   </AnimatePresence>
@@ -254,40 +237,40 @@ const MobileMenuEntry: React.FC<{
   // Cas 1 : item simple → lien direct
   if (!hasSubmenu) {
     return (
-      <Link
-        href={item.href ?? "#"}
-        className={cn(
-          "block px-4 py-3 transition-colors text-base",
-          item.active
-            ? "text-white font-bold underline underline-offset-4"
-            : "text-secondary hover:text-white"
-        )}
-        onClick={closeMenu}
-      >
-        {item.label}
-      </Link>
+      <div className="border-b border-stone-100 last:border-0">
+        <Link
+          href={item.href ?? "#"}
+          className={cn(
+            "block py-4 transition-colors text-xl font-medium",
+            item.active
+              ? "text-primary font-bold"
+              : "text-secondary hover:text-primary"
+          )}
+          onClick={closeMenu}
+        >
+          {item.label}
+        </Link>
+      </div>
     );
   }
 
   // Cas 2 & 3 : item avec sous-menu → accordéon
   return (
-    <div>
+    <div className="border-b border-stone-100 last:border-0">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
         className={cn(
-          "w-full flex items-center justify-between px-4 py-3 text-base transition-colors",
-          item.active
-            ? "text-white font-bold"
-            : "text-secondary hover:text-white"
+          "w-full flex items-center justify-between py-4 transition-colors text-xl font-medium",
+          expanded ? "text-primary" : "text-secondary"
         )}
       >
         <span>{item.label}</span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 transition-transform duration-200",
-            expanded && "rotate-180"
+            "h-5 w-5 text-stone-400 transition-transform duration-300",
+            expanded && "rotate-180 text-primary"
           )}
         />
       </button>
@@ -298,16 +281,16 @@ const MobileMenuEntry: React.FC<{
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden bg-primary/80"
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
           >
-            <div className="py-2">
+            <div className="pb-4 pt-1">
               {/* Lien parent vers la page principale (si défini) */}
               {item.href && (
                 <Link
                   href={item.href}
                   onClick={closeMenu}
-                  className="block px-6 py-2 text-sm font-semibold text-white/90 hover:text-white"
+                  className="block px-6 py-2 text-sm font-semibold text-secondary group-hover:text-primary transition-colors/90 hover:text-white"
                 >
                   → Voir tout
                 </Link>
@@ -316,10 +299,10 @@ const MobileMenuEntry: React.FC<{
               {/* Mega menu : colonnes avec titres */}
               {item.columns?.map((col) => (
                 <div key={col.title} className="mt-2">
-                  <div className="px-6 py-1 text-[10px] font-bold uppercase tracking-wider text-white/60">
+                  <div className="px-6 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-400">
                     {col.title}
                   </div>
-                  <ul>
+                  <ul className="grid grid-cols-2 gap-2 mt-2">
                     {col.items.map((sub) => {
                       const Icon = sub.icon;
                       return (
@@ -327,10 +310,10 @@ const MobileMenuEntry: React.FC<{
                           <Link
                             href={sub.href}
                             onClick={closeMenu}
-                            className="flex items-center gap-2 px-6 py-2 text-sm text-secondary hover:text-white hover:bg-primary/60 transition-colors"
+                            className="flex items-center gap-3 py-3 px-3 hover:bg-stone-50 rounded-xl transition-colors group"
                           >
-                            {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
-                            <span>{sub.label}</span>
+                            {Icon && <Icon className="h-5 w-5 text-primary shrink-0 transition-transform group-hover:scale-110" />}
+                            <span className="text-[15px] font-medium text-stone-700 group-hover:text-primary transition-colors">{sub.label}</span>
                           </Link>
                         </li>
                       );
@@ -339,9 +322,9 @@ const MobileMenuEntry: React.FC<{
                 </div>
               ))}
 
-              {/* Simple dropdown : items avec icône + description */}
+              {/* Simple dropdown : items avec icône */}
               {item.simpleItems && (
-                <ul className="mt-1">
+                <ul className="mt-2 space-y-1">
                   {item.simpleItems.map((sub) => {
                     const Icon = sub.icon;
                     return (
@@ -349,20 +332,15 @@ const MobileMenuEntry: React.FC<{
                         <Link
                           href={sub.href}
                           onClick={closeMenu}
-                          className="flex items-start gap-3 px-6 py-2.5 hover:bg-primary/60 transition-colors"
+                          className="flex items-center gap-3 py-3 px-3 hover:bg-stone-50 rounded-xl transition-colors group"
                         >
                           {Icon && (
-                            <Icon className="h-4 w-4 text-white/80 shrink-0 mt-0.5" />
+                            <Icon className="h-5 w-5 text-primary shrink-0 transition-transform group-hover:scale-110" />
                           )}
                           <div className="flex-1 min-w-0">
-                            <div className="text-sm font-semibold text-white">
+                            <div className="text-[15px] font-medium text-stone-700 group-hover:text-primary transition-colors">
                               {sub.label}
                             </div>
-                            {sub.description && (
-                              <div className="text-xs text-white/70 mt-0.5">
-                                {sub.description}
-                              </div>
-                            )}
                           </div>
                         </Link>
                       </li>
@@ -371,24 +349,7 @@ const MobileMenuEntry: React.FC<{
                 </ul>
               )}
 
-              {/* Featured card en bas (uniquement pour mega) */}
-              {item.featured && (
-                <Link
-                  href={item.featured.href}
-                  onClick={closeMenu}
-                  className="mx-4 mt-3 mb-2 block rounded-lg bg-secondary p-3"
-                >
-                  <div className="text-xs font-bold uppercase tracking-wider text-primary mb-1">
-                    {item.featured.title}
-                  </div>
-                  <div className="text-xs text-white/80 mb-2">
-                    {item.featured.description}
-                  </div>
-                  <div className="text-xs font-semibold text-primary">
-                    {item.featured.cta} →
-                  </div>
-                </Link>
-              )}
+
             </div>
           </motion.div>
         )}

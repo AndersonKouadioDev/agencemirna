@@ -23,7 +23,7 @@ const PARTNERS = [
 
 export default function ClientSection() {
   return (
-    <section id="clients" className="bg-[#FAF5EE] py-20 sm:py-24">
+    <section id="clients" className="bg-background py-20 sm:py-24">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-12 max-w-2xl mx-auto">
@@ -44,11 +44,11 @@ export default function ClientSection() {
           {/* Gradient fade left/right */}
           <div
             aria-hidden
-            className="pointer-events-none absolute left-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-r from-[#FAF5EE] to-transparent"
+            className="pointer-events-none absolute left-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-r from-background to-transparent"
           />
           <div
             aria-hidden
-            className="pointer-events-none absolute right-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-l from-[#FAF5EE] to-transparent"
+            className="pointer-events-none absolute right-0 top-0 bottom-0 w-24 z-10 bg-gradient-to-l from-background to-transparent"
           />
 
           <Marquee className="max-w-full [--duration:50s] [--gap:3rem] py-4">
@@ -62,7 +62,7 @@ export default function ClientSection() {
                   alt={p.alt}
                   width={140}
                   height={80}
-                  className="max-h-full max-w-full object-contain opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300"
+                  className="max-h-full max-w-full object-contain opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300 mix-blend-multiply"
                 />
               </div>
             ))}

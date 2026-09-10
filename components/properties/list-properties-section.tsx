@@ -106,42 +106,41 @@ export default function ListPropertiesSection({
   const [viewMode, setViewMode] = React.useState<"list" | "map">("list");
 
   const filteredBiens = React.useMemo(() => {
+    // Normalize string helper
+    const normalize = (str: string | undefined | null) => 
+      (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
     let list = initialBiens.filter((bien: any) => {
       if (filters.q) {
-        const q = filters.q.toLowerCase().trim();
-        const haystack = [
+        const q = normalize(filters.q);
+        const haystack = normalize([
           bien.name,
           bien.address,
           bien.ville_commune,
           bien.pays,
-        ]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
+        ].filter(Boolean).join(" "));
         if (!haystack.includes(q)) return false;
       }
-      if (filters.location) {
-        const loc = filters.location.toLowerCase().trim();
-        const hay = [bien.address, bien.ville_commune, bien.pays]
-          .filter(Boolean)
-          .join(" ")
-          .toLowerCase();
-        if (!hay.includes(loc)) return false;
+      
+      if (filters.location && filters.location !== "toute la ville") {
+        // Retrieve the human readable label for the location to match against DB
+        const locObj = ABIDJAN_LOCATIONS.find(l => l.value === filters.location);
+        const locLabel = locObj ? locObj.label.replace(" (toute la commune)", "") : filters.location;
+        const loc = normalize(locLabel);
+        const hay = normalize([bien.address, bien.ville_commune, bien.pays].filter(Boolean).join(" "));
+        if (!hay.includes(loc) && !loc.includes(hay)) return false;
       }
-      if (filters.type && bien.types_bien?.name) {
-        // Match tolérant : si l'un contient l'autre (case-insensitive),
-        // on accepte. Évite d'exclure quand l'URL et la DB diffèrent
-        // légèrement (singulier/pluriel, accent, etc.).
-        const t = filters.type.toLowerCase().trim();
-        const name = bien.types_bien.name.toLowerCase();
-        if (name !== t && !name.includes(t) && !t.includes(name))
-          return false;
+      
+      if (filters.type) {
+        const t = normalize(filters.type);
+        const name = normalize(bien.types_bien?.name);
+        if (!name.includes(t) && !t.includes(name)) return false;
       }
-      if (filters.service && bien.services_bien?.name) {
-        const svc = filters.service.toLowerCase().trim();
-        const name = bien.services_bien.name.toLowerCase();
-        if (name !== svc && !name.includes(svc) && !svc.includes(name))
-          return false;
+      
+      if (filters.service) {
+        const svc = normalize(filters.service).replace("_", " ");
+        const name = normalize(bien.services_bien?.name);
+        if (!name.includes(svc) && !svc.includes(name)) return false;
       }
       const priceMin = filters.priceMin ? parseInt(filters.priceMin, 10) : null;
       const priceMax = filters.priceMax ? parseInt(filters.priceMax, 10) : null;

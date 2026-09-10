@@ -46,7 +46,7 @@ export default async function WhyChooseSection() {
   ];
 
   return (
-    <MotionSection as="section" className="bg-white py-16 sm:py-20">
+    <MotionSection as="section" className="bg-background py-16 sm:py-20">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* En-tête compact */}
         <div className="mb-8 max-w-2xl">
@@ -83,7 +83,7 @@ export default async function WhyChooseSection() {
           </div>
 
           {/* Carte atouts */}
-          <div className="col-span-2 row-span-2 flex flex-col rounded-3xl border border-stone-200 bg-[#FAF5EE] p-5 shadow-sm sm:p-6">
+          <div className="col-span-2 row-span-2 flex flex-col rounded-3xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
             <p className="text-sm leading-relaxed text-neutral-600">
               De la recherche à la signature, notre rigueur et notre
               connaissance du marché abidjanais au service de votre projet.
@@ -124,7 +124,7 @@ export default async function WhyChooseSection() {
                   "group flex flex-col justify-between rounded-3xl p-5 shadow-sm ring-1 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg",
                   s.accent
                     ? "bg-primary text-secondary ring-primary/20"
-                    : "bg-[#FAF5EE] text-secondary ring-black/5 hover:ring-primary/30",
+                    : "bg-white text-secondary ring-black/5 hover:ring-primary/30",
                 )}
               >
                 <Icon

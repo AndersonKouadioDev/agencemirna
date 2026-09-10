@@ -1,119 +1,130 @@
 "use client";
 
 import {
-  ChevronRightIcon,
   FacebookIcon,
   InstagramIcon,
-  LinkedinIcon,
+  TwitterIcon,
   YoutubeIcon,
+  Home,
+  Users,
+  Star,
+  Clock
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { Button } from "./ui/button";
 
-type FooterLink = { id: number; title: string; url: string };
-
-const SOCIALS = [
-  {
-    name: "Instagram",
-    icon: InstagramIcon,
-    url: "https://instagram.com/agencemirna",
-  },
-  {
-    name: "Facebook",
-    icon: FacebookIcon,
-    url: "https://facebook.com/agencemirna",
-  },
-  {
-    name: "LinkedIn",
-    icon: LinkedinIcon,
-    url: "https://linkedin.com/company/agencemirna",
-  },
-  {
-    name: "YouTube",
-    icon: YoutubeIcon,
-    url: "https://youtube.com/@agencemirna",
-  },
-];
-
-const footerLinks: FooterLink[][] = [
-  [
-    { id: 1, title: "À propos", url: "/about" },
-    { id: 2, title: "Contact", url: "/contact_us" },
-    { id: 3, title: "Nos propriétés", url: "/properties" },
-    { id: 4, title: "Nos services", url: "/services" },
-  ],
-  [
-    { id: 5, title: "Notre équipe", url: "/agents" },
-    { id: 6, title: "Promotions", url: "/promotions" },
-    { id: 7, title: "WhatsApp", url: "https://wa.me/2250143483131" },
-  ],
+const STATS = [
+  { icon: Home, value: "100+", label: "Biens" },
+  { icon: Users, value: "50K+", label: "Clients satisfaits" },
+  { icon: Star, value: "4.8", label: "Avis moyen" },
+  { icon: Clock, value: "24/7", label: "Support" },
 ];
 
 export function SiteFooter() {
   return (
-    <section
-      id="footer"
-      className="relative isolate bg-secondary py-14 text-white"
-    >
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        {/* Footer */}
-        <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between">
-          <div className="flex flex-col items-start justify-start gap-y-5">
-            <a href="/" className="flex items-center gap-3">
-              <Image
-                className="h-8 w-8"
-                alt="Logo"
-                src="/images/icon.png"
-                width={100}
-                height={100}
-              />
-              <h1 className="text-xl text-white">AGENCE MIRNA</h1>
-            </a>
-            <div className="flex items-center gap-2">
-              {SOCIALS.map((s) => {
-                const Icon = s.icon;
-                return (
-                  <Link
-                    key={s.name}
-                    href={s.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={s.name}
-                    className="text-white hover:text-primary group bg-black rounded-full p-2"
-                  >
-                    <Icon className="h-4 w-4 transition-all duration-300 ease-out group-hover:scale-125 group-hover:rotate-12" />
-                  </Link>
-                );
-              })}
-            </div>
-            <p className="max-w-xs text-sm leading-relaxed text-white/70">
-              © AGENCE MIRNA 2024. Tous droits réservés. | Développé par{" "}
-              <Link
-                target="_blank"
-                href="https://lunion-lab.com"
-                className="underline hover:text-violet-500"
-              >
-                LUINION-LAB
-              </Link>
+    <section className="bg-white pt-20 pb-10 border-t border-stone-100">
+      <div className="mx-auto max-w-[1400px] px-6 lg:px-8">
+        
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pb-16 border-b border-stone-100 mb-16">
+          {STATS.map((stat, idx) => {
+            const Icon = stat.icon;
+            return (
+              <div key={idx} className="flex items-center gap-4">
+                <Icon className="h-8 w-8 text-stone-400 shrink-0" strokeWidth={1.5} />
+                <div className="flex flex-col">
+                  <span className="font-bold text-2xl text-secondary">{stat.value}</span>
+                  <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">{stat.label}</span>
+                </div>
+              </div>
+            );
+          })}
+          {/* Socials on the right in mockup, we can put them anywhere, let's add them to the right of stats on desktop */}
+          <div className="col-span-2 md:col-span-4 lg:col-span-4 flex justify-between items-center mt-4 md:mt-0 lg:absolute lg:right-8 lg:mt-2">
+             <div className="hidden lg:flex items-center gap-4">
+               <span className="text-sm font-semibold text-stone-600">Suivez-nous</span>
+               <div className="flex gap-2">
+                 <Link href="#" className="h-8 w-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"><FacebookIcon className="h-4 w-4" /></Link>
+                 <Link href="#" className="h-8 w-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"><InstagramIcon className="h-4 w-4" /></Link>
+                 <Link href="#" className="h-8 w-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"><TwitterIcon className="h-4 w-4" /></Link>
+                 <Link href="#" className="h-8 w-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"><YoutubeIcon className="h-4 w-4" /></Link>
+               </div>
+             </div>
+          </div>
+        </div>
+
+        {/* Main Columns */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 lg:gap-8 mb-16">
+          {/* Logo & Intro */}
+          <div className="lg:col-span-1 flex flex-col items-start">
+            <Link href="/" className="flex items-center gap-3 mb-6">
+              <Image src="/images/icon.png" alt="Logo" width={32} height={32} />
+              <span className="font-bold text-xl text-secondary">Agence Mirna</span>
+            </Link>
+            <p className="text-sm text-stone-500 leading-relaxed">
+              Nous vous rapprochons des plus belles propriétés avec des expériences inoubliables.
             </p>
           </div>
-          <div>
-            <div className="grid grid-cols-2 gap-x-12 gap-y-2">
-              {footerLinks.map((column, columnIndex) => (
-                <ul key={columnIndex} className="flex flex-col gap-y-2">
-                  {column.map((link) => (
-                    <li
-                      key={link.id}
-                      className="group inline-flex cursor-pointer items-center justify-start gap-1 text-[15px]/snug font-medium text-white duration-200 hover:text-primary"
-                    >
-                      <a href={link.url}>{link.title}</a>
-                      <ChevronRightIcon className="h-4 w-4 translate-x-0 transform opacity-0 transition-all duration-300 ease-out group-hover:translate-x-1 group-hover:opacity-100" />
-                    </li>
-                  ))}
-                </ul>
-              ))}
+
+          {/* Company */}
+          <div className="flex flex-col">
+            <h4 className="font-bold text-secondary mb-6">L'Agence</h4>
+            <div className="flex flex-col gap-4 text-sm text-stone-500">
+              <Link href="/about" className="hover:text-primary transition-colors">À propos</Link>
+              <Link href="/agents" className="hover:text-primary transition-colors">Notre équipe</Link>
+              <Link href="/blog" className="hover:text-primary transition-colors">Presse</Link>
+              <Link href="/contact_us" className="hover:text-primary transition-colors">Contact</Link>
             </div>
           </div>
+
+          {/* Support */}
+          <div className="flex flex-col">
+            <h4 className="font-bold text-secondary mb-6">Support</h4>
+            <div className="flex flex-col gap-4 text-sm text-stone-500">
+              <Link href="/contact_us" className="hover:text-primary transition-colors">Centre d'aide</Link>
+              <Link href="#" className="hover:text-primary transition-colors">FAQ</Link>
+              <Link href="#" className="hover:text-primary transition-colors">Conditions générales</Link>
+              <Link href="#" className="hover:text-primary transition-colors">Confidentialité</Link>
+            </div>
+          </div>
+
+          {/* Top Destinations */}
+          <div className="flex flex-col">
+            <h4 className="font-bold text-secondary mb-6">Top Lieux</h4>
+            <div className="flex flex-col gap-4 text-sm text-stone-500">
+              <Link href="#" className="hover:text-primary transition-colors">Cocody, Abidjan</Link>
+              <Link href="#" className="hover:text-primary transition-colors">Marcory, Abidjan</Link>
+              <Link href="#" className="hover:text-primary transition-colors">Plateau, Abidjan</Link>
+              <Link href="#" className="hover:text-primary transition-colors">Assinie</Link>
+            </div>
+          </div>
+
+          {/* Newsletter */}
+          <div className="lg:col-span-1 flex flex-col">
+            <h4 className="font-bold text-secondary mb-6">Newsletter</h4>
+            <p className="text-sm text-stone-500 mb-4">
+              Abonnez-vous pour recevoir des offres exclusives et de l'inspiration.
+            </p>
+            <div className="flex bg-stone-50 rounded-md p-1 border border-stone-200">
+              <input 
+                type="email" 
+                placeholder="Votre email" 
+                className="bg-transparent border-none outline-none text-sm w-full px-3 text-stone-600 placeholder:text-stone-400"
+              />
+              <Button size="sm" className="bg-[#1B3C35] hover:bg-[#152e29] text-white">
+                S'abonner
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom */}
+        <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-stone-100 text-xs text-stone-400">
+          <p>© 2026 Agence Mirna. Tous droits réservés.</p>
+          <p className="mt-2 md:mt-0">
+            Développé par <a href="https://lunion-lab.com" target="_blank" className="hover:text-primary">LUNION-LAB</a>
+          </p>
         </div>
       </div>
     </section>
