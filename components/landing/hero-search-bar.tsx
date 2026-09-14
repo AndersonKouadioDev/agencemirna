@@ -481,8 +481,13 @@ export default function HeroSearchBar({
                                         {selectionne ? (
                                           <Check className="h-3.5 w-3.5 text-white shrink-0" />
                                         ) : (
-                                          <span className="text-xs text-stone-400 shrink-0">
-                                            {q.total > 0 ? q.total : "—"}
+                                          <span
+                                            className={cn(
+                                              "text-xs shrink-0",
+                                              vide ? "text-stone-300" : "text-stone-400",
+                                            )}
+                                          >
+                                            {q.total > 0 ? q.total : "aucun bien"}
                                           </span>
                                         )}
                                       </button>
