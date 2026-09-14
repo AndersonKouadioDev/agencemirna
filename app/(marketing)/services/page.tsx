@@ -3,9 +3,12 @@ import Image from "next/image";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { Card } from "@heroui/react";
 import { Button } from "@/components/ui/button";
-import { getActiveServices } from "@/src/actions/public";
-import { getSiteContact } from "@/src/lib/site-contact";
+import { STATIC_SERVICES } from "@/src/data/services";
+import { WHATSAPP_URL_PAR_DEFAUT } from "@/src/data/contact";
 import { ServiceIcon } from "./service-icon";
+
+// Page éditoriale : son contenu ne vient d'aucune donnée d'administration.
+export const dynamic = "force-static";
 
 export const metadata = {
   title: "Nos services : Agence Mirna",
@@ -13,14 +16,14 @@ export const metadata = {
     "Vente, gestion immobilière, location meublée, décoration, construction, promotion : tous nos services à Abidjan.",
 };
 
-export default async function ServicesHubPage() {
-  const services = await getActiveServices();
+export default function ServicesHubPage() {
+  const services = STATIC_SERVICES;
   // Le numéro saisi dans l'admin (site_settings) prime sur la variable
   // d'environnement, que le back-office ne pouvait pas supplanter : le bouton
   // WhatsApp de ce hub pointait donc vers un numéro figé au déploiement.
-  const contact = await getSiteContact();
+
   const whatsappHref =
-    contact.whatsappMessageUrl || process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "#";
+    process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || WHATSAPP_URL_PAR_DEFAUT;
 
   return (
     <main className="bg-[#FAF5EE]">
@@ -127,7 +130,7 @@ function ServiceCard({
   service,
   featured,
 }: {
-  service: Awaited<ReturnType<typeof getActiveServices>>[number];
+  service: (typeof STATIC_SERVICES)[number];
   featured?: boolean;
 }) {
   return (

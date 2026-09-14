@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "../supabase/server";
+import { STATIC_SERVICES, type PublicService } from "@/src/data/services";
 
 /**
  * POURQUOI un `.eq("is_active", true)` explicite sur chaque lecture publique.
@@ -268,73 +269,9 @@ export async function getBienReferenceData(): Promise<BienReferenceData> {
  * les dupliquer ici laissait deux sources de vérité qui divergeaient déjà
  * (le CTA « Voir nos meublés » ne correspondait plus à celui de la page).
  */
-export type PublicService = {
-  id: string;
-  slug: string;
-  name: string;
-  short_description: string | null;
-  icon: string | null;
-  image: string | null;
-  ordre: number;
-};
-
-const STATIC_SERVICES: PublicService[] = [
-  {
-    id: "vente",
-    slug: "vente",
-    name: "Vente de biens immobiliers",
-    short_description: "Achat et vente de villas, terrains et appartements haut de gamme.",
-    icon: "Key",
-    image: null,
-    ordre: 1,
-  },
-  {
-    id: "location",
-    slug: "location-meublee",
-    name: "Location meublée",
-    short_description: "Des appartements et villas meublés prêts à vivre pour de courtes ou longues durées.",
-    icon: "Sofa",
-    image: null,
-    ordre: 2,
-  },
-  {
-    id: "gestion",
-    slug: "gestion-immobiliere",
-    name: "Gestion locative",
-    short_description: "Confiez-nous la gestion de votre patrimoine immobilier en toute sérénité.",
-    icon: "Building",
-    image: null,
-    ordre: 3,
-  },
-  {
-    id: "construction",
-    slug: "construction",
-    name: "Construction",
-    short_description: "Réalisation de vos projets de construction de la conception à la remise des clés.",
-    icon: "HardHat",
-    image: null,
-    ordre: 4,
-  },
-  {
-    id: "decoration",
-    slug: "decoration-amenagement",
-    name: "Décoration d'intérieur",
-    short_description: "Aménagement et décoration sur-mesure pour sublimer vos espaces.",
-    icon: "Paintbrush",
-    image: null,
-    ordre: 5,
-  },
-  {
-    id: "promotion",
-    slug: "promotion-immobiliere",
-    name: "Promotion immobilière",
-    short_description: "Développement de projets immobiliers résidentiels et commerciaux.",
-    icon: "Briefcase",
-    image: null,
-    ordre: 6,
-  }
-];
-
+/** @deprecated Importer STATIC_SERVICES depuis `@/src/data/services` :
+ *  ces données sont statiques, les enrober dans une action serveur oblige
+ *  inutilement les pages à devenir asynchrones. */
 export async function getActiveServices(): Promise<PublicService[]> {
   return STATIC_SERVICES;
 }

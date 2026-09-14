@@ -3,8 +3,8 @@ import Image from "next/image";
 import { ArrowRight, Building2, Check, MessageCircle } from "lucide-react";
 import { Breadcrumbs, Card } from "@heroui/react";
 import { Button } from "@/components/ui/button";
-import { getActiveServices } from "@/src/actions/public";
-import { getSiteContact } from "@/src/lib/site-contact";
+import { STATIC_SERVICES } from "@/src/data/services";
+import { WHATSAPP_URL_PAR_DEFAUT } from "@/src/data/contact";
 import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
 import { ServiceIcon } from "../service-icon";
 
@@ -29,7 +29,7 @@ export type ServicePageLayoutProps = {
   bienService?: string;
 };
 
-export async function ServicePageLayout({
+export function ServicePageLayout({
   slug,
   name,
   shortDescription,
@@ -40,18 +40,17 @@ export async function ServicePageLayout({
   cta,
   bienService,
 }: ServicePageLayoutProps) {
-  const contact = await getSiteContact();
-  // Le réglage admin (site_settings) prime sur la variable d'environnement,
-  // qui n'était jusqu'ici jamais supplantée et ignorait donc le back-office.
+  // Page éditoriale figée : elle ne lit pas `site_settings`, sinon elle
+  // deviendrait dynamique. Le numéro vient de la constante du projet, la
+  // variable d'environnement ne servant qu'à porter un message d'accroche.
   const whatsappHref =
-    contact.whatsappMessageUrl || process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "#";
+    process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || WHATSAPP_URL_PAR_DEFAUT;
 
   const biensHref = bienService
     ? `/properties?service=${encodeURIComponent(bienService)}`
     : "/properties";
 
-  const allServices = await getActiveServices();
-  const otherServices = allServices.filter((s) => s.slug !== slug).slice(0, 3);
+  const otherServices = STATIC_SERVICES.filter((s) => s.slug !== slug).slice(0, 3);
 
   return (
     <main className="bg-[#FAF5EE]">

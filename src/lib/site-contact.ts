@@ -8,26 +8,12 @@ import "server-only";
 
 import { cache } from "react";
 import { createClient } from "@/src/supabase/server";
+import { DEFAULT_SITE_CONTACT } from "@/src/data/contact";
 
 /**
  * Coordonnées de repli, utilisées tant que `site_settings` n'a pas été
  * renseigné depuis l'admin (la migration 0014 insère une ligne de démo).
  */
-export const DEFAULT_SITE_CONTACT = {
-  phone: "+225 01 43 483 131",
-  phones: [
-    "(+225) 27 21 536 231",
-    "(+225) 01 43 483 131",
-    "(+225) 07 03 06 42 06",
-  ],
-  // 225 + les 10 chiffres du numéro affiché. L'ancienne valeur en comptait
-  // 11, ce qui rendait tous les liens wa.me du site inopérants.
-  whatsapp: "2250143483131",
-  email: "info@agencemirna.com",
-  facebook: "https://facebook.com/agencemirna",
-  instagram: "https://instagram.com/agencemirna",
-  linkedin: "https://linkedin.com/company/agencemirna",
-};
 
 export type SiteContact = {
   /** Numéro principal, tel qu'il doit être affiché. */

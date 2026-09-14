@@ -1,5 +1,9 @@
 import { ServicePageLayout } from "../_components/service-page";
 
+// Page éditoriale sans aucune donnée d'administration : pré-générée au
+// build plutôt que rendue à chaque requête.
+export const dynamic = "force-static";
+
 export const metadata = {
   title: "Vente de biens immobiliers à Abidjan : Agence Mirna",
   description:

@@ -21,13 +21,13 @@ const features = [
     icon: Home,
     title: "Vente de biens",
     desc: "Biens d'exception sélectionnés.",
-    href: "/properties?service=Vente",
+    href: "/services/vente",
   },
   {
     icon: BedDouble,
     title: "Appartements meublés",
     desc: "Confort et vue sur mer.",
-    href: "/properties?service=Location%20meubl%C3%A9e",
+    href: "/services/location-meublee",
   },
   {
     icon: Building2,

@@ -5,6 +5,7 @@ import StatesSection from "@/components/about/states-section";
 import ValueSection from "@/components/about/value-section";
 import ClientSection from "@/components/client-section";
 import AboutSection from "@/components/about/about-section";
+import AboutServicesSection from "@/components/about/services-section";
 import BlogSection from "@/components/landing/blog-section";
 import CommoditiesSection from "@/components/landing/commodities-section";
 import FAQSection from "@/components/landing/faq-section";
@@ -21,6 +22,7 @@ import FAQSection from "@/components/landing/faq-section";
  *  4. Partenaires : confiance
  *  5. Description détaillée
  *  6. Valeurs
+ *  7. Nos métiers : les six services, vers leurs pages dédiées
  *  7. Commodités : équipements proposés (déplacé depuis home)
  *  8. Actualités & conseils : blog (déplacé depuis home)
  *  9. FAQ : questions fréquentes (déplacé depuis home)
@@ -35,6 +37,7 @@ export default async function Page() {
       <ClientSection />
       <DescriptionSection />
       <ValueSection />
+      <AboutServicesSection />
       <CommoditiesSection />
       <BlogSection />
       <FAQSection />
