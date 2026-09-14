@@ -7,8 +7,9 @@
  *   - RESEND_API_KEY            : clé API Resend (obligatoire pour activer)
  *   - NOTIFY_EMAIL_FROM         : adresse expéditrice (ex: 'Mirna <noreply@agencemirna.com>')
  *                                 par défaut 'Mirna <onboarding@resend.dev>' (compte test Resend)
- *   - NOTIFY_EMAIL_TO           : adresse destinataire de l'agence
- *                                 par défaut 'info@agencemirna.com'
+ *   - NOTIFY_EMAIL_TO           : surcharge d'exploitation du destinataire.
+ *                                 À défaut, on prend l'adresse saisie dans
+ *                                 /admin/parametres (site_settings.email).
  *   - NEXT_PUBLIC_SITE_URL      : base URL pour les liens admin (ex: https://www.agencemirna.com)
  *
  * Comportement :
@@ -17,6 +18,8 @@
  *   - Si erreur Resend : on log, on renvoie { ok: false } mais le lead est
  *     déjà créé en DB (l'email est best-effort).
  */
+
+import { getSiteContact } from "./site-contact";
 
 export type NotifyResult =
   | { ok: true; skipped?: boolean; messageId?: string }
@@ -94,6 +97,15 @@ export async function notifyNewLead(lead: {
   metadata?: Record<string, unknown> | null;
   bien_name?: string | null;
 }): Promise<NotifyResult> {
+  // Le destinataire suit l'adresse saisie en back-office : sans ça, changer
+  // l'email dans /admin/parametres n'avait aucun effet sur les notifications,
+  // qui partaient toujours vers l'adresse codée en dur de sendEmail().
+  // NOTIFY_EMAIL_TO reste prioritaire comme surcharge d'exploitation, mais une
+  // variable déclarée à vide (accident courant sur un hébergeur) doit valoir
+  // « non configurée », sinon `??` la retiendrait et l'email partirait vers "".
+  const surcharge = process.env.NOTIFY_EMAIL_TO?.trim();
+  const to = surcharge || (await getSiteContact()).email;
+
   const sourceLabel = SOURCE_LABELS[lead.source] ?? lead.source;
   const siteUrl =
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.agencemirna.com";
@@ -167,5 +179,5 @@ export async function notifyNewLead(lead: {
     .filter(Boolean)
     .join("\n");
 
-  return sendEmail({ subject, html, text });
+  return sendEmail({ subject, html, text, to });
 }

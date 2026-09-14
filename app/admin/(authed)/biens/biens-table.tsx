@@ -247,16 +247,29 @@ function ActionsCell({
               Éditer
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link
-              href={`/properties/${bien.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
+          {/* La fiche publique filtre `is_active` : proposer le lien pour un
+              bien dépublié menait à une 404 nue, qui se lit comme un bien
+              cassé plutôt que comme un bien masqué. */}
+          {bien.is_active ? (
+            <DropdownMenuItem asChild>
+              <Link
+                href={`/properties/${bien.id}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Voir sur le site
+              </Link>
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem
+              disabled
+              title="Ce bien est dépublié : réactivez-le pour le voir en ligne."
             >
               <ExternalLink className="h-4 w-4" />
-              Voir sur le site
-            </Link>
-          </DropdownMenuItem>
+              Voir sur le site (dépublié)
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="danger" onClick={onDelete}>
             <Trash2 className="h-4 w-4" />

@@ -52,6 +52,12 @@ export type ActionResult<T = void> =
 // ============================================================================
 
 export async function listAgentsAdmin(): Promise<AgentAdminRow[]> {
+  // Ce module est « use server » : chaque export devient un endpoint POST
+  // atteignable sans session. La RLS filtre déjà, mais la garde doit être ici
+  // aussi, comme sur les mutations plus bas.
+  const admin = await getAdminUser();
+  if (!admin) return [];
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("agents")
@@ -74,6 +80,12 @@ export async function listAgentsAdmin(): Promise<AgentAdminRow[]> {
 export async function getAgentAdmin(
   id: string,
 ): Promise<AgentAdminRow | null> {
+  // Ce module est « use server » : chaque export devient un endpoint POST
+  // atteignable sans session. La RLS filtre déjà, mais la garde doit être ici
+  // aussi, comme sur les mutations plus bas.
+  const admin = await getAdminUser();
+  if (!admin) return null;
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("agents")

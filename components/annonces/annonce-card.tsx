@@ -76,6 +76,14 @@ export default function AnnonceCard({ annonce }: { annonce: PublicAnnonce }) {
             </p>
           )}
 
+          {/* Le texte saisi en back-office n'était rendu nulle part : l'agence
+              le rédigeait, l'enregistrait et le relisait dans le vide. */}
+          {annonce.description && (
+            <p className="text-stone-600 text-sm leading-relaxed mb-4 line-clamp-3">
+              {annonce.description}
+            </p>
+          )}
+
           {bien?.ville_commune && (
             <div className="flex items-center gap-1.5 text-stone-400 text-xs font-semibold uppercase tracking-wider mb-4">
               <MapPinIcon className="h-3.5 w-3.5" />

@@ -18,11 +18,17 @@ export type ActionResult<T = void> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 
+/**
+ * La colonne `icon` existe en base (migration 0018) mais reste hors de ce type
+ * et du payload : aucun formulaire ne la saisissait et aucun lecteur ne
+ * l'affichait. Les icônes du méga-menu et de la section « catégories » sont
+ * déduites du libellé (config/site.ts, iconeType / iconeService). La relire et
+ * l'écrire ici entretenait l'illusion d'un réglage administrable.
+ */
 export type TaxonomyRow = {
   id: number;
   name: string;
   image: string | null;
-  icon: string | null;
   ordre: number;
 };
 export type TaxonomyTable = "types_bien" | "services_bien" | "categories_bien";
@@ -41,7 +47,7 @@ const revalider = () => {
 };
 
 /**
- * Les colonnes image / icon / ordre viennent de la migration 0018. Tant
+ * Les colonnes image / ordre viennent de la migration 0018. Tant
  * qu'elle n'est pas appliquée, PostgREST rejette la requête entière et
  * renverrait [] sans erreur visible — ce qui viderait les listes déroulantes
  * de création d'un bien. On retente donc avec le jeu minimal.
@@ -56,7 +62,7 @@ export async function listTaxonomy(table: TaxonomyTable): Promise<TaxonomyRow[]>
 
   const complet = await supabase
     .from(table)
-    .select("id, name, image, icon, ordre")
+    .select("id, name, image, ordre")
     .order("ordre", { ascending: true })
     .order("name", { ascending: true });
 
@@ -71,14 +77,13 @@ export async function listTaxonomy(table: TaxonomyTable): Promise<TaxonomyRow[]>
     .order("name", { ascending: true });
   return ((data ?? []) as Array<{ id: number; name: string }>)
     .filter((r) => r.name)
-    .map((r) => ({ ...r, image: null, icon: null, ordre: 0 }));
+    .map((r) => ({ ...r, image: null, ordre: 0 }));
 }
 
 export type TaxonomyFormData = {
   id?: number;
   name: string;
   image?: string | null;
-  icon?: string | null;
   ordre?: number | null;
 };
 
@@ -125,13 +130,12 @@ export async function upsertTaxonomyEntry(
   }
 
   const payload: Record<string, unknown> = { name };
-  // `image`, `icon` et `ordre` sont optionnels dans TaxonomyFormData : les
+  // `image` et `ordre` sont optionnels dans TaxonomyFormData : les
   // écrire inconditionnellement remettait la colonne à null à chaque
   // enregistrement d'un appelant qui ne les fournit pas. On ne touche une
   // colonne que lorsque sa valeur est explicitement transmise — `null` reste
   // une valeur, c'est ainsi que le formulaire retire une image.
   if (input.image !== undefined) payload.image = input.image?.trim() || null;
-  if (input.icon !== undefined) payload.icon = input.icon?.trim() || null;
   if (input.ordre != null) payload.ordre = input.ordre;
 
   if (input.id) {

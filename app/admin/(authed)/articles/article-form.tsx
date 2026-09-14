@@ -32,6 +32,9 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
     toDateInput(row?.published_at),
   );
   const [isActive, setIsActive] = React.useState(row?.is_active ?? true);
+  // Rang de tri : dominant sur le blog et la page À propos, il n'était
+  // exposé nulle part alors que la création l'auto-incrémentait.
+  const [ordre, setOrdre] = React.useState(row?.ordre?.toString() ?? "");
 
   const [imageUrls, setImageUrls] = React.useState<string[]>(
     row?.image && row.image.startsWith("/images/") ? [] : row?.image ? [row.image] : [],
@@ -65,6 +68,8 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
       return;
     }
 
+    const ordreSaisi = Number.parseInt(ordre, 10);
+
     const result = await upsertArticle({
       id: row?.id,
       slug,
@@ -78,7 +83,7 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
         ? new Date(publishedAt).toISOString()
         : null,
       is_active: isActive,
-      ordre: row?.ordre,
+      ordre: Number.isNaN(ordreSaisi) ? undefined : ordreSaisi,
     });
 
     if (!result.ok) {
@@ -140,8 +145,8 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
                 placeholder="Auto-généré depuis le titre si vide"
               />
               <p className="mt-1.5 text-xs text-neutral-500">
-                Utilisé pour la future URL /actualites/[slug]. Laissez vide
-                pour génération automatique.
+                Utilisé pour l&apos;URL publique /actualites/[slug]. Laissez
+                vide pour génération automatique.
               </p>
             </Field>
 
@@ -162,8 +167,15 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
                 rows={12}
               />
               <p className="mt-1.5 text-xs text-neutral-500">
-                Pour le moment uniquement stocké en base. L&apos;affichage
-                complet de l&apos;article arrivera dans une page dédiée.
+                Affiché sur /actualites/[slug]. Mise en forme reconnue :
+                <code className="mx-1">## Titre</code>,
+                <code className="mx-1">**gras**</code>,
+                <code className="mx-1">*italique*</code>, listes
+                <code className="mx-1">- item</code> ou
+                <code className="mx-1">1. item</code>, citations
+                <code className="mx-1">&gt; texte</code> et liens
+                <code className="mx-1">[libellé](https://…)</code>. Les
+                retours à la ligne simples sont conservés.
               </p>
             </Field>
           </section>
@@ -216,6 +228,22 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
                 value={publishedAt}
                 onChange={(e) => setPublishedAt(e.target.value)}
               />
+            </Field>
+
+            <Field label="Ordre d'affichage">
+              <Input
+                type="number"
+                value={ordre}
+                onChange={(e) => setOrdre(e.target.value)}
+                placeholder="0"
+              />
+              <p className="mt-1.5 text-xs text-neutral-500">
+                Les plus petits nombres passent en premier sur le blog et la
+                page À propos ; à rang égal, l&apos;article le plus récent sort
+                devant. Saisissez 0 pour vous en remettre à la date seule.
+                Laissé vide, le rang en place est conservé — un nouvel article
+                démarre à 0, donc en tête.
+              </p>
             </Field>
           </section>
 

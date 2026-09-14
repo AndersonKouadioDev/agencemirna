@@ -57,6 +57,14 @@ type FormState = {
   area: string;
 };
 
+/**
+ * Valeur sentinelle des trois <Select> de catégorisation : Radix interdit une
+ * `SelectItem` de valeur vide, et sans option de remise à zéro un type choisi
+ * par erreur ne pouvait plus être retiré. Retraduite en chaîne vide au submit,
+ * puis en `null` côté action.
+ */
+const AUCUN = "none";
+
 export function BienForm({ bien, images = [], reference }: BienFormProps) {
   const router = useRouter();
   const isEdit = !!bien;
@@ -100,13 +108,26 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  // pathPrefix : pour l'édition, utilise le bien.id (chemin stable).
-  // Pour la création, un random temporaire (les fichiers orphelins seront
-  // nettoyés au save côté upsertBien via diff).
-  // Identifiant de brouillon figé au premier rendu : le calculer dans un
+  // Nombre de photos en cours d'envoi, remonté par <ImageUploader>. Le
+  // composant n'appelle `onChange` qu'une fois l'envoi terminé : enregistrer
+  // pendant ce temps soumettait la liste INCHANGÉE, donc aucune des photos
+  // déposées, et laissait les fichiers déjà montés orphelins dans le bucket.
+  const [photosEnEnvoi, setPhotosEnEnvoi] = React.useState(0);
+
+  // Identifiant d'un bien créé dont la galerie a échoué : le bien existe déjà,
+  // un second envoi doit le modifier et non en créer un doublon.
+  const [idCree, setIdCree] = React.useState<string | null>(null);
+
+  // pathPrefix : pour l'édition, le bien.id (chemin stable) ; pour la
+  // création, un brouillon figé au premier rendu — le calculer dans un
   // useMemo appelait une fonction impure, et un re-rendu pouvait déplacer le
   // dossier de destination des images en cours d'envoi. Non persisté : le
   // chemin réel est stocké dans `storage_path`, rien n'est à renommer ensuite.
+  //
+  // Les photos retirées avant enregistrement sont effacées du bucket par
+  // <ImageUploader> : le diff de `upsertBien` ne peut pas les voir, elles
+  // n'ont jamais eu de ligne dans `bien_images`. Seul un formulaire abandonné
+  // sans retirer ses photos laisse encore des fichiers sous `biens/draft-*`.
   const [brouillonId] = React.useState(() =>
     typeof crypto !== "undefined" && crypto.randomUUID
       ? crypto.randomUUID().slice(0, 8)
@@ -153,11 +174,21 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // La touche Entrée soumet le formulaire même bouton désactivé : la garde
+    // doit vivre ici aussi, sinon les photos en vol seraient perdues.
+    if (photosEnEnvoi > 0) {
+      setError(
+        "Des photos sont encore en cours d'envoi. Patientez la fin de l'envoi avant d'enregistrer.",
+      );
+      return;
+    }
+
     setError(null);
     setSubmitting(true);
 
     const result = await upsertBien({
-      id: bien?.id,
+      id: bien?.id ?? idCree ?? undefined,
       name: form.name,
       short_description: form.short_description || null,
       description: form.description || null,
@@ -191,6 +222,15 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
       return;
     }
 
+    // Le bien est enregistré mais une écriture sur `bien_images` a échoué :
+    // rediriger sur « Bien créé » annoncerait une galerie qui n'existe pas.
+    if (result.data.erreurPhotos) {
+      setIdCree(result.data.id);
+      setError(result.data.erreurPhotos);
+      setSubmitting(false);
+      return;
+    }
+
     // Redirection avec flash
     router.push(`/admin/biens?flash=${isEdit ? "updated" : "created"}`);
   }
@@ -216,18 +256,20 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
           </h1>
         </div>
         <div className="flex gap-2">
-          <Button type="submit" disabled={submitting}>
-            {submitting ? (
+          <Button type="submit" disabled={submitting || photosEnEnvoi > 0}>
+            {submitting || photosEnEnvoi > 0 ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Save className="h-4 w-4" />
             )}
             <span className="ml-1.5">
-              {submitting
-                ? "Enregistrement…"
-                : isEdit
-                  ? "Enregistrer"
-                  : "Créer le bien"}
+              {photosEnEnvoi > 0
+                ? "Envoi des photos…"
+                : submitting
+                  ? "Enregistrement…"
+                  : isEdit
+                    ? "Enregistrer"
+                    : "Créer le bien"}
             </span>
           </Button>
         </div>
@@ -281,67 +323,78 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
             <ImageUploader
               value={imageUrls}
               onChange={setImageUrls}
+              onUploadingChange={setPhotosEnEnvoi}
               pathPrefix={pathPrefix}
               maxFiles={20}
+              disabled={submitting}
             />
+            {photosEnEnvoi > 0 && (
+              <p className="text-xs text-primary font-medium">
+                Envoi en cours : l&apos;enregistrement est bloqué tant que les
+                photos ne sont pas toutes montées.
+              </p>
+            )}
           </Section>
 
           {/* Section : Localisation */}
           <Section title="Localisation">
             <Field label="Adresse">
-              <AddressAutocomplete
-                value={form.address}
-                onChange={(val) => update("address", val)}
-                placeholder="Recherchez une adresse..."
-                onPlaceSelected={(place) => {
-                  if (place.geometry?.location) {
-                    update("latitude", place.geometry.location.lat().toString());
-                    update("longitude", place.geometry.location.lng().toString());
-                  }
-                  if (place.url) {
-                    update("localisation", place.url);
-                  }
+              {(id) => (
+                <AddressAutocomplete
+                  id={id}
+                  value={form.address}
+                  onChange={(val) => update("address", val)}
+                  placeholder="Recherchez une adresse..."
+                  onPlaceSelected={(place) => {
+                    if (place.geometry?.location) {
+                      update("latitude", place.geometry.location.lat().toString());
+                      update("longitude", place.geometry.location.lng().toString());
+                    }
+                    if (place.url) {
+                      update("localisation", place.url);
+                    }
                   
-                  // Extract city and country
-                  if (place.address_components) {
-                    let city = "";
-                    let country = "";
+                    // Extract city and country
+                    if (place.address_components) {
+                      let city = "";
+                      let country = "";
                     
-                    for (const component of place.address_components) {
-                      const types = component.types;
-                      if (types.includes("locality")) {
-                        city = component.long_name;
-                      } else if (types.includes("administrative_area_level_2") && !city) {
-                        city = component.long_name;
-                      } else if (types.includes("administrative_area_level_1") && !city) {
-                        city = component.long_name;
-                      }
+                      for (const component of place.address_components) {
+                        const types = component.types;
+                        if (types.includes("locality")) {
+                          city = component.long_name;
+                        } else if (types.includes("administrative_area_level_2") && !city) {
+                          city = component.long_name;
+                        } else if (types.includes("administrative_area_level_1") && !city) {
+                          city = component.long_name;
+                        }
                       
-                      if (types.includes("country")) {
-                        country = component.long_name;
+                        if (types.includes("country")) {
+                          country = component.long_name;
+                        }
                       }
-                    }
                     
-                    // Google renvoie une ville en texte libre. On tente de la
-                    // rapprocher d'une commune connue pour pré-sélectionner le
-                    // select ; sans cela on pouvait enregistrer commune_id =
-                    // Cocody avec ville_commune = « Abidjan », ce qui contredit
-                    // le filtrage de la vitrine.
-                    if (city) {
-                      const n = (v: string) =>
-                        v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
-                      const match = reference.communes.find(
-                        (c) => n(c.nom) === n(city),
-                      );
-                      if (match) handleCommuneChange(match.id);
-                      else update("ville_commune", city);
+                      // Google renvoie une ville en texte libre. On tente de la
+                      // rapprocher d'une commune connue pour pré-sélectionner le
+                      // select ; sans cela on pouvait enregistrer commune_id =
+                      // Cocody avec ville_commune = « Abidjan », ce qui contredit
+                      // le filtrage de la vitrine.
+                      if (city) {
+                        const n = (v: string) =>
+                          v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+                        const match = reference.communes.find(
+                          (c) => n(c.nom) === n(city),
+                        );
+                        if (match) handleCommuneChange(match.id);
+                        else update("ville_commune", city);
+                      }
+                      if (country) update("pays", country);
                     }
-                    if (country) update("pays", country);
-                  }
-                }}
-              />
-              <p className="text-xs text-stone-500 mt-1">L&apos;auto-complétion remplit automatiquement la ville, le pays, le lien et les coordonnées GPS.</p>
+                  }}
+                />
+              )}
             </Field>
+            <p className="text-xs text-stone-500 -mt-1">L&apos;auto-complétion remplit automatiquement la ville, le pays, le lien et les coordonnées GPS.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Commune">
                 {reference.communes.length > 0 ? (
@@ -406,7 +459,7 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
                 />
               </Field>
             </div>
-            <Field label="Adresse complète (affichée sur la fiche)">
+            <Field label="Adresse complète (remplace l'adresse sur la fiche)">
               <Input
                 value={form.adresse_complete}
                 onChange={(e) => update("adresse_complete", e.target.value)}
@@ -422,6 +475,9 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
               />
               <p className="text-xs text-stone-500 mt-1">
                 Affiche la section « Visite en vidéo » sur la fiche du bien.
+                Seuls les liens YouTube sont lus (watch?v=, youtu.be, /shorts/,
+                /embed/, /live/) : un lien d&apos;un autre hébergeur laisse la
+                section masquée.
               </p>
             </Field>
             <Field label="Lien Google Maps">
@@ -497,57 +553,72 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
           {/* Section : Catégorisation */}
           <Section title="Catégorisation">
             <Field label="Type de bien">
-              <Select
-                value={form.type_bien_id}
-                onValueChange={(v) => update("type_bien_id", v)}
-              >
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Choisir un type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {reference.types.map((t) => (
-                    <SelectItem key={t.id} value={t.id.toString()}>
-                      {t.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {(id) => (
+                <Select
+                  value={form.type_bien_id || AUCUN}
+                  onValueChange={(v) =>
+                    update("type_bien_id", v === AUCUN ? "" : v)
+                  }
+                >
+                  <SelectTrigger id={id} className="bg-white">
+                    <SelectValue placeholder="Choisir un type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={AUCUN}>— Aucun type —</SelectItem>
+                    {reference.types.map((t) => (
+                      <SelectItem key={t.id} value={t.id.toString()}>
+                        {t.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </Field>
 
             <Field label="Service (transaction)">
-              <Select
-                value={form.service_bien_id}
-                onValueChange={(v) => update("service_bien_id", v)}
-              >
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Vente ou Location" />
-                </SelectTrigger>
-                <SelectContent>
-                  {reference.services.map((s) => (
-                    <SelectItem key={s.id} value={s.id.toString()}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {(id) => (
+                <Select
+                  value={form.service_bien_id || AUCUN}
+                  onValueChange={(v) =>
+                    update("service_bien_id", v === AUCUN ? "" : v)
+                  }
+                >
+                  <SelectTrigger id={id} className="bg-white">
+                    <SelectValue placeholder="Vente ou Location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={AUCUN}>— Aucun service —</SelectItem>
+                    {reference.services.map((s) => (
+                      <SelectItem key={s.id} value={s.id.toString()}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </Field>
 
             <Field label="Ameublement">
-              <Select
-                value={form.categorie_bien_id}
-                onValueChange={(v) => update("categorie_bien_id", v)}
-              >
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Meublé ou Non meublé" />
-                </SelectTrigger>
-                <SelectContent>
-                  {reference.categories.map((c) => (
-                    <SelectItem key={c.id} value={c.id.toString()}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {(id) => (
+                <Select
+                  value={form.categorie_bien_id || AUCUN}
+                  onValueChange={(v) =>
+                    update("categorie_bien_id", v === AUCUN ? "" : v)
+                  }
+                >
+                  <SelectTrigger id={id} className="bg-white">
+                    <SelectValue placeholder="Meublé ou Non meublé" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={AUCUN}>— Aucun ameublement —</SelectItem>
+                    {reference.categories.map((c) => (
+                      <SelectItem key={c.id} value={c.id.toString()}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </Field>
           </Section>
 
@@ -637,18 +708,20 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
         >
           <Link href="/admin/biens">Annuler</Link>
         </Button>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? (
+        <Button type="submit" disabled={submitting || photosEnEnvoi > 0}>
+          {submitting || photosEnEnvoi > 0 ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Save className="h-4 w-4" />
           )}
           <span className="ml-1.5">
-            {submitting
-              ? "Enregistrement…"
-              : isEdit
-                ? "Enregistrer les modifications"
-                : "Créer le bien"}
+            {photosEnEnvoi > 0
+              ? "Envoi des photos…"
+              : submitting
+                ? "Enregistrement…"
+                : isEdit
+                  ? "Enregistrer les modifications"
+                  : "Créer le bien"}
           </span>
         </Button>
       </div>
@@ -680,6 +753,13 @@ function Section({
   );
 }
 
+/**
+ * `htmlFor` pointait dans le vide : l'identifiant généré n'était transmis à
+ * aucun enfant, si bien que cliquer sur l'étiquette ne focalisait rien et
+ * qu'un lecteur d'écran annonçait des champs sans nom. On le pose sur le
+ * premier élément rendu — le champ de saisie —, ou on le laisse au parent via
+ * un enfant fonction quand la cible est imbriquée (SelectTrigger).
+ */
 function Field({
   label,
   required,
@@ -687,16 +767,32 @@ function Field({
 }: {
   label: string;
   required?: boolean;
-  children: React.ReactNode;
+  children: React.ReactNode | ((id: string) => React.ReactNode);
 }) {
   const id = React.useId();
+
+  let contenu: React.ReactNode;
+  if (typeof children === "function") {
+    contenu = children(id);
+  } else {
+    let pose = false;
+    contenu = React.Children.map(children, (child) => {
+      if (pose || !React.isValidElement(child)) return child;
+      pose = true;
+      const element = child as React.ReactElement<{ id?: string }>;
+      return element.props.id
+        ? element
+        : React.cloneElement(element, { id });
+    });
+  }
+
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-xs font-medium text-neutral-700">
         {label}
         {required && <span className="text-red-500 ml-0.5">*</span>}
       </Label>
-      <div>{children}</div>
+      <div>{contenu}</div>
     </div>
   );
 }

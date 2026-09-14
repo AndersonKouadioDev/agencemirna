@@ -151,7 +151,9 @@ function AgentCard({
           )}
           {agent.phone && (
             <a
-              href={`tel:${agent.phone}`}
+              // Même normalisation que site-contact.ts : le numéro est saisi
+              // en admin avec espaces et parenthèses.
+              href={`tel:${agent.phone.replace(/[^\d+]/g, "")}`}
               className="inline-flex items-center justify-center h-10 w-10 rounded-full border border-stone-300 hover:bg-stone-100 text-neutral-700 transition-colors"
               aria-label={`Appeler ${agent.full_name}`}
               title="Téléphone"

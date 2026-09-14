@@ -15,6 +15,7 @@ import {
   getArticleBySlug,
 } from "@/src/actions/public";
 import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
+import { ArticleMarkdown } from "./article-markdown";
 import { getSiteContact } from "@/src/lib/site-contact";
 
 function formatDate(iso: string): string {
@@ -130,9 +131,7 @@ export default async function ArticlePage({
       <section className="py-16 sm:py-20">
         <div className="mx-auto max-w-3xl px-6 lg:px-8">
           {article.content_md ? (
-            <div className="prose prose-lg prose-neutral max-w-none whitespace-pre-wrap text-neutral-800 leading-relaxed">
-              {article.content_md}
-            </div>
+            <ArticleMarkdown source={article.content_md} />
           ) : (
             <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center">
               <p className="text-neutral-600">

@@ -5,16 +5,22 @@ import { CheckCircle2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 /**
- * Bandeau propre aux communes. La page réutilisait celui des annonces, qui
- * annonce « Promotion enregistrée. » puis renvoie sur /admin/annonces au bout
- * de quatre secondes : l'admin était éjecté de sa liste de communes.
+ * Bandeau de confirmation de la page « Communes & quartiers ».
+ *
+ * Il sert les DEUX entités depuis la fusion des deux listes : les libellés
+ * sont donc neutres, faute de quoi enregistrer un quartier annonçait
+ * « Commune enregistrée ». Et le nettoyage de la query string vise
+ * /admin/geographie : /admin/communes ne contient plus qu'un redirect, si
+ * bien que fermer le bandeau coûtait un aller-retour serveur inutile.
  */
 const MESSAGES: Record<string, string> = {
-  created: "Commune créée.",
-  saved: "Commune enregistrée.",
-  updated: "Commune mise à jour.",
-  deleted: "Commune supprimée.",
+  created: "Enregistrement créé.",
+  saved: "Modification enregistrée.",
+  updated: "Modification enregistrée.",
+  deleted: "Suppression effectuée.",
 };
+
+const ROUTE = "/admin/geographie";
 
 export function FlashBanner({ type }: { type: string }) {
   const router = useRouter();
@@ -25,7 +31,7 @@ export function FlashBanner({ type }: { type: string }) {
     if (!message) return;
     const timer = setTimeout(() => {
       setVisible(false);
-      router.replace("/admin/communes", { scroll: false });
+      router.replace(ROUTE, { scroll: false });
     }, 4000);
     return () => clearTimeout(timer);
   }, [message, router]);
@@ -41,7 +47,7 @@ export function FlashBanner({ type }: { type: string }) {
       <button
         onClick={() => {
           setVisible(false);
-          router.replace("/admin/communes", { scroll: false });
+          router.replace(ROUTE, { scroll: false });
         }}
         className="rounded p-1 text-green-700 hover:bg-green-100"
         aria-label="Fermer"

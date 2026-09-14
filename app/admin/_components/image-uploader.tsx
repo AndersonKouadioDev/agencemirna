@@ -29,7 +29,7 @@ import {
   StarOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { uploadAdminImage } from "@/src/actions/admin/upload";
+import { deleteAdminImage, uploadAdminImage } from "@/src/actions/admin/upload";
 
 /**
  * <ImageUploader> : composant controlled multi-images.
@@ -62,6 +62,13 @@ export interface ImageUploaderProps {
   maxFiles?: number;
   /** Désactive interactions. */
   disabled?: boolean;
+  /**
+   * Nombre de fichiers encore en cours d'envoi, à chaque variation.
+   * `onChange` n'est appelé qu'une fois le lot complet monté : sans cette
+   * remontée, le formulaire parent laissait son bouton « Enregistrer » actif
+   * et soumettait la liste d'images INCHANGÉE, perdant tout le lot.
+   */
+  onUploadingChange?: (enCours: number) => void;
 }
 
 export function ImageUploader({
@@ -70,12 +77,34 @@ export function ImageUploader({
   pathPrefix,
   maxFiles = 20,
   disabled = false,
+  onUploadingChange,
 }: ImageUploaderProps) {
   const [uploading, setUploading] = React.useState<number>(0);
   const [errors, setErrors] = React.useState<string[]>([]);
 
   const remainingSlots = Math.max(0, maxFiles - value.length);
   const isFull = remainingSlots === 0;
+
+  // `value` est capturé à l'entrée de `handleFiles`, qui dure le temps de
+  // l'envoi : deux dépôts successifs repartaient tous deux de la même liste,
+  // et le second `onChange` écrasait le lot du premier.
+  const valueRef = React.useRef(value);
+  React.useEffect(() => {
+    valueRef.current = value;
+  }, [value]);
+
+  // Chemins Storage des fichiers montés depuis ce montage du composant. Ils
+  // n'ont encore aucune ligne en base : les retirer du formulaire les rendrait
+  // définitivement orphelins dans le bucket sans cet inventaire.
+  const cheminsEnvoyes = React.useRef(new Map<string, string>());
+
+  const onUploadingChangeRef = React.useRef(onUploadingChange);
+  React.useEffect(() => {
+    onUploadingChangeRef.current = onUploadingChange;
+  }, [onUploadingChange]);
+  React.useEffect(() => {
+    onUploadingChangeRef.current?.(uploading);
+  }, [uploading]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -88,7 +117,7 @@ export function ImageUploader({
 
   // Upload séquentiel pour ne pas saturer le réseau ni Supabase
   async function handleFiles(files: File[]) {
-    if (disabled || isFull) return;
+    if (disabled || isFull || uploading > 0) return;
     setErrors([]);
     const toUpload = files.slice(0, remainingSlots);
     setUploading(toUpload.length);
@@ -104,6 +133,7 @@ export function ImageUploader({
         const result = await uploadAdminImage(formData);
         if (result.ok) {
           newUrls.push(result.url);
+          cheminsEnvoyes.current.set(result.url, result.path);
         } else {
           newErrors.push(`${file.name} : ${result.error}`);
         }
@@ -116,7 +146,7 @@ export function ImageUploader({
     }
 
     if (newUrls.length > 0) {
-      onChange([...value, ...newUrls]);
+      onChange([...valueRef.current, ...newUrls]);
     }
     if (newErrors.length > 0) {
       setErrors(newErrors);
@@ -131,7 +161,9 @@ export function ImageUploader({
       "image/avif": [".avif"],
     },
     maxFiles: remainingSlots,
-    disabled: disabled || isFull,
+    // Désactivée pendant un envoi : un second dépôt lançait un `handleFiles`
+    // concurrent dont le résultat écrasait celui du premier.
+    disabled: disabled || isFull || uploading > 0,
     onDrop: handleFiles,
   });
 
@@ -145,7 +177,16 @@ export function ImageUploader({
   }
 
   function handleRemove(url: string) {
-    onChange(value.filter((u) => u !== url));
+    onChange(valueRef.current.filter((u) => u !== url));
+    // Fichier monté puis retiré avant l'enregistrement : aucune ligne ne le
+    // référence, personne ne le supprimera jamais. On l'efface tout de suite.
+    // Les images déjà enregistrées, elles, restent au bucket tant que le save
+    // n'a pas confirmé leur retrait.
+    const chemin = cheminsEnvoyes.current.get(url);
+    if (chemin) {
+      cheminsEnvoyes.current.delete(url);
+      void deleteAdminImage(chemin).catch(() => {});
+    }
   }
 
   function handleSetCover(url: string) {
@@ -170,7 +211,7 @@ export function ImageUploader({
                   key={url}
                   url={url}
                   isCover={i === 0}
-                  disabled={disabled}
+                  disabled={disabled || uploading > 0}
                   onRemove={() => handleRemove(url)}
                   onSetCover={() => handleSetCover(url)}
                 />

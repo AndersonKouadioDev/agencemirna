@@ -33,10 +33,12 @@ export type SiteContact = {
 };
 
 /**
- * Ignore les valeurs vides et la ligne de démo « +225 00 00 00 00 00 »
- * pour ne jamais afficher un numéro factice sur la vitrine.
+ * Réservé aux NUMÉROS : ignore les valeurs vides et la ligne de démo
+ * « +225 00 00 00 00 00 » pour ne jamais afficher un numéro factice sur la
+ * vitrine. Ne pas l'appliquer à un email ni à une URL : le test « tous les
+ * chiffres à zéro » y écarterait des valeurs parfaitement valides.
  */
-function clean(value: string | null | undefined): string | null {
+function numero(value: string | null | undefined): string | null {
   const v = value?.trim();
   if (!v) return null;
   const digits = v.replace(/\D/g, "");
@@ -44,18 +46,27 @@ function clean(value: string | null | undefined): string | null {
   return v;
 }
 
+/** Champs texte (email, URLs) : on ne garde que ce qui reste après trim. */
+function valeurTexte(value: string | null | undefined): string | null {
+  return value?.trim() || null;
+}
+
 export const getSiteContact = cache(async (): Promise<SiteContact> => {
   const supabase = await createClient();
+  // `.order()` explicite : rien n'interdit une seconde ligne dans
+  // `site_settings`, et sans tri la vitrine pourrait lire une autre ligne que
+  // celle que l'admin vient d'éditer.
   const { data, error } = await supabase
     .from("site_settings")
     .select("phone, whatsapp, email, facebook, instagram, linkedin")
+    .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
 
   if (error) console.error("getSiteContact error:", error);
 
-  const phone = clean(data?.phone);
-  const whatsapp = (clean(data?.whatsapp) ?? DEFAULT_SITE_CONTACT.whatsapp).replace(/\D/g, "");
+  const phone = numero(data?.phone);
+  const whatsapp = (numero(data?.whatsapp) ?? DEFAULT_SITE_CONTACT.whatsapp).replace(/\D/g, "");
   const resolvedPhone = phone ?? DEFAULT_SITE_CONTACT.phone;
 
   // NEXT_PUBLIC_WHATSAPP_MESSAGE porte une URL complète avec un ?text=…
@@ -80,9 +91,13 @@ export const getSiteContact = cache(async (): Promise<SiteContact> => {
       ? `${whatsappUrl}?text=${encodeURIComponent(texte)}`
       : whatsappUrl,
     telHref: `tel:${resolvedPhone.replace(/[^\d+]/g, "")}`,
-    email: clean(data?.email) ?? DEFAULT_SITE_CONTACT.email,
-    facebook: clean(data?.facebook) ?? DEFAULT_SITE_CONTACT.facebook,
-    instagram: clean(data?.instagram) ?? DEFAULT_SITE_CONTACT.instagram,
-    linkedin: clean(data?.linkedin) ?? DEFAULT_SITE_CONTACT.linkedin,
+    email: valeurTexte(data?.email) ?? DEFAULT_SITE_CONTACT.email,
+    // Pas de repli sur les réseaux sociaux : c'est le seul moyen pour l'admin
+    // de RETIRER une icône du footer. Avec un `?? DEFAULT_SITE_CONTACT`, le
+    // test `settings?.facebook &&` du footer n'était jamais faux et le lien
+    // vidé depuis /admin/parametres réapparaissait au rechargement.
+    facebook: valeurTexte(data?.facebook),
+    instagram: valeurTexte(data?.instagram),
+    linkedin: valeurTexte(data?.linkedin),
   };
 });

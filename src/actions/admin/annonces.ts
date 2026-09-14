@@ -4,6 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/src/supabase/server";
 import { getAdminUser } from "@/src/supabase/admin-auth";
+import {
+  MESSAGE_URL_IMAGE_INVALIDE,
+  normaliserUrlImage,
+} from "@/src/lib/image-url";
 
 /**
  * Server Actions admin pour la table `promotions` (créas, bannières,
@@ -191,6 +195,14 @@ export async function upsertPromotion(
     };
   }
 
+  // Le champ « URL d'image » du formulaire est libre et cette action reste
+  // appelable sans lui : une adresse hors des `remotePatterns` de next.config
+  // ferait lever next/image et tomber toutes les pages qui affichent l'annonce.
+  const image = normaliserUrlImage(input.image);
+  if (image === undefined) {
+    return { ok: false, error: MESSAGE_URL_IMAGE_INVALIDE };
+  }
+
   const supabase = await createClient();
 
   const data = {
@@ -200,7 +212,7 @@ export async function upsertPromotion(
     type_annonce_id: input.type_annonce_id ?? null,
     bien_id: input.bien_id ?? null,
     // Facultative : la photo du bien lié sert de repli à l'affichage.
-    image: input.image?.trim() || null,
+    image,
     cta_label: input.cta_label?.trim() || null,
     cta_url: input.cta_url?.trim() || null,
     starts_at: input.starts_at || null,
@@ -219,7 +231,6 @@ export async function upsertPromotion(
     revalidatePath("/admin/annonces");
     revalidatePath("/annonces");
     revalidatePath("/");
-    if (input.bien_id) revalidatePath(`/properties/${input.bien_id}`);
     return { ok: true, data: { id: input.id } };
   } else {
     const { data: existing } = await supabase
@@ -304,6 +315,9 @@ export async function reorderAnnonces(ids: string[]): Promise<ActionResult> {
 
   revalidatePath("/admin/annonces");
   revalidatePath("/annonces");
+  // L'accueil consomme `ordre` (section Annonces & Promotions, bandeau) : il
+  // était la seule surface qu'un réordonnancement laissait en arrière.
+  revalidatePath("/");
   return { ok: true, data: undefined };
 }
 

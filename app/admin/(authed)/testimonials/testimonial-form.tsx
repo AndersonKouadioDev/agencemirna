@@ -24,6 +24,9 @@ export function TestimonialForm({ row }: { row?: TestimonialRow }) {
   const [initials, setInitials] = React.useState(row?.avatar_initials ?? "");
   const [rating, setRating] = React.useState(row?.rating ?? 5);
   const [isActive, setIsActive] = React.useState(row?.is_active ?? true);
+  // Rang de tri : seul critère de classement du carousel public, il n'était
+  // exposé nulle part.
+  const [ordre, setOrdre] = React.useState(row?.ordre?.toString() ?? "");
 
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -33,6 +36,8 @@ export function TestimonialForm({ row }: { row?: TestimonialRow }) {
     setError(null);
     setSubmitting(true);
 
+    const ordreSaisi = Number.parseInt(ordre, 10);
+
     const result = await upsertTestimonial({
       id: row?.id,
       quote,
@@ -41,7 +46,7 @@ export function TestimonialForm({ row }: { row?: TestimonialRow }) {
       avatar_initials: initials || null,
       rating,
       is_active: isActive,
-      ordre: row?.ordre,
+      ordre: Number.isNaN(ordreSaisi) ? undefined : ordreSaisi,
     });
 
     if (!result.ok) {
@@ -157,6 +162,21 @@ export function TestimonialForm({ row }: { row?: TestimonialRow }) {
                 {rating} / 5
               </span>
             </div>
+
+            <Field label="Ordre d'affichage">
+              <Input
+                type="number"
+                value={ordre}
+                onChange={(e) => setOrdre(e.target.value)}
+                placeholder="0"
+                className="w-32"
+              />
+              <p className="mt-1.5 text-xs text-neutral-500">
+                Les plus petits nombres passent en premier dans le carousel.
+                Laissé vide, le rang en place est conservé — à la création, le
+                témoignage se range en dernier.
+              </p>
+            </Field>
           </section>
 
           <section className="rounded-xl border border-stone-200 bg-white p-5 space-y-3">

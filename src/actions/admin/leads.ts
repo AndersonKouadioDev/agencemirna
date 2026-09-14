@@ -62,6 +62,12 @@ export type LeadFilters = {
 export async function listLeadsAdmin(
   filters?: LeadFilters,
 ): Promise<LeadRow[]> {
+  // Ce module est « use server » : chaque export devient un endpoint POST
+  // atteignable sans session. La RLS de `leads` filtre déjà, mais la garde
+  // doit être ici aussi, comme sur les mutations plus bas.
+  const admin = await getAdminUser();
+  if (!admin) return [];
+
   const supabase = await createClient();
   let q = supabase
     .from("leads")
@@ -86,6 +92,12 @@ export async function listLeadsAdmin(
 }
 
 export async function getLeadAdmin(id: string): Promise<LeadRow | null> {
+  // Ce module est « use server » : chaque export devient un endpoint POST
+  // atteignable sans session. La RLS de `leads` filtre déjà, mais la garde
+  // doit être ici aussi, comme sur les mutations plus bas.
+  const admin = await getAdminUser();
+  if (!admin) return null;
+
   const supabase = await createClient();
   const { data } = await supabase
     .from("leads")
@@ -105,7 +117,6 @@ export async function updateLeadStatus(
   if (!admin) return { ok: false, error: "Non autorisé." };
   const supabase = await createClient();
 
-  // handled_at = maintenant uniquement à la 1ère transition hors de 'new'
   const update: {
     status: LeadStatus;
     handled_by?: string;
@@ -113,7 +124,17 @@ export async function updateLeadStatus(
   } = { status };
   if (status !== "new") {
     update.handled_by = admin.id;
-    update.handled_at = new Date().toISOString();
+    // `handled_at` date la PREMIÈRE prise en charge : la réécrire à chaque
+    // changement de statut faisait passer un lead traité il y a trois semaines
+    // pour un lead traité aujourd'hui, dès qu'on le marquait « Converti ».
+    const { data: existant } = await supabase
+      .from("leads")
+      .select("handled_at")
+      .eq("id", id)
+      .maybeSingle();
+    if (!existant?.handled_at) {
+      update.handled_at = new Date().toISOString();
+    }
   }
 
   const { error } = await supabase.from("leads").update(update).eq("id", id);
@@ -163,6 +184,12 @@ export type LeadStats = {
 };
 
 export async function getLeadStats(): Promise<LeadStats> {
+  // Ce module est « use server » : chaque export devient un endpoint POST
+  // atteignable sans session. La RLS de `leads` filtre déjà, mais la garde
+  // doit être ici aussi, comme sur les mutations plus bas.
+  const admin = await getAdminUser();
+  if (!admin) return { total: 0, new: 0, in_progress: 0, converted: 0, this_week: 0 };
+
   const supabase = await createClient();
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 

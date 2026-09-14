@@ -49,6 +49,7 @@ type BienListe = {
   capacity?: number | null;
   prix?: number | null;
   prix_month?: number | null;
+  area?: number | null;
   types_bien?: { id?: number | null; name?: string | null } | null;
   services_bien?: { name?: string | null } | null;
   categories_bien?: { name?: string | null } | null;

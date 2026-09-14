@@ -20,6 +20,7 @@ type BienCarteSource = {
   capacity?: number | null;
   prix?: number | null;
   prix_month?: number | null;
+  area?: number | string | null;
   types_bien?: { id?: number | null; name?: string | null } | null;
   services_bien?: { name?: string | null } | null;
   categories_bien?: { name?: string | null } | null;
@@ -44,10 +45,21 @@ export default function PropertySection({
         const furnished = categorie
           ? categorie.includes("meubl") && !categorie.includes("non meubl")
           : undefined;
-        const pieces =
-          (bien.types_bien?.id ?? 0) > 1
-            ? `${(bien.chambre ?? 0) + (bien.salon ?? 0)} pièces`
-            : "";
+        // Le décompte de pièces se déduit des pièces saisies, pas du rang de
+        // `types_bien` : tester `types_bien.id > 1` masquait la mention pour
+        // le type dont l'identifiant vaut 1, au hasard de l'ordre de la table.
+        const nbPieces = (bien.chambre ?? 0) + (bien.salon ?? 0);
+        const pieces = nbPieces > 0 ? `${nbPieces} pièce${nbPieces > 1 ? "s" : ""}` : "";
+        // Toutes ces colonnes sont nullables : la concaténation littérale
+        // rendait « | Cocody, » sur un bien sans type ni pièces ni pays. On
+        // n'assemble que les morceaux réellement renseignés.
+        const lieu = [bien.ville_commune, bien.pays]
+          .map((part) => part?.trim())
+          .filter(Boolean)
+          .join(", ");
+        const detail = [[typeName, pieces].filter(Boolean).join(" "), lieu]
+          .filter(Boolean)
+          .join(" | ");
 
         return (
           <PropertyCard
@@ -56,14 +68,15 @@ export default function PropertySection({
             imageUrl={bien.image}
             altText={bien.name ?? ""}
             localisation={bien.localisation ?? undefined}
-            address={bien.address ?? ""}
+            // `address` est facultative en admin : sans ce repli, la carte
+            // affichait une épingle nue au-dessus du titre.
+            address={bien.address?.trim() || lieu}
             title={`${typeName} ${bien.name ?? ""}`.trim()}
-            detail={`${typeName} ${pieces} | ${bien.ville_commune ?? ""}, ${
-              bien.pays ?? ""
-            }`}
+            detail={detail}
             bedrooms={bien.chambre ?? undefined}
             bathrooms={bien.salle_bains ?? undefined}
             capacity={bien.capacity ?? undefined}
+            area={bien.area ? `${bien.area} m²` : undefined}
             status={serviceName}
             furnished={furnished}
             price={bien.prix != null ? formatNumber(bien.prix) + " FCFA" : ""}

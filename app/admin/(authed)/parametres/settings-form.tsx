@@ -113,6 +113,7 @@ export function SettingsForm({ settings }: { settings: SiteSettingsRow | null })
               Facebook
             </Label>
             <Input 
+              type="url"
               value={formData.facebook} 
               onChange={e => setFormData({...formData, facebook: e.target.value})} 
               placeholder="https://facebook.com/agencemirna" 
@@ -125,6 +126,7 @@ export function SettingsForm({ settings }: { settings: SiteSettingsRow | null })
               Instagram
             </Label>
             <Input 
+              type="url"
               value={formData.instagram} 
               onChange={e => setFormData({...formData, instagram: e.target.value})} 
               placeholder="https://instagram.com/agencemirna" 
@@ -137,6 +139,7 @@ export function SettingsForm({ settings }: { settings: SiteSettingsRow | null })
               LinkedIn
             </Label>
             <Input 
+              type="url"
               value={formData.linkedin} 
               onChange={e => setFormData({...formData, linkedin: e.target.value})} 
               placeholder="https://linkedin.com/company/agencemirna" 

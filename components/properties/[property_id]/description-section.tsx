@@ -22,6 +22,7 @@ import {
   BathIcon,
   BedIcon,
   MapPinIcon,
+  Sofa,
   SpaceIcon,
   Users,
   ChevronLeft,
@@ -56,6 +57,7 @@ type BienFicheSource = {
   area?: string | number | null;
   capacity?: number | null;
   chambre?: number | null;
+  salon?: number | null;
   salle_bains?: number | null;
   prix?: number | null;
   prix_month?: number | null;
@@ -128,7 +130,18 @@ export default function DescriptionSection({
     displayPrice = bien.prix;
   }
 
-  const addressLine = `${bien?.address ? `${bien.address}, ` : ""}${bien?.ville_commune ?? ""}, ${bien?.pays ?? ""}`;
+  // `adresse_complete` n'était rendue que dans la bulle de la carte, donc
+  // invisible dès qu'il manque une coordonnée GPS. Saisie en admin comme
+  // l'adresse de la fiche, c'est bien ici qu'elle doit primer. Les trois
+  // colonnes du repli sont nullables : la concaténation littérale rendait
+  // « Cocody, » sur un bien sans pays et « , » seul sur un bien sans aucune
+  // localisation, d'où l'assemblage des seuls morceaux renseignés.
+  const addressLine =
+    bien?.adresse_complete?.trim() ||
+    [bien?.address, bien?.ville_commune, bien?.pays]
+      .map((part) => part?.trim())
+      .filter(Boolean)
+      .join(", ");
 
   // `biens.localisation` est un champ texte libre et nullable : injecté tel
   // quel dans un href, null donnait `href=""` — soit la page courante rouverte
@@ -165,17 +178,20 @@ export default function DescriptionSection({
                <h1 className="text-4xl md:text-5xl lg:text-6xl font-agate font-bold text-secondary leading-tight mb-2">
                  {bien?.name}
                </h1>
-               {mapsHref ? (
-                 <Link href={mapsHref} target="_blank" className="flex items-center gap-2 text-stone-500 hover:text-primary transition-colors text-lg">
-                   <MapPinIcon className="w-5 h-5 text-primary" />
-                   {addressLine}
-                 </Link>
-               ) : (
-                 <div className="flex items-center gap-2 text-stone-500 text-lg">
-                   <MapPinIcon className="w-5 h-5 text-primary" />
-                   {addressLine}
-                 </div>
-               )}
+               {/* Sans adresse, l'épingle seule laissait croire à un libellé
+                   manquant plutôt qu'à une donnée non saisie. */}
+               {addressLine &&
+                 (mapsHref ? (
+                   <Link href={mapsHref} target="_blank" className="flex items-center gap-2 text-stone-500 hover:text-primary transition-colors text-lg">
+                     <MapPinIcon className="w-5 h-5 text-primary" />
+                     {addressLine}
+                   </Link>
+                 ) : (
+                   <div className="flex items-center gap-2 text-stone-500 text-lg">
+                     <MapPinIcon className="w-5 h-5 text-primary" />
+                     {addressLine}
+                   </div>
+                 ))}
              </div>
              
              {/* Un bien sans aucun montant saisi affichait « Loyer mensuel /
@@ -214,11 +230,15 @@ export default function DescriptionSection({
               {/* Features Bar */}
               <Motion variant="verticalSlideIn">
                 <div className="flex flex-wrap items-center gap-8 p-6 md:p-8 bg-white rounded-[24px] border border-stone-100 shadow-sm">
-                   {bien?.area && (
+                   {/* `area &&` laissait React rendre le nombre 0 tout seul au
+                       milieu du bandeau ; `!= null` aligne la tuile sur ses
+                       voisines. Et le nombre nu se lisait mal sans son unité,
+                       que l'admin annonce pourtant (« Surface (m²) »). */}
+                   {bien?.area != null && (
                      <div className="flex flex-col gap-1">
                        <span className="text-xs text-stone-400 font-bold uppercase tracking-widest">Surface</span>
                        <div className="flex items-center gap-2 text-secondary font-semibold text-lg">
-                         <SpaceIcon className="w-5 h-5 text-primary" /> {bien?.area}
+                         <SpaceIcon className="w-5 h-5 text-primary" /> {bien?.area} m²
                        </div>
                      </div>
                    )}
@@ -227,6 +247,14 @@ export default function DescriptionSection({
                        <span className="text-xs text-stone-400 font-bold uppercase tracking-widest">Chambres</span>
                        <div className="flex items-center gap-2 text-secondary font-semibold text-lg">
                          <BedIcon className="w-5 h-5 text-primary" /> {bien?.chambre}
+                       </div>
+                     </div>
+                   )}
+                   {bien?.salon != null && (
+                     <div className="flex flex-col gap-1">
+                       <span className="text-xs text-stone-400 font-bold uppercase tracking-widest">Salons</span>
+                       <div className="flex items-center gap-2 text-secondary font-semibold text-lg">
+                         <Sofa className="w-5 h-5 text-primary" /> {bien?.salon}
                        </div>
                      </div>
                    )}

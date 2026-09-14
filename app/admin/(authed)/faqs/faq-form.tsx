@@ -17,6 +17,9 @@ export function FaqForm({ row }: { row?: FaqRow }) {
   const [question, setQuestion] = React.useState(row?.question ?? "");
   const [answer, setAnswer] = React.useState(row?.answer ?? "");
   const [isActive, setIsActive] = React.useState(row?.is_active ?? true);
+  // Rang de tri : seul critère de classement de l'accordéon public, il
+  // n'était exposé nulle part.
+  const [ordre, setOrdre] = React.useState(row?.ordre?.toString() ?? "");
 
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -26,12 +29,14 @@ export function FaqForm({ row }: { row?: FaqRow }) {
     setError(null);
     setSubmitting(true);
 
+    const ordreSaisi = Number.parseInt(ordre, 10);
+
     const result = await upsertFaq({
       id: row?.id,
       question,
       answer,
       is_active: isActive,
-      ordre: row?.ordre,
+      ordre: Number.isNaN(ordreSaisi) ? undefined : ordreSaisi,
     });
 
     if (!result.ok) {
@@ -97,6 +102,23 @@ export function FaqForm({ row }: { row?: FaqRow }) {
         </div>
 
         <div className="space-y-6">
+          <section className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+            <h2 className="font-semibold text-secondary">Affichage</h2>
+            <Field label="Ordre d'affichage">
+              <Input
+                type="number"
+                value={ordre}
+                onChange={(e) => setOrdre(e.target.value)}
+                placeholder="0"
+              />
+              <p className="mt-1.5 text-xs text-neutral-500">
+                Les plus petits nombres remontent en tête de la FAQ publique.
+                Laissé vide, le rang en place est conservé — à la création, la
+                question se range en dernier.
+              </p>
+            </Field>
+          </section>
+
           <section className="rounded-xl border border-stone-200 bg-white p-5 space-y-3">
             <h2 className="font-semibold text-secondary">Publication</h2>
             <label className="flex items-start gap-3 cursor-pointer select-none">

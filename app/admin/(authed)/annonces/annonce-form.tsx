@@ -10,6 +10,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ImageUploader } from "@/app/admin/_components/image-uploader";
 import {
+  MESSAGE_URL_IMAGE_INVALIDE,
+  normaliserUrlImage,
+} from "@/src/lib/image-url";
+import {
   AnnonceFormData,
   AnnonceAdminRow,
   BienOption,
@@ -29,9 +33,23 @@ export function AnnonceForm({
   const isEdit = !!promo;
 
   const [title, setTitle] = useState(promo?.title || "");
-  const [imageAltUrl, setImageAltUrl] = useState<string>("");
+
+  // Une adresse enregistrée avant que ce champ soit validé peut sortir des
+  // `remotePatterns` de next.config : la confier à l'ImageUploader, qui rend en
+  // next/image, ferait tomber la page d'édition elle-même et l'admin ne
+  // pourrait plus corriger sa saisie. On la ramène donc dans le champ texte,
+  // où elle sera refusée à l'enregistrement tant qu'elle n'est pas remplacée.
+  const imageInitiale = promo?.image ?? null;
+  const imageRendable =
+    imageInitiale && normaliserUrlImage(imageInitiale) !== undefined
+      ? imageInitiale
+      : null;
+
+  const [imageAltUrl, setImageAltUrl] = useState<string>(
+    imageInitiale && !imageRendable ? imageInitiale : "",
+  );
   const [imageUrls, setImageUrls] = useState<string[]>(
-    promo?.image ? [promo.image] : [],
+    imageRendable ? [imageRendable] : [],
   );
 
   const [ctaLabel, setCtaLabel] = useState(promo?.cta_label || "");
@@ -58,6 +76,7 @@ export function AnnonceForm({
   const [subtitle, setSubtitle] = useState(promo?.sous_titre ?? "");
   const [description, setDescription] = useState(promo?.description ?? "");
   const [bienQuery, setBienQuery] = useState("");
+  const idUrlImage = React.useId();
 
   const bienSelectionne = React.useMemo(
     () => biens.find((b) => b.id === bienId) ?? null,
@@ -90,10 +109,25 @@ export function AnnonceForm({
       return;
     }
 
+    // Une URL hors des domaines déclarés dans next.config fait lever
+    // next/image au rendu : on la refuse à la saisie plutôt que de laisser
+    // tomber la vitrine, la grille admin et cette page d'édition.
+    //
+    // Le visuel téléversé l'emporte sur la saisie libre : on ne contrôle donc
+    // que l'adresse réellement enregistrée. Sinon une URL héritée invalide,
+    // ramenée dans ce champ à l'ouverture, refusait l'enregistrement que le
+    // téléversement d'un nouveau visuel venait pourtant de corriger.
+    const urlManuelle = imageUrls[0] ? null : normaliserUrlImage(imageAltUrl);
+    if (urlManuelle === undefined) {
+      setError(MESSAGE_URL_IMAGE_INVALIDE);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+
     setSubmitting(true);
 
     // L'image est facultative : à défaut, la carte reprend la photo du bien.
-    const finalImage = imageUrls[0] || imageAltUrl.trim() || null;
+    const finalImage = imageUrls[0] || urlManuelle || null;
 
     const data: AnnonceFormData = {
       id: promo?.id,
@@ -106,8 +140,8 @@ export function AnnonceForm({
       cta_label: ctaLabel.trim() || null,
       // Laissé vide, le lien est dérivé du bien : /properties/<bien_id>.
       cta_url: ctaUrl.trim() || null,
-      starts_at: startsAt || null,
-      ends_at: endsAt || null,
+      starts_at: fromDateTimeLocal(startsAt),
+      ends_at: fromDateTimeLocal(endsAt),
       show_on_home: showOnHome,
       is_active: isActive,
       ordre: promo?.ordre,
@@ -296,15 +330,24 @@ export function AnnonceForm({
             />
 
             <div className="mt-4 pt-4 border-t border-stone-200">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2 block">
+              <Label
+                htmlFor={idUrlImage}
+                className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2 block"
+              >
                 Ou réutiliser une image existante (URL)
               </Label>
               <Input
+                id={idUrlImage}
                 value={imageAltUrl}
                 onChange={(e) => setImageAltUrl(e.target.value)}
                 placeholder="Ex : /images/biens/bien1.jpg ou https://…"
                 className="text-sm"
               />
+              <p className="text-xs text-stone-500 mt-1">
+                Chemin interne commençant par « / », ou adresse https d&apos;un
+                domaine autorisé. Toute autre adresse est refusée : elle
+                empêcherait l&apos;image de s&apos;afficher sur le site.
+              </p>
             </div>
           </Section>
 
@@ -364,7 +407,8 @@ export function AnnonceForm({
                   Afficher sur la home
                 </span>
                 <span className="block text-xs text-neutral-500 mt-0.5">
-                  Met en avant cette promo dans le bandeau défilant de la home.
+                  Met en avant cette annonce dans la section « Annonces &amp;
+                  Promotions » de l&apos;accueil.
                 </span>
               </span>
             </label>
@@ -420,6 +464,19 @@ export function AnnonceForm({
   );
 }
 
+/**
+ * `datetime-local` produit une chaîne sans fuseau (« 2026-09-14T10:00 ») que
+ * Postgres range telle quelle dans un `timestamptz`, donc en UTC, alors que la
+ * relecture ci-dessous reformate en heure locale du poste : la fenêtre de
+ * publication se décalait à chaque réenregistrement hors du fuseau d'Abidjan.
+ * On fixe donc explicitement l'instant à l'écriture.
+ */
+function fromDateTimeLocal(valeur: string): string | null {
+  if (!valeur) return null;
+  const d = new Date(valeur);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 function toDateTimeLocal(iso: string): string {
   const d = new Date(iso);
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -458,13 +515,27 @@ function Field({
   children: React.ReactNode;
 }) {
   const id = React.useId();
+  // Le `htmlFor` du libellé ne vaut que si l'id atteint réellement le contrôle :
+  // sans cela, cliquer le libellé ne focalise rien et un lecteur d'écran
+  // annonce le champ sans nom. On le pose sur le premier élément rendu — les
+  // autres enfants d'un Field ne sont que des textes d'aide.
+  const enfants = React.Children.toArray(children);
+  const indexControle = enfants.findIndex((e) => React.isValidElement(e));
+  const controles = enfants.map((enfant, i) =>
+    i === indexControle
+      ? React.cloneElement(enfant as React.ReactElement<{ id?: string }>, { id })
+      : enfant,
+  );
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs font-medium text-neutral-700">
+      <Label
+        htmlFor={indexControle >= 0 ? id : undefined}
+        className="text-xs font-medium text-neutral-700"
+      >
         {label}
         {required && <span className="text-red-500 ml-0.5">*</span>}
       </Label>
-      <div>{children}</div>
+      <div>{controles}</div>
     </div>
   );
 }

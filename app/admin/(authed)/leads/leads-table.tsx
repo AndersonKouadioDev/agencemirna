@@ -80,8 +80,15 @@ export function LeadsTable({ leads }: { leads: LeadRow[] }) {
   async function onDelete(id: string) {
     if (!confirm("Supprimer ce lead ? Action irréversible.")) return;
     setBusy(id);
-    await deleteLead(id);
+    // Le résultat était ignoré : sur session expirée ou refus RLS, la ligne
+    // réapparaissait après le refresh sans le moindre message, ce qui se lit
+    // comme un bug d'affichage plutôt que comme un échec de suppression.
+    const res = await deleteLead(id);
     setBusy(null);
+    if (!res.ok) {
+      alert(res.error);
+      return;
+    }
     router.refresh();
   }
 

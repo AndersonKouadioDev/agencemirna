@@ -18,10 +18,9 @@ export const metadata = {
 
 export default function ServicesHubPage() {
   const services = STATIC_SERVICES;
-  // Le numéro saisi dans l'admin (site_settings) prime sur la variable
-  // d'environnement, que le back-office ne pouvait pas supplanter : le bouton
-  // WhatsApp de ce hub pointait donc vers un numéro figé au déploiement.
-
+  // Page éditoriale figée (force-static) : comme les pages détail, elle ne lit
+  // pas `site_settings`, sinon elle deviendrait dynamique. Le numéro de repli
+  // est donc volontaire, pas un oubli de branchement sur l'admin.
   const whatsappHref =
     process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || WHATSAPP_URL_PAR_DEFAUT;
 

@@ -22,6 +22,13 @@ type NavItem = {
   label: string;
   href: string;
   icon: React.ComponentType<{ className?: string }>;
+  /**
+   * Préfixes annexes qui appartiennent à cette entrée sans vivre sous son
+   * `href`. Sans eux, la saisie d'une commune ou d'un quartier n'allumait
+   * aucune entrée : la sidebar perdait toute surbrillance pendant tout le
+   * temps du formulaire.
+   */
+  matches?: string[];
 };
 
 const NAV_ITEMS: NavItem[] = [
@@ -29,7 +36,12 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Leads", href: "/admin/leads", icon: Inbox },
   { label: "Biens", href: "/admin/biens", icon: Home },
   { label: "Types & services", href: "/admin/taxonomie", icon: Tags },
-  { label: "Communes & quartiers", href: "/admin/geographie", icon: MapPin },
+  {
+    label: "Communes & quartiers",
+    href: "/admin/geographie",
+    icon: MapPin,
+    matches: ["/admin/communes", "/admin/quartiers"],
+  },
   { label: "Annonces", href: "/admin/annonces", icon: Megaphone },
   
   { label: "Agents", href: "/admin/agents", icon: Users },
@@ -113,11 +125,14 @@ function NavLink({
   pathname: string;
   onNavigate?: () => void;
 }) {
+  const sousRoute = (prefixe: string) =>
+    pathname === prefixe || pathname.startsWith(`${prefixe}/`);
+
   // /admin : match exact uniquement (sinon serait actif sur toutes les sous-routes)
   const isActive =
     item.href === "/admin"
       ? pathname === "/admin"
-      : pathname === item.href || pathname.startsWith(`${item.href}/`);
+      : sousRoute(item.href) || (item.matches?.some(sousRoute) ?? false);
 
   const Icon = item.icon;
 

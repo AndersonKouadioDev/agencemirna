@@ -218,10 +218,17 @@ function MegaContent({
                 {col.title}
               </h4>
               <ul className="space-y-4">
-                {col.items.map((sub) => {
-                  const isHovered = hovered?.href === sub.href;
+                {/*
+                  Ni la clé ni le survol ne peuvent reposer sur `href` : quand
+                  la base ne répond pas, getMenuList dégrade tous les liens en
+                  « /properties ». Les entrées partageaient alors la même clé
+                  React et le survol de l'une surlignait toute la colonne. Le
+                  libellé identifie l'entrée, l'objet lui-même tranche le survol.
+                */}
+                {col.items.map((sub, i) => {
+                  const isHovered = hovered === sub;
                   return (
-                    <li key={sub.href}>
+                    <li key={`${sub.label}-${i}`}>
                       <Link
                         href={sub.href}
                         onClick={onItemClick}

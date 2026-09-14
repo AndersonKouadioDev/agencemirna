@@ -149,21 +149,24 @@ export default function PropertyCard({
           <div className="flex flex-col flex-1 p-5 pt-4">
             {/* Header */}
             <div className="mb-4">
-              {mapsHref ? (
-                <Link
-                  href={mapsHref}
-                  target="_blank"
-                  className="inline-flex items-center gap-1.5 text-stone-400 mb-2 hover:text-primary transition-colors"
-                >
-                  <MapPinIcon className="w-3.5 h-3.5" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider truncate">{address}</span>
-                </Link>
-              ) : (
-                <div className="inline-flex items-center gap-1.5 text-stone-400 mb-2">
-                  <MapPinIcon className="w-3.5 h-3.5" />
-                  <span className="text-[11px] font-bold uppercase tracking-wider truncate">{address}</span>
-                </div>
-              )}
+              {/* Sans libellé, il ne restait qu'une épingle nue : elle se lit
+                  comme une ligne cassée, pas comme une adresse non saisie. */}
+              {address?.trim() &&
+                (mapsHref ? (
+                  <Link
+                    href={mapsHref}
+                    target="_blank"
+                    className="inline-flex items-center gap-1.5 text-stone-400 mb-2 hover:text-primary transition-colors"
+                  >
+                    <MapPinIcon className="w-3.5 h-3.5" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider truncate">{address}</span>
+                  </Link>
+                ) : (
+                  <div className="inline-flex items-center gap-1.5 text-stone-400 mb-2">
+                    <MapPinIcon className="w-3.5 h-3.5" />
+                    <span className="text-[11px] font-bold uppercase tracking-wider truncate">{address}</span>
+                  </div>
+                ))}
               
               <Link
                 href={`/properties/${id}`}

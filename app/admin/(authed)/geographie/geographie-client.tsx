@@ -15,10 +15,14 @@ import {
   ImageOff,
   Loader2,
   ChevronRight,
+  AlertTriangle,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
+  type ActionResult,
+  type BiensParZone,
   type CommuneAdminRow,
   toggleCommuneActive,
   deleteCommune,
@@ -26,7 +30,6 @@ import {
 import {
   type QuartierRow,
   toggleQuartierActive,
-  toggleQuartierFeatured,
   deleteQuartier,
 } from "@/src/actions/admin/quartiers";
 
@@ -40,12 +43,15 @@ import {
 export function GeographieClient({
   communes,
   quartiers,
+  biensParZone,
 }: {
   communes: CommuneAdminRow[];
   quartiers: QuartierRow[];
+  biensParZone: BiensParZone;
 }) {
   const router = useRouter();
   const [busy, setBusy] = React.useState<string | null>(null);
+  const [erreur, setErreur] = React.useState<string | null>(null);
 
   /**
    * Rattachement tolérant : `commune_id` fait foi, mais les quartiers saisis
@@ -72,32 +78,93 @@ export function GeographieClient({
     return { map, orphelins };
   }, [communes, quartiers]);
 
-  async function action(cle: string, fn: () => Promise<unknown>) {
+  /**
+   * Les Server Actions de ce module ne lèvent pas : elles renvoient
+   * `{ ok: false, error }`. Jeter cette valeur faisait passer un refus RLS ou
+   * une contrainte violée pour un succès — l'œil de dépublication restait sur
+   * « actif » et l'admin en concluait que la commune était en ligne. Le
+   * `finally` est tout aussi nécessaire : si l'appel jette (coupure réseau
+   * pendant le POST), sans lui la ligne restait indéfiniment sur son spinner,
+   * boutons désactivés.
+   */
+  async function action(cle: string, fn: () => Promise<ActionResult<unknown>>) {
     setBusy(cle);
-    await fn();
-    setBusy(null);
-    router.refresh();
+    setErreur(null);
+    try {
+      const resultat = await fn();
+      if (!resultat.ok) {
+        setErreur(resultat.error);
+        return;
+      }
+      router.refresh();
+    } catch {
+      setErreur("L'enregistrement n'a pas abouti. Vérifiez votre connexion.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  /** « 3 biens » / « 1 quartier » : un pluriel correct, sans « (s) ». */
+  function pluriel(n: number, singulier: string) {
+    return `${n} ${singulier}${n > 1 ? "s" : ""}`;
   }
 
   function supprimerCommune(c: CommuneAdminRow) {
     const rattaches = parCommune.map.get(c.id)?.length ?? 0;
-    const avertissement = rattaches
-      ? `\n\n${rattaches} quartier(s) y sont rattachés : ils perdront leur commune.`
-      : "";
+    // Les biens comptent autant que les quartiers : `biens.commune_id` est en
+    // ON DELETE SET NULL, la suppression les détache donc en silence et les
+    // fait disparaître de tous les filtres de lieu, sans retour arrière.
+    const biens = biensParZone.communes[c.id] ?? 0;
+    const pertes: string[] = [];
+    if (biens > 0) {
+      pertes.push(
+        `${pluriel(biens, "bien")} y sont rattachés : ils perdront leur commune et sortiront des filtres de lieu du site.`,
+      );
+    }
+    if (rattaches > 0) {
+      pertes.push(`${pluriel(rattaches, "quartier")} y sont rattachés : ils perdront leur commune.`);
+    }
+    const avertissement = pertes.length ? `\n\n${pertes.join("\n")}` : "";
     if (!confirm(`Supprimer la commune « ${c.nom} » ?${avertissement}`)) return;
     action(`c-${c.id}`, () => deleteCommune(c.id));
   }
 
   function supprimerQuartier(q: QuartierRow) {
-    if (!confirm(`Supprimer le quartier « ${q.name} » ?`)) return;
+    const biens = biensParZone.quartiers[q.id] ?? 0;
+    const avertissement =
+      biens > 0
+        ? `\n\n${pluriel(biens, "bien")} y sont rattachés : ils perdront leur quartier et sortiront du filtre correspondant.`
+        : "";
+    if (!confirm(`Supprimer le quartier « ${q.name} » ?${avertissement}`)) return;
     action(`q-${q.id}`, () => deleteQuartier(q.id));
   }
 
   return (
     <div className="space-y-4">
+      {erreur && (
+        <div
+          role="alert"
+          className="flex items-start justify-between gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3"
+        >
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-red-600 mt-0.5" />
+            <span className="text-sm text-red-800">{erreur}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setErreur(null)}
+            className="rounded p-1 text-red-700 hover:bg-red-100"
+            aria-label="Fermer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
       {communes.map((commune) => {
         const enfants = parCommune.map.get(commune.id) ?? [];
         const occupe = busy === `c-${commune.id}`;
+        const biens = biensParZone.communes[commune.id] ?? 0;
 
         return (
           <section
@@ -144,11 +211,22 @@ export function GeographieClient({
                   /{commune.slug} · ordre {commune.ordre} ·{" "}
                   {enfants.length === 0
                     ? "aucun quartier"
-                    : `${enfants.length} quartier${enfants.length > 1 ? "s" : ""}`}
+                    : pluriel(enfants.length, "quartier")}{" "}
+                  · {biens === 0 ? "aucun bien" : pluriel(biens, "bien")}
                 </p>
                 {commune.is_featured && !commune.image && (
                   <p className="text-xs text-amber-700 mt-1">
                     Sans image : la carte d&apos;accueil s&apos;affichera vide.
+                  </p>
+                )}
+                {/* « Communes phares » écarte les communes sans bien AVANT de
+                    retenir celles qui sont cochées : cocher la case ne suffit
+                    donc pas, et rien sur cet écran ne le disait. */}
+                {commune.is_featured && biens === 0 && (
+                  <p className="text-xs text-amber-700 mt-1">
+                    Aucun bien rattaché : l&apos;accueil l&apos;écarte malgré la
+                    case cochée, une carte ne devant pas mener à un catalogue
+                    vide.
                   </p>
                 )}
               </div>
@@ -208,6 +286,7 @@ export function GeographieClient({
               <ul className="border-t border-stone-100 divide-y divide-stone-50">
                 {enfants.map((q) => {
                   const pris = busy === `q-${q.id}`;
+                  const biensQuartier = biensParZone.quartiers[q.id] ?? 0;
                   return (
                     <li key={q.id} className="flex items-center gap-3 py-2.5 pl-8 pr-4">
                       <ChevronRight className="h-3.5 w-3.5 text-stone-300 shrink-0" />
@@ -244,31 +323,16 @@ export function GeographieClient({
                             </span>
                           )}
                         </p>
-                        {q.tagline && (
-                          <p className="text-xs text-neutral-500 truncate">{q.tagline}</p>
-                        )}
+                        <p className="text-xs text-neutral-500 truncate">
+                          ordre {q.ordre} ·{" "}
+                          {biensQuartier === 0
+                            ? "aucun bien"
+                            : pluriel(biensQuartier, "bien")}
+                          {q.tagline ? ` · ${q.tagline}` : ""}
+                        </p>
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className={cn(
-                            "h-8 w-8",
-                            q.is_featured ? "text-primary" : "text-stone-400",
-                          )}
-                          onClick={() =>
-                            action(`q-${q.id}`, () =>
-                              toggleQuartierFeatured(q.id, !q.is_featured),
-                            )
-                          }
-                          aria-label="Mettre en avant"
-                          disabled={pris}
-                        >
-                          <Star
-                            className={cn("h-4 w-4", q.is_featured && "fill-current")}
-                          />
-                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"

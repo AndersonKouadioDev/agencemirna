@@ -77,7 +77,6 @@ export type BienImage = {
   id: string;
   url: string;
   storage_path: string | null;
-  alt: string | null;
   ordre: number;
 };
 
@@ -174,7 +173,10 @@ export async function getBienAdmin(
 
   const { data: images } = await supabase
     .from("bien_images")
-    .select("id, url, storage_path, alt, ordre")
+    // `alt` a été retirée de la lecture : aucun formulaire ne la saisit et
+    // aucune galerie ne l'affiche (elles composent leur texte alternatif à
+    // partir du nom du bien). La lire laissait croire qu'elle était gérée.
+    .select("id, url, storage_path, ordre")
     .eq("bien_id", id)
     .order("ordre", { ascending: true });
 
@@ -292,7 +294,7 @@ export type BienFormData = {
 
 export async function upsertBien(
   input: BienFormData,
-): Promise<ActionResult<{ id: string }>> {
+): Promise<ActionResult<{ id: string; erreurPhotos?: string }>> {
   const admin = await getAdminUser();
   if (!admin) return { ok: false, error: "Non autorisé." };
 
@@ -365,57 +367,109 @@ export async function upsertBien(
     bienId = data.id;
   }
 
-  // Sync des images : on récupère les anciennes URLs, on calcule diff
-  const { data: existingImages } = await supabase
+  // Sync des images. Aucune de ces écritures ne lève d'exception : le client
+  // Supabase renvoie `{ error }` qu'un refus RLS, une contrainte ou une
+  // coupure réseau se produise. Tant que personne ne lisait ces erreurs, une
+  // galerie perdue repartait vers le formulaire sous l'étiquette « Bien créé ».
+  const echecsPhotos: string[] = [];
+
+  const { data: existingImages, error: existingImagesError } = await supabase
     .from("bien_images")
-    .select("id, url, storage_path")
+    .select("id, url, storage_path, ordre")
     .eq("bien_id", bienId);
+
+  if (existingImagesError) {
+    console.error("upsertBien images read error:", existingImagesError);
+    echecsPhotos.push(`lecture de la galerie : ${existingImagesError.message}`);
+  }
 
   const existingByUrl = new Map(
     (existingImages ?? []).map((img) => [img.url, img]),
   );
 
-  // Images à SUPPRIMER : présentes en DB mais plus dans input.image_urls
-  const toDelete = (existingImages ?? []).filter(
-    (img) => !input.image_urls.includes(img.url),
-  );
+  // Images à SUPPRIMER : présentes en DB mais plus dans input.image_urls.
+  // Sans galerie lue, `toDelete` serait vide et l'INSERT recréerait des
+  // doublons : on ne touche plus à rien dans ce cas.
+  const toDelete = existingImagesError
+    ? []
+    : (existingImages ?? []).filter(
+        (img) => !input.image_urls.includes(img.url),
+      );
 
   if (toDelete.length > 0) {
-    await supabase
+    const { error: deleteError } = await supabase
       .from("bien_images")
       .delete()
       .in(
         "id",
         toDelete.map((img) => img.id),
       );
-    // Cleanup Storage des fichiers retirés
-    for (const img of toDelete) {
-      if (img.storage_path) {
-        await deleteAdminImage(img.storage_path).catch(() => {});
+    if (deleteError) {
+      console.error("upsertBien images delete error:", deleteError);
+      echecsPhotos.push(
+        `suppression de ${toDelete.length} photo(s) retirée(s) : ${deleteError.message}`,
+      );
+    } else {
+      // Cleanup Storage subordonné à la suppression en base : effacer le
+      // fichier alors que sa ligne subsiste laisserait une vignette morte.
+      for (const img of toDelete) {
+        if (img.storage_path) {
+          await deleteAdminImage(img.storage_path).catch(() => {});
+        }
       }
     }
   }
 
-  // Images à INSÉRER : nouvelles dans input.image_urls
-  // Et UPDATE de l'ordre pour celles qui existaient déjà
-  for (let i = 0; i < input.image_urls.length; i++) {
-    const url = input.image_urls[i];
-    const existing = existingByUrl.get(url);
-    if (existing) {
-      // Update ordre seulement
-      await supabase
+  if (!existingImagesError) {
+    // Un aller-retour réseau par photo (jusqu'à vingt) multipliait d'autant
+    // les occasions d'échec partiel : les nouvelles lignes partent en un seul
+    // INSERT, et l'ordre n'est réécrit que là où il a réellement changé.
+    const nouvellesLignes: {
+      bien_id: string;
+      url: string;
+      storage_path: string | null;
+      ordre: number;
+    }[] = [];
+    const aReordonner: { id: string; ordre: number }[] = [];
+
+    for (let i = 0; i < input.image_urls.length; i++) {
+      const url = input.image_urls[i];
+      const existing = existingByUrl.get(url);
+      if (existing) {
+        if (existing.ordre !== i) aReordonner.push({ id: existing.id, ordre: i });
+      } else {
+        nouvellesLignes.push({
+          bien_id: bienId,
+          url,
+          storage_path: extractStoragePath(url),
+          ordre: i,
+        });
+      }
+    }
+
+    for (const ligne of aReordonner) {
+      const { error: ordreError } = await supabase
         .from("bien_images")
-        .update({ ordre: i })
-        .eq("id", existing.id);
-    } else {
-      // Insert nouveau
-      const storage_path = extractStoragePath(url);
-      await supabase.from("bien_images").insert({
-        bien_id: bienId,
-        url,
-        storage_path,
-        ordre: i,
-      });
+        .update({ ordre: ligne.ordre })
+        .eq("id", ligne.id);
+      if (ordreError) {
+        console.error("upsertBien images order error:", ordreError);
+        // Une seule mention : la cause est la même pour toutes les lignes.
+        echecsPhotos.push(`ordre d'affichage : ${ordreError.message}`);
+        break;
+      }
+    }
+
+    if (nouvellesLignes.length > 0) {
+      const { error: insertError } = await supabase
+        .from("bien_images")
+        .insert(nouvellesLignes);
+      if (insertError) {
+        console.error("upsertBien images insert error:", insertError);
+        echecsPhotos.push(
+          `enregistrement de ${nouvellesLignes.length} nouvelle(s) photo(s) : ${insertError.message}`,
+        );
+      }
     }
   }
 
@@ -424,6 +478,20 @@ export async function upsertBien(
   revalidatePath(`/admin/biens/${bienId}`);
   revalidatePath("/properties");
   revalidatePath(`/properties/${bienId}`);
+
+  if (echecsPhotos.length > 0) {
+    // Le bien, lui, est bien enregistré : on renvoie son identifiant pour que
+    // le formulaire reste sur place sans risquer d'en créer un doublon.
+    return {
+      ok: true,
+      data: {
+        id: bienId,
+        erreurPhotos:
+          `Le bien a bien été ${input.id ? "enregistré" : "créé"}, mais sa galerie n'a pas pu être mise à jour (` +
+          `${echecsPhotos.join(" ; ")}). Réessayez d'enregistrer : les photos manquantes seront reprises.`,
+      },
+    };
+  }
 
   return { ok: true, data: { id: bienId } };
 }

@@ -91,17 +91,21 @@ export async function upsertTestimonial(
     author_role: input.author_role?.trim() || null,
     avatar_initials: input.avatar_initials?.trim() || null,
     rating: input.rating ?? 5,
-    ordre: input.ordre ?? 0,
     is_active: input.is_active ?? true,
   };
+  // `ordre` n'est écrit que s'il est fourni : un appelant qui l'omet ne doit
+  // pas remettre la ligne en tête de carousel sans l'avoir demandé.
+  const avecOrdre =
+    input.ordre === undefined ? data : { ...data, ordre: input.ordre };
 
   if (input.id) {
-    const { error } = await supabase.from("testimonials").update(data).eq("id", input.id);
+    const { error } = await supabase.from("testimonials").update(avecOrdre).eq("id", input.id);
     if (error) return { ok: false, error: error.message };
     REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
     revalidatePath("/admin/testimonials");
     return { ok: true, data: { id: input.id } };
   }
+  // Sans position saisie, le nouveau témoignage se range en fin de carousel.
   const { data: existing } = await supabase
     .from("testimonials")
     .select("ordre")
@@ -110,7 +114,7 @@ export async function upsertTestimonial(
   const nextOrdre = ((existing?.[0]?.ordre as number | undefined) ?? 0) + 1;
   const { data: created, error } = await supabase
     .from("testimonials")
-    .insert({ ...data, ordre: nextOrdre })
+    .insert({ ...data, ordre: input.ordre ?? nextOrdre })
     .select("id")
     .single();
   if (error || !created) return { ok: false, error: error?.message ?? "Erreur." };
@@ -201,17 +205,20 @@ export async function upsertFaq(
   const data = {
     question: input.question.trim(),
     answer: input.answer.trim(),
-    ordre: input.ordre ?? 0,
     is_active: input.is_active ?? true,
   };
+  // Idem témoignages : on ne réécrit la position que si elle est fournie.
+  const avecOrdre =
+    input.ordre === undefined ? data : { ...data, ordre: input.ordre };
 
   if (input.id) {
-    const { error } = await supabase.from("faqs").update(data).eq("id", input.id);
+    const { error } = await supabase.from("faqs").update(avecOrdre).eq("id", input.id);
     if (error) return { ok: false, error: error.message };
     REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
     revalidatePath("/admin/faqs");
     return { ok: true, data: { id: input.id } };
   }
+  // Sans position saisie, la nouvelle question se range en fin d'accordéon.
   const { data: existing } = await supabase
     .from("faqs")
     .select("ordre")
@@ -220,7 +227,7 @@ export async function upsertFaq(
   const nextOrdre = ((existing?.[0]?.ordre as number | undefined) ?? 0) + 1;
   const { data: created, error } = await supabase
     .from("faqs")
-    .insert({ ...data, ordre: nextOrdre })
+    .insert({ ...data, ordre: input.ordre ?? nextOrdre })
     .select("id")
     .single();
   if (error || !created) return { ok: false, error: error?.message ?? "Erreur." };
@@ -294,6 +301,9 @@ export async function listArticlesAdmin(): Promise<ArticleRow[]> {
   const { data } = await supabase
     .from("articles")
     .select("id, slug, title, excerpt, content_md, image, category, read_time_minutes, published_at, ordre, is_active, updated_at")
+    // Exactement le tri de getActiveArticles : la liste admin annonçait
+    // l'inverse de la vitrine, un article remonté ici partait en queue là-bas.
+    .order("ordre", { ascending: true })
     .order("published_at", { ascending: false });
   return (data as ArticleRow[]) ?? [];
 }
@@ -341,26 +351,30 @@ export async function upsertArticle(
     category: input.category?.trim() || null,
     read_time_minutes: input.read_time_minutes ?? null,
     published_at: input.published_at || new Date().toISOString(),
-    ordre: input.ordre ?? 0,
     is_active: input.is_active ?? true,
   };
+  // `ordre` n'est écrit que s'il est fourni, pour ne pas reclasser un article
+  // au passage d'un appelant qui ne s'occupe pas de son rang.
+  const avecOrdre =
+    input.ordre === undefined ? data : { ...data, ordre: input.ordre };
 
   if (input.id) {
-    const { error } = await supabase.from("articles").update(data).eq("id", input.id);
+    const { error } = await supabase.from("articles").update(avecOrdre).eq("id", input.id);
     if (error) return { ok: false, error: error.message };
     REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
     revalidatePath("/admin/articles");
     return { ok: true, data: { id: input.id } };
   }
-  const { data: existing } = await supabase
-    .from("articles")
-    .select("ordre")
-    .order("ordre", { ascending: false })
-    .limit(1);
-  const nextOrdre = ((existing?.[0]?.ordre as number | undefined) ?? 0) + 1;
+  // Un blog se lit du plus récent au plus ancien. L'auto-incrément
+  // `max(ordre) + 1` plaçait au contraire chaque nouvel article en queue de
+  // tri, donc hors des 2 cartes de l'accueil et de la une du blog, sans aucun
+  // moyen de le remonter. Sans rang saisi on laisse donc 0 : c'est alors
+  // `published_at` décroissant, deuxième critère de getActiveArticles, qui
+  // départage, et le champ « Ordre » du formulaire sert à épingler ou
+  // rétrograder manuellement.
   const { data: created, error } = await supabase
     .from("articles")
-    .insert({ ...data, ordre: nextOrdre })
+    .insert({ ...data, ordre: input.ordre ?? 0 })
     .select("id")
     .single();
   if (error || !created) return { ok: false, error: error?.message ?? "Erreur." };

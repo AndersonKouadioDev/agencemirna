@@ -41,13 +41,13 @@ export default async function AdminTaxonomiePage() {
         <TaxonomyManager
           table="services_bien"
           title="Services"
-          description="Vente, Location meublée, Gestion locative, Construction. Ce que l'agence propose sur ce bien."
+          description="Vente, Location meublée, Gestion locative, Construction. Ce que l'agence propose sur ce bien. Ces quatre libellés sont repris mot pour mot par les pages /services et par le bandeau défilant : les renommer demande une intervention sur le code."
           items={services}
         />
         <TaxonomyManager
           table="categories_bien"
           title="Catégories d'ameublement"
-          description="Meublé, Non meublé, Semi-meublé. C'est cette valeur qui déclenche l'affichage du tarif à la nuitée."
+          description="Meublé, Non meublé, Semi-meublé. C'est cette valeur qui déclenche l'affichage du tarif à la nuitée, et c'est l'orthographe exacte qui compte : le site cherche le mot « meublé » dans le libellé."
           items={categories}
         />
       </div>

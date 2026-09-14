@@ -90,7 +90,9 @@ export default async function LeadDetailPage({
               )}
               {lead.phone && (
                 <a
-                  href={`tel:${lead.phone}`}
+                  // Un `tel:` ne tolère pas les espaces du numéro saisi par le
+                  // visiteur : même normalisation que partout ailleurs.
+                  href={`tel:${lead.phone.replace(/[^\d+]/g, "")}`}
                   className="flex items-center gap-2.5 text-sm hover:text-primary transition-colors group"
                 >
                   <Phone className="h-4 w-4 text-neutral-400 group-hover:text-primary" />

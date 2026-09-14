@@ -5,9 +5,13 @@ import { createClient } from "@/src/supabase/server";
 import { getAdminUser } from "@/src/supabase/admin-auth";
 
 /**
- * Server Actions admin pour la table `quartiers` (zones/communes affichées
- * sur la home dans la section "Nos quartiers", chargées dans le dropdown
- * Localisation du hero search).
+ * Server Actions admin pour la table `quartiers`.
+ *
+ * Un quartier n'a plus de rendu propre sur la vitrine : la section « Nos
+ * quartiers » a disparu de l'accueil. Il ne sert plus qu'au filtre
+ * /properties?quartier=<id> et au groupement du dropdown Localisation, qui
+ * n'affichent que son nom. Les colonnes purement décoratives (badge,
+ * description, is_featured) ne sont donc plus ni saisies ni écrites.
  */
 
 export type ActionResult<T = void> =
@@ -19,14 +23,13 @@ export type QuartierRow = {
   id: string;
   name: string;
   commune: string;
-  badge: string | null;
+  /** Affichée sous le nom dans la liste d'administration. */
   tagline: string | null;
-  description: string | null;
   image: string;
+  /** Alias de recherche : résout ?location= vers ce quartier. */
   search_query: string | null;
   ordre: number;
   is_active: boolean;
-  is_featured: boolean;
   updated_at: string;
 };
 
@@ -35,17 +38,24 @@ export type QuartierFormData = {
   id?: string;
   name: string;
   commune: string;
-  badge?: string | null;
   tagline?: string | null;
-  description?: string | null;
   image: string;
   search_query?: string | null;
   ordre?: number;
   is_active?: boolean;
-  is_featured?: boolean;
 };
 
-const REVALIDATE = ["/", "/properties"];
+const COLONNES =
+  "id, name, commune, commune_id, tagline, image, search_query, ordre, is_active, updated_at";
+
+// La liste et les filtres de lieu vivent sur l'accueil et le catalogue ;
+// /admin/quartiers ne contient plus qu'un redirect, la page consommatrice
+// est /admin/geographie.
+const REVALIDATE = ["/", "/properties", "/admin/geographie"];
+
+function revaliderVitrine() {
+  REVALIDATE.forEach((p) => revalidatePath(p));
+}
 
 export async function listQuartiersAdmin(): Promise<QuartierRow[]> {
   const admin = await getAdminUser();
@@ -53,9 +63,9 @@ export async function listQuartiersAdmin(): Promise<QuartierRow[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("quartiers")
-    .select("id, name, commune, commune_id, badge, tagline, description, image, search_query, ordre, is_active, is_featured, updated_at")
+    .select(COLONNES)
     .order("ordre", { ascending: true });
-  return (data as QuartierRow[]) ?? [];
+  return (data as unknown as QuartierRow[]) ?? [];
 }
 
 export async function getQuartierAdmin(id: string): Promise<QuartierRow | null> {
@@ -64,10 +74,10 @@ export async function getQuartierAdmin(id: string): Promise<QuartierRow | null> 
   const supabase = await createClient();
   const { data } = await supabase
     .from("quartiers")
-    .select("id, name, commune, commune_id, badge, tagline, description, image, search_query, ordre, is_active, is_featured, updated_at")
+    .select(COLONNES)
     .eq("id", id)
     .maybeSingle();
-  return (data as QuartierRow) ?? null;
+  return (data as unknown as QuartierRow) ?? null;
 }
 
 export async function upsertQuartier(
@@ -78,6 +88,11 @@ export async function upsertQuartier(
 
   if (!input.name?.trim()) return { ok: false, error: "Le nom est obligatoire." };
   if (!input.commune?.trim()) return { ok: false, error: "La commune est obligatoire." };
+  // `quartiers.image` est NOT NULL depuis la migration 0006 : sans cette
+  // garde, l'admin recevrait l'erreur brute de Postgres au lieu d'un message
+  // en français. La vignette ne sert aujourd'hui qu'à repérer la ligne dans
+  // la liste d'administration — voir « migrationsNecessaires » pour la
+  // rendre facultative.
   if (!input.image?.trim()) return { ok: false, error: "L'image est obligatoire." };
 
   const supabase = await createClient();
@@ -85,13 +100,10 @@ export async function upsertQuartier(
     commune_id: input.commune_id || null,
     name: input.name.trim(),
     commune: input.commune.trim(),
-    badge: input.badge?.trim() || null,
     tagline: input.tagline?.trim() || null,
-    description: input.description?.trim() || null,
     image: input.image.trim(),
     search_query: input.search_query?.trim() || null,
     is_active: input.is_active ?? true,
-    is_featured: input.is_featured ?? false,
   };
 
   if (input.id) {
@@ -102,8 +114,7 @@ export async function upsertQuartier(
       input.ordre !== undefined ? { ...data, ordre: input.ordre } : data;
     const { error } = await supabase.from("quartiers").update(payload).eq("id", input.id);
     if (error) return { ok: false, error: error.message };
-    REVALIDATE.forEach((p) => revalidatePath(p));
-    revalidatePath("/admin/quartiers");
+    revaliderVitrine();
     return { ok: true, data: { id: input.id } };
   }
   const { data: existing } = await supabase
@@ -118,8 +129,7 @@ export async function upsertQuartier(
     .select("id")
     .single();
   if (error || !created) return { ok: false, error: error?.message ?? "Erreur." };
-  REVALIDATE.forEach((p) => revalidatePath(p));
-  revalidatePath("/admin/quartiers");
+  revaliderVitrine();
   return { ok: true, data: { id: created.id as string } };
 }
 
@@ -129,8 +139,7 @@ export async function deleteQuartier(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from("quartiers").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
-  REVALIDATE.forEach((p) => revalidatePath(p));
-  revalidatePath("/admin/quartiers");
+  revaliderVitrine();
   return { ok: true, data: undefined };
 }
 
@@ -143,21 +152,6 @@ export async function toggleQuartierActive(
   const supabase = await createClient();
   const { error } = await supabase.from("quartiers").update({ is_active: isActive }).eq("id", id);
   if (error) return { ok: false, error: error.message };
-  REVALIDATE.forEach((p) => revalidatePath(p));
-  revalidatePath("/admin/quartiers");
-  return { ok: true, data: undefined };
-}
-
-export async function toggleQuartierFeatured(
-  id: string,
-  isFeatured: boolean,
-): Promise<ActionResult> {
-  const admin = await getAdminUser();
-  if (!admin) return { ok: false, error: "Non autorisé." };
-  const supabase = await createClient();
-  const { error } = await supabase.from("quartiers").update({ is_featured: isFeatured }).eq("id", id);
-  if (error) return { ok: false, error: error.message };
-  REVALIDATE.forEach((p) => revalidatePath(p));
-  revalidatePath("/admin/quartiers");
+  revaliderVitrine();
   return { ok: true, data: undefined };
 }

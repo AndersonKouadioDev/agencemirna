@@ -7,7 +7,6 @@ import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { ImageUploader } from "../../_components/image-uploader";
 import { CommuneAdminRow } from "@/src/actions/admin/communes";
 import {
@@ -15,8 +14,15 @@ import {
   type QuartierRow,
 } from "@/src/actions/admin/quartiers";
 
-const BADGES = ["Premium", "Business", "Lifestyle", "Familles", "Investir", "Étudiants", "Plage", "Calme"];
-
+/**
+ * Formulaire de quartier.
+ *
+ * Un quartier n'a plus de rendu propre sur la vitrine : il n'y sert que de
+ * filtre (/properties?quartier=<id>) et d'entrée du dropdown Localisation,
+ * qui n'affiche que son nom. Badge, description longue et « mis en avant sur
+ * la home » ont donc été retirés : la section « Nos quartiers » qu'ils
+ * alimentaient n'existe plus, et les trois champs ne sortaient nulle part.
+ */
 export function QuartierForm({
   row,
   communes = [],
@@ -40,12 +46,10 @@ export function QuartierForm({
   const [communeId, setCommuneId] = React.useState(
     row?.commune_id ?? preselection?.id ?? "",
   );
-  const [badge, setBadge] = React.useState(row?.badge ?? "");
   const [tagline, setTagline] = React.useState(row?.tagline ?? "");
-  const [description, setDescription] = React.useState(row?.description ?? "");
   const [searchQuery, setSearchQuery] = React.useState(row?.search_query ?? "");
   const [isActive, setIsActive] = React.useState(row?.is_active ?? true);
-  const [isFeatured, setIsFeatured] = React.useState(row?.is_featured ?? false);
+  const [ordre, setOrdre] = React.useState<number | null>(row?.ordre ?? null);
 
   const [imageUrls, setImageUrls] = React.useState<string[]>(
     row?.image && row.image.startsWith("/images/") ? [] : row?.image ? [row.image] : [],
@@ -103,14 +107,11 @@ export function QuartierForm({
       name,
       commune,
       commune_id: communeIdEffectif || null,
-      badge: badge || null,
       tagline: tagline || null,
-      description: description || null,
       image: finalImage,
       search_query: searchQuery || null,
       is_active: isActive,
-      is_featured: isFeatured,
-      ordre: row?.ordre,
+      ordre: ordre ?? undefined,
     });
 
     if (!result.ok) {
@@ -118,18 +119,21 @@ export function QuartierForm({
       setSubmitting(false);
       return;
     }
-    router.push("/admin/quartiers?flash=saved");
+    // /admin/quartiers rebondit sur /admin/geographie en perdant la query
+    // string : le flash de confirmation n'arrivait jamais. Et une création
+    // annonçait « Modification enregistrée » faute de distinguer les deux cas.
+    router.push(`/admin/geographie?flash=${isEdit ? "saved" : "created"}`);
   }
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <Link
-          href="/admin/quartiers"
+          href="/admin/geographie"
           className="inline-flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900"
         >
           <ArrowLeft className="h-4 w-4" />
-          Retour aux quartiers
+          Retour aux communes &amp; quartiers
         </Link>
         <Button type="submit" disabled={submitting}>
           {submitting ? (
@@ -161,7 +165,7 @@ export function QuartierForm({
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex : Cocody"
+                  placeholder="Ex : Riviera"
                   required
                 />
               </Field>
@@ -186,8 +190,8 @@ export function QuartierForm({
                     </select>
                     <p className="mt-1 text-[11px] text-neutral-500">
                       Gérées dans{" "}
-                      <Link href="/admin/communes" className="underline">
-                        Communes
+                      <Link href="/admin/geographie" className="underline">
+                        Communes &amp; quartiers
                       </Link>
                       .
                     </p>
@@ -197,7 +201,7 @@ export function QuartierForm({
                     <Input
                       value={commune}
                       onChange={(e) => setCommune(e.target.value)}
-                      placeholder="Ex : Abidjan"
+                      placeholder="Ex : Cocody"
                       required
                     />
                     <p className="mt-1 text-[11px] text-amber-600">
@@ -212,64 +216,56 @@ export function QuartierForm({
               </Field>
             </div>
 
-            <Field label="Badge (catégorie courte)">
-              <div className="flex flex-wrap gap-2">
-                {BADGES.map((b) => (
-                  <button
-                    key={b}
-                    type="button"
-                    onClick={() => setBadge(badge === b ? "" : b)}
-                    className={`rounded-full px-3 py-1 text-xs font-semibold border transition-colors ${
-                      badge === b
-                        ? "border-primary bg-primary text-white"
-                        : "border-stone-300 text-neutral-700 hover:border-primary/40"
-                    }`}
-                  >
-                    {b}
-                  </button>
-                ))}
-                <Input
-                  value={badge}
-                  onChange={(e) => setBadge(e.target.value)}
-                  placeholder="Autre..."
-                  className="w-32 text-xs"
-                />
-              </div>
-            </Field>
-
-            <Field label="Tagline (phrase courte)">
+            <Field label="Accroche">
               <Input
                 value={tagline}
                 onChange={(e) => setTagline(e.target.value)}
                 placeholder="Ex : Le prestige résidentiel"
               />
-            </Field>
-
-            <Field label="Description longue">
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Décrivez le quartier : ambiance, public, points forts..."
-                rows={4}
-              />
+              <p className="mt-1.5 text-xs text-neutral-500">
+                Rappel interne : elle identifie le quartier dans la liste
+                d&apos;administration. Le site, lui, n&apos;affiche que son nom.
+              </p>
             </Field>
 
             <Field label="Mot-clé recherche (optionnel)">
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Si vide, utilise le nom du quartier"
+                placeholder="Si vide, seul le nom du quartier est reconnu"
               />
               <p className="mt-1.5 text-xs text-neutral-500">
-                Utilisé pour préfilter /properties?q=... au clic sur la card.
-                Permet par exemple de chercher « Riviera » sur un quartier nommé
-                « Riviera Bonoumin ».
+                Second libellé accepté par les anciens liens
+                /properties?location=… : renseignez « Riviera » sur un quartier
+                nommé « Riviera Bonoumin » pour que les deux mènent ici.
+              </p>
+            </Field>
+
+            <Field label="Ordre d'affichage">
+              <Input
+                type="number"
+                min={0}
+                step={1}
+                value={ordre ?? ""}
+                onChange={(e) =>
+                  setOrdre(e.target.value === "" ? null : Number(e.target.value))
+                }
+                placeholder="auto"
+              />
+              <p className="mt-1.5 text-xs text-neutral-500">
+                Du plus petit au plus grand : c&apos;est l&apos;ordre des
+                quartiers dans le dropdown Localisation. Laissez vide à la
+                création pour placer le quartier en fin de liste.
               </p>
             </Field>
           </section>
 
           <section className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
             <h2 className="font-semibold text-secondary">Image</h2>
+            <p className="text-xs text-neutral-500">
+              Vignette de repérage dans la liste d&apos;administration. Elle
+              reste obligatoire tant que la colonne est NOT NULL en base.
+            </p>
             <ImageUploader
               value={imageUrls}
               onChange={setImageUrls}
@@ -305,24 +301,8 @@ export function QuartierForm({
                   Quartier actif
                 </span>
                 <span className="block text-xs text-neutral-500">
-                  Visible dans le dropdown Localisation et la section quartiers.
-                </span>
-              </span>
-            </label>
-
-            <label className="flex items-start gap-3 cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={isFeatured}
-                onChange={(e) => setIsFeatured(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-stone-300 text-primary"
-              />
-              <span>
-                <span className="block text-sm font-medium text-neutral-900">
-                  Mis en avant sur la home
-                </span>
-                <span className="block text-xs text-neutral-500">
-                  Affiché en grande card dans la section « Nos quartiers » de la home.
+                  Proposé dans le dropdown Localisation et dans les filtres du
+                  catalogue.
                 </span>
               </span>
             </label>

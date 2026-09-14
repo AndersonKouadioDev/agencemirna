@@ -41,19 +41,15 @@ export async function OrganizationJsonLd() {
       addressRegion: "Abidjan",
       addressCountry: "CI",
     },
+    // Un seul contactPoint, alimenté par `site_settings` : le second, « sales »,
+    // portait un numéro codé en dur qu'aucun champ d'admin ne pilotait et que
+    // Google continuait d'indexer après un changement de coordonnées.
     contactPoint: [
       {
         "@type": "ContactPoint",
         telephone: contact.phone.replace(/\s+/g, "-"),
         contactType: "customer service",
         email: contact.email,
-        areaServed: "CI",
-        availableLanguage: ["French"],
-      },
-      {
-        "@type": "ContactPoint",
-        telephone: "+225-01-00-68-61-83",
-        contactType: "sales",
         areaServed: "CI",
         availableLanguage: ["French"],
       },

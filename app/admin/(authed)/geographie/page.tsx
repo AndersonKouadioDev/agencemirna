@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Plus, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { listCommunesAdmin } from "@/src/actions/admin/communes";
+import { listCommunesAdmin, countBiensParZone } from "@/src/actions/admin/communes";
 import { listQuartiersAdmin } from "@/src/actions/admin/quartiers";
 import { GeographieClient } from "./geographie-client";
-import { FlashBanner } from "../communes/flash-banner";
+import { FlashBanner } from "./flash-banner";
 
 export const metadata = { title: "Communes & quartiers · Admin Mirna" };
 
@@ -19,10 +19,14 @@ export const metadata = { title: "Communes & quartiers · Admin Mirna" };
 export default async function AdminGeographiePage(props: {
   searchParams: Promise<{ flash?: string }>;
 }) {
-  const [{ flash }, communes, quartiers] = await Promise.all([
+  const [{ flash }, communes, quartiers, biens] = await Promise.all([
     props.searchParams,
     listCommunesAdmin(),
     listQuartiersAdmin(),
+    // Les FK de `biens` sont en ON DELETE SET NULL : sans ces compteurs, le
+    // confirm de suppression ne peut pas dire combien de biens seront
+    // détachés (voir countBiensParZone).
+    countBiensParZone(),
   ]);
 
   const communesActives = communes.filter((c) => c.is_active).length;
@@ -39,8 +43,10 @@ export default async function AdminGeographiePage(props: {
             {communes.length} commune{communes.length > 1 ? "s" : ""} dont{" "}
             {communesActives} active{communesActives > 1 ? "s" : ""} et {aLaUne} sur
             l&apos;accueil · {quartiers.length} quartier
-            {quartiers.length > 1 ? "s" : ""}. Une commune ou un quartier sans bien
-            rattaché n&apos;apparaît pas dans les filtres du site.
+            {quartiers.length > 1 ? "s" : ""}. Sans bien rattaché, une commune
+            quitte l&apos;accueil et le dropdown Localisation, sauf si l&apos;un
+            de ses quartiers en porte ; un quartier, lui, y reste affiché mais
+            devient non cliquable.
           </p>
         </div>
         <Button asChild>
@@ -56,10 +62,18 @@ export default async function AdminGeographiePage(props: {
 
       {flash && <FlashBanner type={flash} />}
 
-      {communes.length === 0 ? (
+      {/* Tester les deux listes : avec zéro commune mais des quartiers, la
+          section « Quartiers sans commune » — seul écran qui les liste depuis
+          la fusion — n'était jamais montée, et ces quartiers devenaient
+          inaccessibles alors que la vitrine continuait de les servir. */}
+      {communes.length === 0 && quartiers.length === 0 ? (
         <EmptyState />
       ) : (
-        <GeographieClient communes={communes} quartiers={quartiers} />
+        <GeographieClient
+          communes={communes}
+          quartiers={quartiers}
+          biensParZone={biens}
+        />
       )}
     </div>
   );

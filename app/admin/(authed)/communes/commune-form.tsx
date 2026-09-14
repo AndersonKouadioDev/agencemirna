@@ -6,7 +6,6 @@ import { ArrowLeft, Save, Loader2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { ImageUploader } from "@/app/admin/_components/image-uploader";
 import { CommuneFormData, CommuneAdminRow, upsertCommuneAndRedirect } from "@/src/actions/admin/communes";
 
@@ -28,13 +27,14 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
   const [nom, setNom] = useState(item?.nom || "");
   const [slugSaisi, setSlugSaisi] = useState(item?.slug || "");
   const [isActive, setIsActive] = useState(item?.is_active ?? true);
-  // Champs de présentation : ils alimentent la section « Communes phares »
-  // de l'accueil et le visuel du méga-menu.
-  const [badge, setBadge] = useState(item?.badge || "");
+  // Seuls les champs de présentation réellement rendus sur la vitrine sont
+  // saisissables : la carte « Communes phares » n'affiche que le nom,
+  // l'accroche et l'image. Badge, description et terme de recherche ont été
+  // retirés — aucune page ne les lisait, et le placeholder du terme de
+  // recherche promettait un repli qui n'existait pas.
   const [tagline, setTagline] = useState(item?.tagline || "");
-  const [description, setDescription] = useState(item?.description || "");
-  const [searchQuery, setSearchQuery] = useState(item?.search_query || "");
   const [isFeatured, setIsFeatured] = useState(item?.is_featured ?? false);
+  const [ordre, setOrdre] = useState<number | null>(item?.ordre ?? null);
   const [imageUrls, setImageUrls] = useState<string[]>(
     item?.image ? [item.image] : [],
   );
@@ -57,11 +57,8 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
       nom,
       slug,
       is_active: isActive,
-      ordre: item?.ordre,
-      badge: badge.trim() || null,
+      ordre: ordre ?? undefined,
       tagline: tagline.trim() || null,
-      description: description.trim() || null,
-      search_query: searchQuery.trim() || null,
       image: imageUrls[0] || imageAltUrl.trim() || null,
       is_featured: isFeatured,
     };
@@ -72,7 +69,7 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
   return (
     <form onSubmit={handleSubmit} className="mx-auto max-w-2xl pt-6 pb-24">
       <div className="flex items-center gap-4 mb-8">
-        <Button variant="ghost" size="icon" asChild className="h-8 w-8 shrink-0"><Link href="/admin/communes"><ArrowLeft className="h-4 w-4" /></Link></Button>
+        <Button variant="ghost" size="icon" asChild className="h-8 w-8 shrink-0"><Link href="/admin/geographie"><ArrowLeft className="h-4 w-4" /></Link></Button>
         <h1 className="text-2xl font-bold text-neutral-900 tracking-tight flex items-center gap-2">
           <MapPin className="h-5 w-5 text-neutral-400" />
           {isEdit ? "Modifier la commune" : "Nouvelle commune"}
@@ -87,6 +84,25 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
         <div className="space-y-1.5">
           <Label>Slug (URL) <span className="text-red-500">*</span></Label>
           <Input value={slug} onChange={(e) => { setSlugSaisi(e.target.value); setAutoSlug(false); }} required placeholder="ex: cocody" />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Ordre d&apos;affichage</Label>
+          <Input
+            type="number"
+            min={0}
+            step={1}
+            value={ordre ?? ""}
+            onChange={(e) =>
+              setOrdre(e.target.value === "" ? null : Number(e.target.value))
+            }
+            placeholder="auto"
+          />
+          <p className="text-xs text-neutral-500">
+            Du plus petit au plus grand. Décide de l&apos;ordre des communes
+            dans le menu, le pied de page et la section « Communes phares »,
+            qui n&apos;en montre que les trois premières. Laissez vide à la
+            création pour placer la commune en fin de liste.
+          </p>
         </div>
         <label className="flex items-center gap-3 cursor-pointer mt-4">
           <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-4 w-4 rounded border-stone-300 text-primary" />
@@ -110,25 +126,9 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
             onChange={(e) => setTagline(e.target.value)}
             placeholder="Ex : Le prestige résidentiel"
           />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Badge</Label>
-          <Input
-            value={badge}
-            onChange={(e) => setBadge(e.target.value)}
-            placeholder="Ex : Très demandé"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label>Description</Label>
-          <Textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-            placeholder="Quelques lignes sur la commune."
-          />
+          <p className="text-xs text-neutral-500">
+            Affichée sous le nom sur la carte de l&apos;accueil.
+          </p>
         </div>
 
         <div className="space-y-1.5">
@@ -147,15 +147,6 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
           />
         </div>
 
-        <div className="space-y-1.5">
-          <Label>Terme de recherche</Label>
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Laissez vide pour utiliser le nom de la commune"
-          />
-        </div>
-
         <label className="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
@@ -165,19 +156,16 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
           />
           <span className="text-sm">
             <span className="font-medium">Afficher sur l&apos;accueil</span>
-            {/* Le libellé promettait un « ordre défini sur la liste » : aucun
-                écran n'expose `communes.ordre`, qui est attribué à la création
-                (max + 1) et jamais modifiable. On ne promet donc que ce que
-                l'admin contrôle réellement — la case elle-même. */}
             <span className="block text-xs text-neutral-500">
               La section « Communes phares » de l&apos;accueil montre les trois
-              premières communes cochées.
+              premières communes cochées, dans l&apos;ordre d&apos;affichage
+              ci-dessus.
             </span>
           </span>
         </label>
       </div>
       <div className="mt-6 flex justify-end gap-2">
-        <Button type="button" variant="outline" asChild><Link href="/admin/communes">Annuler</Link></Button>
+        <Button type="button" variant="outline" asChild><Link href="/admin/geographie">Annuler</Link></Button>
         <Button type="submit" disabled={submitting}>
           {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Save className="h-4 w-4 mr-1.5" />}
           Enregistrer

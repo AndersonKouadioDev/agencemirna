@@ -12,8 +12,16 @@ export default function PropertyVideo({ videoUrl }: { videoUrl?: string | null }
     const url = new URL(videoUrl);
     if (url.hostname.includes("youtube.com")) {
       videoId = url.searchParams.get("v") || "";
+      // Les liens partagés depuis l'application mobile, une diffusion ou un
+      // code d'intégration n'ont pas de paramètre `v` : l'identifiant est
+      // alors le segment qui suit /shorts/, /embed/, /live/ ou /v/.
+      if (!videoId) {
+        videoId =
+          url.pathname.match(/^\/(?:shorts|embed|live|v)\/([^/?#]+)/)?.[1] ?? "";
+      }
     } else if (url.hostname.includes("youtu.be")) {
-      videoId = url.pathname.slice(1);
+      // `slice(1)` gardait les segments suivants d'un lien de playlist.
+      videoId = url.pathname.split("/").filter(Boolean)[0] ?? "";
     }
   } catch {
     // URL invalide
