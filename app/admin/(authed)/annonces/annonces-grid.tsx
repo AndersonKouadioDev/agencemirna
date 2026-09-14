@@ -30,21 +30,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
-  deletePromotion,
-  reorderPromotions,
-  togglePromotionActive,
-  type PromotionAdminRow,
-} from "@/src/actions/admin/promotions";
+  deleteAnnonce,
+  reorderAnnonces,
+  toggleAnnonceActive,
+  type AnnonceAdminRow,
+} from "@/src/actions/admin/annonces";
 
 export function PromotionsGrid({
   promotions,
 }: {
-  promotions: PromotionAdminRow[];
+  promotions: AnnonceAdminRow[];
 }) {
   const router = useRouter();
   const [items, setItems] = React.useState(promotions);
   const [confirmDelete, setConfirmDelete] =
-    React.useState<PromotionAdminRow | null>(null);
+    React.useState<AnnonceAdminRow | null>(null);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
   React.useEffect(() => setItems(promotions), [promotions]);
@@ -61,7 +61,7 @@ export function PromotionsGrid({
     if (oldIndex < 0 || newIndex < 0) return;
     const next = arrayMove(items, oldIndex, newIndex);
     setItems(next);
-    const result = await reorderPromotions(next.map((p) => p.id));
+    const result = await reorderAnnonces(next.map((p) => p.id));
     if (!result.ok) {
       setItems(items);
       alert("Erreur : " + result.error);
@@ -74,7 +74,7 @@ export function PromotionsGrid({
     setItems((prev) =>
       prev.map((p) => (p.id === id ? { ...p, is_active: isActive } : p)),
     );
-    const result = await togglePromotionActive(id, isActive);
+    const result = await toggleAnnonceActive(id, isActive);
     if (!result.ok) {
       setItems(promotions);
       alert("Erreur : " + result.error);
@@ -85,7 +85,7 @@ export function PromotionsGrid({
 
   async function handleDelete(id: string) {
     setDeletingId(id);
-    const result = await deletePromotion(id);
+    const result = await deleteAnnonce(id);
     setDeletingId(null);
     setConfirmDelete(null);
     if (result.ok) router.refresh();
@@ -97,11 +97,11 @@ export function PromotionsGrid({
       <div className="rounded-lg border border-stone-200 bg-white p-12 text-center">
         <Megaphone className="h-8 w-8 mx-auto text-neutral-400 mb-3" />
         <p className="text-sm text-neutral-600 mb-4">
-          Aucune promotion pour l'instant. Crée ta première créa pour
+          Aucune annonce pour l'instant. Crée ta première créa pour
           l'afficher sur le site.
         </p>
         <Button asChild size="sm">
-          <Link href="/admin/promotions/nouveau">Créer la première</Link>
+          <Link href="/admin/annonces/nouveau">Créer la première</Link>
         </Button>
       </div>
     );
@@ -150,7 +150,7 @@ function PromotionCard({
   onToggle,
   onDelete,
 }: {
-  promo: PromotionAdminRow;
+  promo: AnnonceAdminRow;
   onToggle: (isActive: boolean) => void;
   onDelete: () => void;
 }) {
@@ -279,7 +279,7 @@ function PromotionCard({
             className="h-7 w-7 p-0 hover:bg-stone-100"
             title="Éditer"
           >
-            <Link href={`/admin/promotions/${promo.id}`}>
+            <Link href={`/admin/annonces/${promo.id}`}>
               <Pencil className="h-3 w-3" />
               <span className="sr-only">Éditer</span>
             </Link>
@@ -308,7 +308,7 @@ function DeleteConfirm({
   onCancel,
   onConfirm,
 }: {
-  promo: PromotionAdminRow;
+  promo: AnnonceAdminRow;
   isDeleting: boolean;
   onCancel: () => void;
   onConfirm: () => void;
@@ -323,7 +323,7 @@ function DeleteConfirm({
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="text-lg font-semibold mb-2">
-          Supprimer cette promotion ?
+          Supprimer cette annonce ?
         </h2>
         <p className="text-sm text-neutral-600 mb-6">
           <span className="font-medium text-neutral-900">{promo.title}</span>{" "}

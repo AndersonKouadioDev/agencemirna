@@ -16,6 +16,7 @@ export type ActionResult<T = void> =
   | { ok: false; error: string };
 
 export type QuartierRow = {
+  commune_id?: string | null;
   id: string;
   name: string;
   commune: string;
@@ -31,6 +32,7 @@ export type QuartierRow = {
 };
 
 export type QuartierFormData = {
+  commune_id?: string | null;
   id?: string;
   name: string;
   commune: string;
@@ -77,6 +79,7 @@ export async function upsertQuartier(
 
   const supabase = await createClient();
   const data = {
+    commune_id: input.commune_id || null,
     name: input.name.trim(),
     commune: input.commune.trim(),
     badge: input.badge?.trim() || null,

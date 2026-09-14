@@ -18,7 +18,7 @@ export default async function ServicesHubPage() {
   return (
     <main className="bg-[#FAF5EE]">
       {/* HERO ÉDITORIAL */}
-      <section className="relative isolate overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-28">
+      <section className="relative isolate overflow-hidden pt-40 sm:pt-48 pb-20 sm:pt-48 sm:pb-28">
         {/* Décoration de fond subtile */}
         <div
           aria-hidden="true"

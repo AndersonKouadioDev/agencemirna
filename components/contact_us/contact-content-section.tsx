@@ -17,7 +17,7 @@ function SubmitButton() {
   );
 }
 
-export default function ContactContentSection() {
+export default function ContactContentSection({ settings }: { settings: any }) {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -51,7 +51,7 @@ export default function ContactContentSection() {
       className="relative isolate py-20 mx-auto max-w-screen-2xl"
     >
       <div className="container">
-        <div className="flex flex-col md:flex-row gap-8 bg-gray-50 p-8 rounded-lg">
+        <div className="flex flex-col md:flex-row gap-8 bg-[#FAF5EE] p-8 rounded-lg">
           <div className="w-full md:w-1/2 pr-8">
             <h2 className="text-3xl font-bold mb-4">Entrer en contact </h2>
             <p className="text-gray-600 mb-6">
@@ -70,11 +70,11 @@ export default function ContactContentSection() {
               </div>
               <div className="flex items-center">
                 <Mail className="w-5 h-5 mr-3 text-gray-400" />
-                <span>info@agencemirna.com</span>
+                <span>{settings?.email || "info@agencemirna.com"}</span>
               </div>
               <div className="flex items-center">
                 <Phone className="w-5 h-5 mr-3 text-gray-400" />
-                <span>(+225) 27 21 536 231 | (+225) 01 43 483 131 | (+225) 07 03 06 42 06</span>
+                <span>{settings?.phone || "(+225) 27 21 536 231 | (+225) 01 43 483 131 | (+225) 07 03 06 42 06"}</span>
               </div>
             </div>
           </div>

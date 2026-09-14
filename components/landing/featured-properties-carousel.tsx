@@ -67,7 +67,7 @@ export default function FeaturedPropertiesCarousel({
   if (biens.length === 0) return null;
 
   return (
-    <section className="relative bg-white pt-8 pb-4 sm:pt-24 sm:pb-12">
+    <section className="relative bg-[#FAF5EE] pt-8 pb-4 sm:pt-24 sm:pb-12">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         {/* Header */}
         <div className="flex items-end justify-between mb-8">
@@ -175,7 +175,7 @@ function PropertyCard({ bien }: { bien: FeaturedBien }) {
       </div>
 
       {/* Dark gradient overlay from bottom */}
-      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#1B3C35]/90 via-[#1B3C35]/40 to-transparent opacity-90 group-hover:opacity-100 transition-opacity" />
 
       {/* Badge Top Left */}
       <div className="absolute top-4 left-4">

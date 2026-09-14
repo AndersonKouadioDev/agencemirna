@@ -1,5 +1,7 @@
 import DescriptionSection from "@/components/properties/[property_id]/description-section";
 import GallerySection from "@/components/properties/[property_id]/gallery-section";
+import SimilarProperties from "@/components/properties/[property_id]/similar-properties";
+
 import { getBienWithImages } from "@/src/actions/bien.actions";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -145,6 +147,8 @@ export default async function Page(props: {
       />
       <DescriptionSection bien={bien} />
       <GallerySection bien={bien} />
+      <SimilarProperties currentBienId={bien.id} />
+
     </>
   );
 }

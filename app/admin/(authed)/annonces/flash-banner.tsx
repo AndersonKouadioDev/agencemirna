@@ -5,10 +5,10 @@ import { CheckCircle2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const MESSAGES: Record<string, string> = {
-  updated: "Service mis à jour.",
-  activated: "Service activé.",
-  deactivated: "Service désactivé.",
-  reordered: "Ordre mis à jour.",
+  created: "Promotion créée.",
+  saved: "Promotion enregistrée.",
+  updated: "Promotion mise à jour.",
+  deleted: "Promotion supprimée.",
 };
 
 export function FlashBanner({ type }: { type: string }) {
@@ -20,7 +20,7 @@ export function FlashBanner({ type }: { type: string }) {
     if (!message) return;
     const timer = setTimeout(() => {
       setVisible(false);
-      router.replace("/admin/services", { scroll: false });
+      router.replace("/admin/annonces", { scroll: false });
     }, 4000);
     return () => clearTimeout(timer);
   }, [message, router]);
@@ -36,7 +36,7 @@ export function FlashBanner({ type }: { type: string }) {
       <button
         onClick={() => {
           setVisible(false);
-          router.replace("/admin/services", { scroll: false });
+          router.replace("/admin/annonces", { scroll: false });
         }}
         className="rounded p-1 text-green-700 hover:bg-green-100"
         aria-label="Fermer"

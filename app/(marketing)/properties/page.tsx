@@ -1,7 +1,7 @@
 import HeroSection from "@/components/properties/hero-section";
 import ListPropertiesSection from "@/components/properties/list-properties-section";
 import { getAllBiens } from "@/src/actions/bien.actions";
-import { getBienReferenceData } from "@/src/actions/public";
+import { getBienReferenceData, listCommunesPublic, getActiveQuartiers } from "@/src/actions/public";
 
 /**
  * Page publique /properties.
@@ -24,9 +24,11 @@ export default async function Page({
     location: typeof sp.location === "string" ? sp.location : "",
   };
 
-  const [biens, refData] = await Promise.all([
+  const [biens, refData, communes, quartiers] = await Promise.all([
     getAllBiens(),
     getBienReferenceData(),
+    listCommunesPublic(),
+    getActiveQuartiers(),
   ]);
 
   return (
@@ -37,6 +39,8 @@ export default async function Page({
         types={refData.types}
         services={refData.services}
         initialFilters={initial}
+        communes={communes}
+        quartiers={quartiers}
       />
     </>
   );

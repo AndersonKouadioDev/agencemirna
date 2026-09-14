@@ -85,7 +85,7 @@ export default async function BlogPage() {
       />
 
       {/* HERO */}
-      <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16">
+      <section className="relative pt-40 sm:pt-48 pb-12 sm:pt-48 sm:pb-16">
         <div className="mx-auto max-w-5xl px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary mb-5">
             <Newspaper className="h-3.5 w-3.5" />

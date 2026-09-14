@@ -1,0 +1,103 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { createClient } from "@/src/supabase/server";
+import { getAdminUser } from "@/src/supabase/admin-auth";
+
+export type CommuneAdminRow = {
+  id: string;
+  nom: string;
+  slug: string;
+  is_active: boolean;
+  ordre: number;
+  updated_at: string;
+};
+
+export type CommuneFormData = {
+  id?: string;
+  nom: string;
+  slug: string;
+  is_active?: boolean;
+  ordre?: number;
+};
+
+export type ActionResult<T = void> =
+  | { ok: true; data: T }
+  | { ok: false; error: string };
+
+export async function listCommunesAdmin(): Promise<CommuneAdminRow[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("communes")
+    .select("*")
+    .order("ordre", { ascending: true });
+
+  if (error || !data) return [];
+  return data as CommuneAdminRow[];
+}
+
+export async function getCommuneAdmin(id: string): Promise<CommuneAdminRow | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("communes").select("*").eq("id", id).maybeSingle();
+  if (error || !data) return null;
+  return data as CommuneAdminRow;
+}
+
+export async function upsertCommune(input: CommuneFormData): Promise<ActionResult<{ id: string }>> {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, error: "Non autorisé." };
+
+  if (!input.nom?.trim()) return { ok: false, error: "Le nom est obligatoire." };
+  if (!input.slug?.trim()) return { ok: false, error: "Le slug est obligatoire." };
+
+  const supabase = await createClient();
+
+  const data = {
+    nom: input.nom.trim(),
+    slug: input.slug.trim(),
+    is_active: input.is_active ?? true,
+    ordre: input.ordre ?? 0,
+  };
+
+  if (input.id) {
+    const { error } = await supabase.from("communes").update(data).eq("id", input.id);
+    if (error) return { ok: false, error: error.message };
+    revalidatePath("/admin/communes");
+    return { ok: true, data: { id: input.id } };
+  } else {
+    const { data: existing } = await supabase.from("communes").select("ordre").order("ordre", { ascending: false }).limit(1);
+    const nextOrdre = ((existing?.[0]?.ordre as number | undefined) ?? 0) + 1;
+
+    const { data: created, error } = await supabase.from("communes").insert({ ...data, ordre: nextOrdre }).select("id").single();
+    if (error || !created) return { ok: false, error: error?.message ?? "Erreur." };
+    revalidatePath("/admin/communes");
+    return { ok: true, data: { id: created.id } };
+  }
+}
+
+export async function deleteCommune(id: string): Promise<ActionResult> {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, error: "Non autorisé." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("communes").delete().eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/admin/communes");
+  return { ok: true, data: undefined };
+}
+
+export async function toggleCommuneActive(id: string, isActive: boolean): Promise<ActionResult> {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, error: "Non autorisé." };
+  const supabase = await createClient();
+  const { error } = await supabase.from("communes").update({ is_active: isActive }).eq("id", id);
+  if (error) return { ok: false, error: error.message };
+  revalidatePath("/admin/communes");
+  return { ok: true, data: undefined };
+}
+
+export async function upsertCommuneAndRedirect(input: CommuneFormData) {
+  const result = await upsertCommune(input);
+  if (result.ok) redirect("/admin/communes?flash=saved");
+  return result;
+}

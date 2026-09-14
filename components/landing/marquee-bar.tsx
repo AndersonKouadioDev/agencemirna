@@ -6,7 +6,7 @@ import {
   ArrowRight,
   Newspaper,
 } from "lucide-react";
-import { getActivePromotions } from "@/src/actions/public";
+import { getActiveAnnonces } from "@/src/actions/public";
 
 /**
  * Bandeau défilant en haut de la home : annonces et liens rapides.
@@ -46,13 +46,13 @@ const FALLBACK_ANNOUNCEMENTS: AnnouncementItem[] = [
 ];
 
 export default async function MarqueeBar() {
-  const promos = await getActivePromotions();
+  const promos = await getActiveAnnonces();
 
   // Construit la liste : promos actives (max 3) puis fallback pour remplir
   const promoItems: AnnouncementItem[] = promos.slice(0, 3).map((p) => ({
     icon: Sparkles,
     text: p.title,
-    href: p.cta_url || "/promotions",
+    href: p.cta_url || "/annonces",
   }));
 
   const announcements: AnnouncementItem[] =
@@ -64,7 +64,7 @@ export default async function MarqueeBar() {
   const items = [...announcements, ...announcements];
 
   return (
-    <div className="relative bg-secondary text-white overflow-hidden border-b border-white/5">
+    <div className="relative bg-secondary text-white overflow-hidden border-b border-[#F5B324]/20">
       <div
         className="flex group"
         role="region"
@@ -77,11 +77,11 @@ export default async function MarqueeBar() {
               <Link
                 key={i}
                 href={a.href}
-                className="inline-flex items-center gap-2 py-2.5 px-6 text-xs sm:text-sm font-medium hover:text-primary transition-colors whitespace-nowrap border-r border-white/10"
+                className="inline-flex items-center gap-2.5 py-3 px-8 text-sm font-medium hover:text-[#F5B324] transition-colors whitespace-nowrap border-r border-white/10"
               >
-                <Icon className="h-3.5 w-3.5 text-primary shrink-0" />
+                <Icon className="h-4 w-4 text-[#F5B324] shrink-0" />
                 <span>{a.text}</span>
-                <ArrowRight className="h-3 w-3 opacity-50" />
+                <ArrowRight className="h-3.5 w-3.5 text-[#F5B324] opacity-70" />
               </Link>
             );
           })}

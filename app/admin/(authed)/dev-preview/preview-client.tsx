@@ -159,7 +159,7 @@ export function PreviewClient() {
           emptyMessage="Aucun bien."
           emptyAction={
             <Button asChild size="sm">
-              <Link href="#">Créer un bien</Link>
+              <Link href="/admin/biens/nouveau">Créer un bien</Link>
             </Button>
           }
         />

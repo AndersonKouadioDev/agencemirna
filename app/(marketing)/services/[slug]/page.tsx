@@ -62,7 +62,7 @@ export default async function ServiceDetailPage(props: {
                 }}
               />
             </div>
-            <div className="mx-auto max-w-6xl px-6 lg:px-8 pt-36 pb-24 sm:pt-44 sm:pb-32 text-white">
+            <div className="mx-auto max-w-6xl px-6 lg:px-8 pt-44 sm:pt-52 pb-24 sm:pt-52 sm:pb-32 text-white">
               <Breadcrumbs className="mb-8 text-white/80 [&_a]:text-white/80 [&_a:hover]:text-white">
                 <Breadcrumbs.Item href="/">Accueil</Breadcrumbs.Item>
                 <Breadcrumbs.Item href="/services">Services</Breadcrumbs.Item>
@@ -87,7 +87,7 @@ export default async function ServiceDetailPage(props: {
           </>
         ) : (
           // Fallback sans image : dégradé brand
-          <div className="bg-gradient-to-br from-secondary via-secondary/90 to-primary text-white pt-36 pb-24 sm:pt-44 sm:pb-32">
+          <div className="bg-gradient-to-br from-secondary via-secondary/90 to-primary text-white pt-44 sm:pt-52 pb-24 sm:pt-52 sm:pb-32">
             <div className="mx-auto max-w-6xl px-6 lg:px-8">
               <Breadcrumbs className="mb-8 text-white/80 [&_a]:text-white/80 [&_a:hover]:text-white">
                 <Breadcrumbs.Item href="/">Accueil</Breadcrumbs.Item>

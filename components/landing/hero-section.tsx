@@ -7,7 +7,7 @@ import {
   Search,
   X,
   MapPin,
-  Building2,
+  Building2, Bed, Sofa, Bath,
   Briefcase
 } from "lucide-react";
 import { buttonVariants } from "../ui/button";
@@ -267,7 +267,7 @@ const HERO_SLIDES = [
   }
 ];
 
-export default function HeroSection() {
+export default function HeroSection({ communes = [], quartiers = [], types = [], services = [] }: { communes?: any[], quartiers?: any[], types?: any[], services?: any[] }) {
   const [currentSlide, setCurrentSlide] = React.useState(0);
   const [isSearchModalOpen, setIsSearchModalOpen] = React.useState(false);
   const [biens, setBiens] = React.useState<any[]>([]);
@@ -366,7 +366,7 @@ export default function HeroSection() {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 w-full max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16 pt-40 pb-32 flex-1 flex flex-col justify-center">
+        <div className="relative z-10 w-full max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16 pt-48 lg:pt-56 pb-32 flex-1 flex flex-col justify-center">
           <div className="max-w-4xl xl:max-w-5xl">
             <AnimatePresence mode="wait">
               <motion.div
@@ -560,7 +560,7 @@ export default function HeroSection() {
                         </button>
                       </div>
                     ) : (
-                      <HeroSearchBar onSearch={(params) => {
+                      <HeroSearchBar communes={communes} quartiers={quartiers} types={types} services={services} onSearch={(params) => {
                          const locVal = params.get("location");
                          const typeVal = params.get("type");
                          const serviceVal = params.get("service");
@@ -606,12 +606,6 @@ export default function HeroSection() {
                      setSelectedBien(null);
                      // setActiveSearchStep removed
 
-                     const resultsGrid = document.getElementById("mock-results-grid");
-                     const emptyState = document.getElementById("mock-empty-state");
-                     if (resultsGrid && emptyState) {
-                       emptyState.style.display = "none";
-                       resultsGrid.style.display = "block";
-                     }
                   }} />
                     )
                   )}
@@ -623,12 +617,12 @@ export default function HeroSection() {
               <div className="flex-1 bg-stone-50 overflow-hidden flex flex-col lg:flex-row">
                  {/* Properties Grid */}
                  <div className="flex-1 h-full overflow-y-auto p-6 md:p-10 scrollbar-hide">
-                    <div id="mock-empty-state" className="h-full flex flex-col items-center justify-center text-center text-stone-400 space-y-4">
+                    <div id="mock-empty-state" className={cn("h-full flex-col items-center justify-center text-center text-stone-400 space-y-4", hasSearched || selectedBien ? "hidden" : "flex")}>
                       <Search className="h-12 w-12 opacity-20" />
                       <p className="text-lg font-medium">Sélectionnez vos critères et lancez la recherche</p>
                     </div>
 
-                    <div id="mock-results-grid" style={{ display: "none" }} className="pb-32">
+                    <div id="mock-results-grid" className={cn("pb-32", hasSearched || selectedBien ? "block" : "hidden")}>
                     {/* Selected Bien Detail View */}
                     {selectedBien ? (
                       <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
@@ -707,7 +701,7 @@ export default function HeroSection() {
                               {selectedBien.chambre && (
                                 <div className="flex items-center gap-3">
                                   <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center text-primary">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg>
+                                    <Bed className="w-5 h-5" />
                                   </div>
                                   <div>
                                     <div className="text-lg font-black text-secondary leading-none">{selectedBien.chambre}</div>
@@ -719,7 +713,7 @@ export default function HeroSection() {
                               {selectedBien.salon && (
                                 <div className="flex items-center gap-3">
                                   <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center text-primary">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
+                                    <Sofa className="w-5 h-5" />
                                   </div>
                                   <div>
                                     <div className="text-lg font-black text-secondary leading-none">{selectedBien.salon}</div>
@@ -731,7 +725,7 @@ export default function HeroSection() {
                               {selectedBien.salle_bains && (
                                 <div className="flex items-center gap-3">
                                   <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center text-primary">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 2v4"/><path d="M14 2v4"/><path d="M18 2v4"/><path d="M7 10h10"/><path d="M9 22v-4h6v4"/><path d="M5 10h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6a2 2 0 0 1 2-2z"/></svg>
+                                    <Bath className="w-5 h-5" />
                                   </div>
                                   <div>
                                     <div className="text-lg font-black text-secondary leading-none">{selectedBien.salle_bains}</div>
@@ -779,7 +773,7 @@ export default function HeroSection() {
                         <h3 className="text-2xl font-bold font-agate text-secondary">Biens correspondants</h3>
                         {!isLoadingBiens && <span className="text-sm font-semibold bg-stone-200 text-stone-600 px-3 py-1 rounded-full whitespace-nowrap shrink-0 ml-2">{filteredBiens.length} pépite(s)</span>}
                       </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8 pb-20">
                         {/* REAL DATA FROM DB */}
                         {isLoadingBiens ? (
                           <div className="col-span-full flex flex-col items-center justify-center p-10 text-stone-400">

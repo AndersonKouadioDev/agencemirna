@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { MapPin, Building2, Briefcase, Search, ChevronDown, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -12,7 +12,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useOnClickOutside } from "@/hooks/use-on-click-outside";
 
-const LOCATIONS_BY_COMMUNE = ABIDJAN_LOCATIONS.reduce(
+const FALLBACK_LOCATIONS_BY_COMMUNE = ABIDJAN_LOCATIONS.reduce(
   (acc, loc) => {
     if (!acc[loc.group]) acc[loc.group] = [];
     acc[loc.group].push(loc);
@@ -21,14 +21,58 @@ const LOCATIONS_BY_COMMUNE = ABIDJAN_LOCATIONS.reduce(
   {} as Record<string, typeof ABIDJAN_LOCATIONS>,
 );
 
-export default function HeroSearchBar({ onSearch }: { onSearch?: (params: URLSearchParams) => void }) {
+export default function HeroSearchBar({ 
+  onSearch, 
+  communes = [], 
+  quartiers = [], 
+  types = [], 
+  services = [],
+  children
+}: { 
+  onSearch?: (params: URLSearchParams) => void;
+  communes?: any[];
+  quartiers?: any[];
+  types?: any[];
+  services?: any[];
+  children?: React.ReactNode;
+}) {
   const router = useRouter();
-  const [location, setLocation] = React.useState<string | null>(null);
-  const [type, setType] = React.useState<string | null>(null);
-  const [service, setService] = React.useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const [location, setLocation] = React.useState<string | null>(searchParams.get("location") || searchParams.get("loc") || null);
+  const [type, setType] = React.useState<string | null>(searchParams.get("type") || null);
+  const [service, setService] = React.useState<string | null>(searchParams.get("service") || null);
 
   const [activeTab, setActiveTab] = React.useState<"location" | "type" | "service" | null>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const loc = searchParams.get("location") || searchParams.get("loc");
+    if (loc) setLocation(loc);
+    const t = searchParams.get("type");
+    if (t) setType(t);
+    const s = searchParams.get("service");
+    if (s) setService(s);
+  }, [searchParams]);
+
+
+  const dynamicLOCATIONS_BY_COMMUNE = React.useMemo<Record<string, any[]>>(() => {
+    if (communes.length > 0) {
+      const grouped: Record<string, any[]> = {};
+      communes.forEach(c => {
+        grouped[c.nom] = [{ value: c.nom, label: `${c.nom} (toute la commune)`, group: c.nom }];
+        const relatedQuartiers = quartiers.filter(q => q.commune_id === c.id || (q.commune && q.commune.toLowerCase() === c.nom.toLowerCase()));
+        relatedQuartiers.forEach(q => {
+          grouped[c.nom].push({ value: q.search_query || q.name, label: q.name, group: c.nom });
+        });
+      });
+      return grouped;
+    }
+    return FALLBACK_LOCATIONS_BY_COMMUNE as Record<string, any[]>;
+  }, [communes, quartiers]);
+  
+  const dynamicTYPES: {value: string, label: string}[] = types && types.length > 0 ? types.map(t => ({ value: t.name, label: t.name })) : BIEN_TYPES;
+  const dynamicSERVICES: {value: string, label: string}[] = services && services.length > 0 ? services.map(s => ({ value: s.name, label: s.name })) : BIEN_SERVICES;
+
 
   // Don't auto open by default unless you want it, but the user is complaining it stays open.
   // Actually if we want to close it externally from hero-section, we need a way to pass activeTab from the parent.
@@ -44,11 +88,11 @@ export default function HeroSearchBar({ onSearch }: { onSearch?: (params: URLSea
     // Correct URL parameter mapping for ListPropertiesSection compatibility
     if (location) params.set("location", location); // use location instead of q
     if (type) {
-      const tLabel = BIEN_TYPES.find(t => t.value === type)?.label;
+      const tLabel = dynamicTYPES.find(t => t.value === type)?.label;
       if (tLabel) params.set("type", tLabel);
     }
     if (service) {
-      const sLabel = BIEN_SERVICES.find(s => s.value === service)?.label;
+      const sLabel = dynamicSERVICES.find(s => s.value === service)?.label;
       if (sLabel) params.set("service", sLabel);
     }
     
@@ -70,13 +114,13 @@ export default function HeroSearchBar({ onSearch }: { onSearch?: (params: URLSea
 
   const getTypeLabel = () => {
     if (!type) return "Quel type ?";
-    const t = BIEN_TYPES.find((x) => x.value === type);
+    const t = dynamicTYPES.find((x) => x.value === type);
     return t ? t.label : "Quel type ?";
   };
 
   const getServiceLabel = () => {
     if (!service) return "Quel projet ?";
-    const s = BIEN_SERVICES.find((x) => x.value === service);
+    const s = dynamicSERVICES.find((x) => x.value === service);
     return s ? s.label : "Quel projet ?";
   };
 
@@ -87,7 +131,7 @@ export default function HeroSearchBar({ onSearch }: { onSearch?: (params: URLSea
   if (activeTab === "service") progress = 100;
 
   return (
-    <div className="relative w-full max-w-[850px] mx-auto" ref={containerRef}>
+    <div className={cn("relative w-full mx-auto", children ? "max-w-[1050px]" : "max-w-[850px]")} ref={containerRef}>
       {/* TRIGGER BAR */}
       <form
         onSubmit={onSubmit}
@@ -170,13 +214,16 @@ export default function HeroSearchBar({ onSearch }: { onSearch?: (params: URLSea
           </button>
         </div>
 
-        <button
-          type="submit"
-          className="w-full md:w-auto mt-2 md:mt-0 bg-primary text-white p-4 md:px-8 md:py-5 rounded-full font-bold flex items-center justify-center gap-3 hover:bg-primary/90 transition-all shadow-lg shadow-primary/30 ml-0 md:ml-2 shrink-0 scale-100 hover:scale-105 z-20"
-        >
-          <Search className="h-5 w-5" />
-          <span className="inline text-[15px]">Rechercher</span>
-        </button>
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 mt-2 md:mt-0 ml-0 md:ml-2">
+          {children}
+          <button
+            type="submit"
+            className="w-full md:w-auto bg-primary text-white p-4 md:px-8 md:py-5 rounded-full font-bold flex items-center justify-center gap-3 hover:bg-primary/90 transition-all shadow-lg shadow-primary/30 shrink-0 scale-100 hover:scale-105 z-20"
+          >
+            <Search className="h-5 w-5" />
+            <span className="inline text-[15px]">Rechercher</span>
+          </button>
+        </div>
       </form>
 
       {/* SINGLE POPOVER CONTAINER */}
@@ -223,7 +270,7 @@ export default function HeroSearchBar({ onSearch }: { onSearch?: (params: URLSea
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-8 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-                      {Object.entries(LOCATIONS_BY_COMMUNE).map(([commune, items]) => (
+                      {Object.entries(dynamicLOCATIONS_BY_COMMUNE).map(([commune, items]) => (
                         <div key={commune}>
                           <h4 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">{commune}</h4>
                           <div className="flex flex-col gap-2">
@@ -275,7 +322,7 @@ export default function HeroSearchBar({ onSearch }: { onSearch?: (params: URLSea
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {BIEN_TYPES.filter((t) => t.value).map((opt) => {
+                      {dynamicTYPES.filter((t) => t.value).map((opt) => {
                         const isSelected = type === opt.value;
                         return (
                           <button
@@ -320,7 +367,7 @@ export default function HeroSearchBar({ onSearch }: { onSearch?: (params: URLSea
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {BIEN_SERVICES.filter((s) => s.value).map((opt) => {
+                      {dynamicSERVICES.filter((s) => s.value).map((opt) => {
                         const isSelected = service === opt.value;
                         return (
                           <button
@@ -334,11 +381,11 @@ export default function HeroSearchBar({ onSearch }: { onSearch?: (params: URLSea
                                 const params = new URLSearchParams();
                                 if (location) params.set("location", location);
                                 if (type) {
-                                  const tLabel = BIEN_TYPES.find(t => t.value === type)?.label;
+                                  const tLabel = dynamicTYPES.find(t => t.value === type)?.label;
                                   if (tLabel) params.set("type", tLabel);
                                 }
                                 
-                                const sLabel = BIEN_SERVICES.find(s => s.value === opt.value)?.label;
+                                const sLabel = dynamicSERVICES.find(s => s.value === opt.value)?.label;
                                 if (sLabel) params.set("service", sLabel);
                                 
                                 if (onSearch) {

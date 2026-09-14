@@ -5,7 +5,7 @@ export default function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative overflow-hidden isolate pt-52 pb-20 mx-auto max-w-screen-2xl"
+      className="relative overflow-hidden isolate pt-60 sm:pt-64 pb-20 mx-auto max-w-screen-2xl"
     >
       <div className="container relative z-10">
         <div className="max-w-md md:max-w-screen-sm mx-auto text-center">

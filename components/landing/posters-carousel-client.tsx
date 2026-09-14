@@ -135,7 +135,7 @@ export default function PostersCarouselClient({
         {/* Mobile : "Tout voir" */}
         <div className="mt-6 flex sm:hidden justify-center">
           <Link
-            href="/promotions"
+            href="/annonces"
             className="inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:gap-2.5 transition-all"
           >
             Voir toutes les offres

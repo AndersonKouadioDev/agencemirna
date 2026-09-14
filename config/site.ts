@@ -153,9 +153,9 @@ export const getMenuList = (pathname: string): MenuItem[] => {
     },
     {
       id: 3,
-      label: "Promotions",
-      href: "/promotions",
-      active: pathname.startsWith("/promotions"),
+      label: "Annonces",
+      href: "/annonces",
+      active: pathname.startsWith("/annonces"),
     },
     {
       id: 4,

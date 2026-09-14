@@ -33,12 +33,14 @@ export type BienAdminRow = {
   salon: number | null;
   salle_bains: number | null;
   capacity: number | null;
+  adresse_complete: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  lien_video: string | null;
   address: string | null;
   ville_commune: string | null;
   pays: string | null;
   localisation: string | null;
-  latitude: number | null;
-  longitude: number | null;
   folder: string | null;
   type_bien_id: number | null;
   service_bien_id: number | null;

@@ -15,6 +15,7 @@ import {
   List,
 } from "lucide-react";
 import { PropertiesMap } from "./properties-map";
+import HeroSearchBar from "../landing/hero-search-bar";
 import {
   Header,
   Label as HeroLabel,
@@ -89,16 +90,37 @@ const SORT_OPTIONS = [
  * (comme dans le hero), pour une cohérence visuelle stricte.
  */
 export default function ListPropertiesSection({
+  communes = [],
+  quartiers = [],
   initialBiens,
   types,
   services,
   initialFilters,
 }: {
   initialBiens: any[];
-  types: RefItem[];
-  services: RefItem[];
+  types: any[];
+  services: any[];
   initialFilters: Partial<Filters>;
+  communes?: any[];
+  quartiers?: any[];
 }) {
+
+
+  const dynamicLOCATIONS_BY_COMMUNE = React.useMemo<Record<string, any[]>>(() => {
+    if (communes && communes.length > 0) {
+      const grouped: Record<string, any[]> = {};
+      communes.forEach(c => {
+        grouped[c.nom] = [{ value: c.nom, label: `${c.nom} (toute la commune)`, group: c.nom }];
+        const relatedQuartiers = (quartiers || []).filter(q => q.commune_id === c.id || (q.commune && q.commune.toLowerCase() === c.nom.toLowerCase()));
+        relatedQuartiers.forEach(q => {
+          grouped[c.nom].push({ value: q.search_query || q.name, label: q.name, group: c.nom });
+        });
+      });
+      return grouped;
+    }
+    return LOCATIONS_BY_COMMUNE;
+  }, [communes, quartiers]);
+
   const [filters, setFilters] = React.useState<Filters>({
     ...EMPTY_FILTERS,
     ...initialFilters,
@@ -124,7 +146,8 @@ export default function ListPropertiesSection({
       
       if (filters.location && filters.location !== "toute la ville") {
         // Retrieve the human readable label for the location to match against DB
-        const locObj = ABIDJAN_LOCATIONS.find(l => l.value === filters.location);
+        const allLocs = Object.values(dynamicLOCATIONS_BY_COMMUNE).flat();
+        const locObj = allLocs.find(l => l.value === filters.location);
         const locLabel = locObj ? locObj.label.replace(" (toute la commune)", "") : filters.location;
         const loc = normalize(locLabel);
         const hay = normalize([bien.address, bien.ville_commune, bien.pays].filter(Boolean).join(" "));
@@ -174,17 +197,19 @@ export default function ListPropertiesSection({
   return (
     <section
       id="hero"
-      className="relative isolate py-32 mx-auto max-w-screen-2xl"
+      className="relative isolate bg-[#FAF5EE] pt-0 pb-32 mx-auto max-w-screen-2xl"
     >
       <PropertySearchBar
         filters={filters}
         setFilters={setFilters}
         types={types}
         services={services}
+        communes={communes}
+        quartiers={quartiers}
       />
       {filteredBiens.length > 0 ? (
         <>
-          <div className="px-6 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 max-w-screen-xl mx-auto">
+          <div className="px-6 mt-12 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 max-w-screen-xl mx-auto">
             <div className="text-sm text-neutral-600">
               <span className="font-semibold text-secondary">
                 {filteredBiens.length}
@@ -319,11 +344,15 @@ export const PropertySearchBar = ({
   setFilters,
   types,
   services,
+  communes,
+  quartiers,
 }: {
   filters: Filters;
   setFilters: (f: Filters) => void;
-  types: RefItem[];
-  services: RefItem[];
+  types: any[];
+  services: any[];
+  communes: any[];
+  quartiers: any[];
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -394,225 +423,81 @@ export const PropertySearchBar = ({
   return (
     <div className="px-6 max-w-screen-xl mx-auto">
       <Motion variant="verticalSlideIn">
-        <div className="relative -top-40 bg-white rounded-2xl shadow-xl border border-stone-200/80 overflow-hidden">
-          {/* Ligne principale : 4 colonnes uniformes avec le hero */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr_1fr_auto] gap-1 p-2 items-stretch">
-            {/* Localisation (HeroUI Select avec sections par commune) */}
-            <div className="lg:border-r lg:border-stone-200/80 px-1">
-              <Select
-                aria-label="Localisation"
-                placeholder="Toute la ville"
-                selectedKey={filters.location || null}
-                onSelectionChange={(k) => update({ location: k ? String(k) : "" })}
-                className="w-full"
+        <div>
+        <div className="-mt-24 sm:-mt-28 max-w-[1050px] mx-auto z-40 relative px-4 md:px-0">
+          <HeroSearchBar 
+            communes={communes} 
+            quartiers={quartiers} 
+            types={types} 
+            services={services} 
+          >
+            <div className="hidden md:flex items-center gap-2 border-l border-stone-200/60 pl-2 ml-2">
+              <Button
+                variant="ghost"
+                onClick={() => setShowAdvanced((o) => !o)}
+                className={cn(
+                  "rounded-full px-4 h-12 shadow-none border-0 hover:bg-stone-200/50 transition-colors text-stone-500 hover:text-stone-800",
+                  (showAdvanced || advancedActive) && "bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary"
+                )}
               >
-                <HeroLabel className="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 px-3 pt-2 pb-0.5">
-                  Localisation
-                </HeroLabel>
-                <Select.Trigger className="w-full flex items-center gap-3 px-3 pb-2 hover:bg-neutral-50 rounded-xl transition-colors min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 data-[hovered=true]:bg-neutral-50">
-                  <MapPin
-                    className={`h-4 w-4 shrink-0 ${
-                      filters.location ? "text-primary" : "text-neutral-400"
-                    }`}
-                  />
-                  <Select.Value className="flex-1 text-left text-sm font-medium text-neutral-900 truncate data-[placeholder]:text-neutral-400" />
-                  <Select.Indicator className="text-neutral-400 data-[open=true]:text-primary transition-colors" />
-                </Select.Trigger>
-                <Select.Popover className="max-h-80 overflow-y-auto rounded-2xl bg-white shadow-2xl border border-stone-200 p-1.5 min-w-[280px] z-[200]">
-                  <ListBox>
-                    {Object.entries(LOCATIONS_BY_COMMUNE).map(
-                      ([commune, items], idx) => (
-                        <React.Fragment key={commune}>
-                          {idx > 0 && (
-                            <Separator className="my-1 bg-stone-100" />
-                          )}
-                          <ListBox.Section>
-                            <Header className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-primary/80 sticky top-0 bg-white">
-                              {commune}
-                            </Header>
-                            {items.map((opt) => (
-                              <ListBox.Item
-                                key={opt.value}
-                                id={opt.value}
-                                textValue={opt.label}
-                                className="px-3 py-2 rounded-lg text-sm text-neutral-800 cursor-pointer flex items-center justify-between data-[selected=true]:bg-primary/10 data-[selected=true]:text-primary data-[selected=true]:font-semibold data-[hovered=true]:bg-stone-100 transition-colors"
-                              >
-                                {opt.label}
-                                <ListBox.ItemIndicator className="text-primary">
-                                  ✓
-                                </ListBox.ItemIndicator>
-                              </ListBox.Item>
-                            ))}
-                          </ListBox.Section>
-                        </React.Fragment>
-                      ),
-                    )}
-                  </ListBox>
-                </Select.Popover>
-              </Select>
+                <SlidersHorizontal className="h-4 w-4 mr-2" />
+                {advancedActive ? "Filtres avancés" : "Plus de filtres"}
+                {advancedActive && (
+                  <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary text-white text-[10px] font-bold">
+                    {[filters.priceMin, filters.priceMax, filters.chambres].filter(Boolean).length}
+                  </span>
+                )}
+              </Button>
+              {hasActive && (
+                <Button
+                  variant="ghost"
+                  onClick={handleReset}
+                  className="rounded-full h-12 px-3 shadow-none border-0 hover:bg-red-50 hover:text-red-600 transition-colors text-stone-500"
+                  aria-label="Réinitialiser"
+                  title="Réinitialiser tous les filtres"
+                >
+                  <ResetIcon className="w-4 h-4" />
+                </Button>
+              )}
             </div>
-
-            {/* Type */}
-            <div className="lg:border-r lg:border-stone-200/80 px-1">
-              <Select
-                aria-label="Type"
-                placeholder="Tous les types"
-                selectedKey={filters.type || null}
-                onSelectionChange={(k) => update({ type: k ? String(k) : "" })}
-                className="w-full"
-              >
-                <HeroLabel className="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 px-3 pt-2 pb-0.5">
-                  Type
-                </HeroLabel>
-                <Select.Trigger className="w-full flex items-center gap-3 px-3 pb-2 hover:bg-neutral-50 rounded-xl transition-colors min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 data-[hovered=true]:bg-neutral-50">
-                  <Building2
-                    className={`h-4 w-4 shrink-0 ${
-                      filters.type ? "text-primary" : "text-neutral-400"
-                    }`}
-                  />
-                  <Select.Value className="flex-1 text-left text-sm font-medium text-neutral-900 truncate data-[placeholder]:text-neutral-400" />
-                  <Select.Indicator className="text-neutral-400 data-[open=true]:text-primary transition-colors" />
-                </Select.Trigger>
-                <Select.Popover className="max-h-80 overflow-y-auto rounded-2xl bg-white shadow-2xl border border-stone-200 p-1.5 min-w-[220px] z-[200]">
-                  <ListBox>
-                    {types.map((t) => (
-                      <ListBox.Item
-                        key={t.id}
-                        id={t.name}
-                        textValue={t.name}
-                        className="px-3 py-2 rounded-lg text-sm text-neutral-800 cursor-pointer flex items-center justify-between data-[selected=true]:bg-primary/10 data-[selected=true]:text-primary data-[selected=true]:font-semibold data-[hovered=true]:bg-stone-100 transition-colors"
-                      >
-                        {t.name}
-                        <ListBox.ItemIndicator className="text-primary">
-                          ✓
-                        </ListBox.ItemIndicator>
-                      </ListBox.Item>
-                    ))}
-                  </ListBox>
-                </Select.Popover>
-              </Select>
-            </div>
-
-            {/* Service */}
-            <div className="lg:border-r lg:border-stone-200/80 px-1">
-              <Select
-                aria-label="Service"
-                placeholder="Tous les services"
-                selectedKey={filters.service || null}
-                onSelectionChange={(k) =>
-                  update({ service: k ? String(k) : "" })
-                }
-                className="w-full"
-              >
-                <HeroLabel className="block text-[10px] font-semibold uppercase tracking-wider text-neutral-500 px-3 pt-2 pb-0.5">
-                  Service
-                </HeroLabel>
-                <Select.Trigger className="w-full flex items-center gap-3 px-3 pb-2 hover:bg-neutral-50 rounded-xl transition-colors min-h-[44px] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 data-[hovered=true]:bg-neutral-50">
-                  <Briefcase
-                    className={`h-4 w-4 shrink-0 ${
-                      filters.service ? "text-primary" : "text-neutral-400"
-                    }`}
-                  />
-                  <Select.Value className="flex-1 text-left text-sm font-medium text-neutral-900 truncate data-[placeholder]:text-neutral-400" />
-                  <Select.Indicator className="text-neutral-400 data-[open=true]:text-primary transition-colors" />
-                </Select.Trigger>
-                <Select.Popover className="max-h-80 overflow-y-auto rounded-2xl bg-white shadow-2xl border border-stone-200 p-1.5 min-w-[220px] z-[200]">
-                  <ListBox>
-                    {services.map((s) => (
-                      <ListBox.Item
-                        key={s.id}
-                        id={s.name}
-                        textValue={s.name}
-                        className="px-3 py-2 rounded-lg text-sm text-neutral-800 cursor-pointer flex items-center justify-between data-[selected=true]:bg-primary/10 data-[selected=true]:text-primary data-[selected=true]:font-semibold data-[hovered=true]:bg-stone-100 transition-colors"
-                      >
-                        {s.name}
-                        <ListBox.ItemIndicator className="text-primary">
-                          ✓
-                        </ListBox.ItemIndicator>
-                      </ListBox.Item>
-                    ))}
-                  </ListBox>
-                </Select.Popover>
-              </Select>
-            </div>
-
-            {/* Bouton Rechercher (avec champ texte intégré sur mobile, dropdown sur desktop) */}
+          </HeroSearchBar>
+          
+          {/* Mobile version of the buttons */}
+          <div className="mt-4 flex md:hidden items-center justify-center gap-2">
             <Button
-              type="button"
-              onClick={onSearchSubmit}
-              className="rounded-xl h-auto px-6 sm:px-8 self-stretch min-h-[64px]"
-            >
-              <Search className="h-4 w-4 sm:mr-2" />
-              <span className="sm:inline">Rechercher</span>
-            </Button>
-          </div>
-
-          {/* Ligne secondaire : champ recherche texte libre + toggle filtres avancés */}
-          <div className="border-t border-stone-200/80 px-4 py-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative flex-1">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400"
-                size={16}
-              />
-              <Input
-                type="text"
-                placeholder="Recherche libre (nom, adresse, mot-clé...)"
-                className="pl-10 pr-4 py-2 w-full rounded-full"
-                value={localQ}
-                onChange={(e) => setLocalQ(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    onSearchSubmit();
-                  }
-                }}
-              />
-            </div>
-
-            <Button
-              type="button"
               variant="outline"
               onClick={() => setShowAdvanced((o) => !o)}
               className={cn(
-                "rounded-full px-4 md:px-5 shrink-0 inline-flex items-center gap-1.5",
-                (showAdvanced || advancedActive) &&
-                  "border-primary text-primary",
+                "rounded-full px-5 h-10 shadow-sm bg-white border border-stone-200 hover:bg-neutral-50 transition-colors",
+                (showAdvanced || advancedActive) && "border-primary text-primary"
               )}
             >
-              <SlidersHorizontal className="h-4 w-4" />
-              <span className="hidden sm:inline">
-                {advancedActive ? "Filtres avancés" : "Plus de filtres"}
-              </span>
+              <SlidersHorizontal className="h-4 w-4 mr-2" />
+              {advancedActive ? "Filtres avancés" : "Plus de filtres"}
               {advancedActive && (
-                <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary text-white text-[10px] font-bold">
-                  {
-                    [
-                      filters.priceMin,
-                      filters.priceMax,
-                      filters.chambres,
-                    ].filter(Boolean).length
-                  }
+                <span className="ml-2 inline-flex items-center justify-center h-5 w-5 rounded-full bg-primary text-white text-[10px] font-bold">
+                  {[filters.priceMin, filters.priceMax, filters.chambres].filter(Boolean).length}
                 </span>
               )}
             </Button>
-
             {hasActive && (
               <Button
-                className="rounded-full px-4 md:px-5 shrink-0"
-                onClick={handleReset}
-                type="button"
                 variant="outline"
+                onClick={handleReset}
+                className="rounded-full h-10 px-4 shadow-sm bg-white border border-stone-200 hover:bg-neutral-50 transition-colors text-neutral-600"
                 aria-label="Réinitialiser"
                 title="Réinitialiser tous les filtres"
               >
-                <ResetIcon className="w-4 h-4" />
+                <ResetIcon className="w-4 h-4 mr-2" />
+                Effacer
               </Button>
             )}
           </div>
-
-          {/* Panneau avancé (Prix min/max + Chambres) */}
+        </div>
+        
+        {/* Panneau avancé (Prix min/max + Chambres) */}
           {showAdvanced && (
-            <div className="border-t border-stone-200/80 p-5 bg-neutral-50">
+            <div className="max-w-[1050px] mx-auto mt-4 mx-4 md:mx-auto rounded-2xl border border-stone-200/80 p-5 bg-white shadow-xl relative z-30">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-1.5">

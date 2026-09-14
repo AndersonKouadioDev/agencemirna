@@ -15,7 +15,7 @@ import { getAdminUser } from "@/src/supabase/admin-auth";
 // Types
 // ============================================================================
 
-export type PromotionAdminRow = {
+export type AnnonceAdminRow = {
   id: string;
   title: string;
   description: string | null;
@@ -30,7 +30,7 @@ export type PromotionAdminRow = {
   updated_at: string;
 };
 
-export type PromotionFormData = {
+export type AnnonceFormData = {
   id?: string;
   title: string;
   description?: string | null;
@@ -52,32 +52,32 @@ export type ActionResult<T = void> =
 // LIST
 // ============================================================================
 
-export async function listPromotionsAdmin(): Promise<PromotionAdminRow[]> {
+export async function listAnnoncesAdmin(): Promise<AnnonceAdminRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("promotions")
+    .from("annonces")
     .select(
       "id, title, description, image, cta_label, cta_url, starts_at, ends_at, show_on_home, is_active, ordre, updated_at",
     )
     .order("ordre", { ascending: true });
 
   if (error || !data) {
-    if (error) console.error("listPromotionsAdmin error:", error);
+    if (error) console.error("listAnnoncesAdmin error:", error);
     return [];
   }
-  return data as PromotionAdminRow[];
+  return data as AnnonceAdminRow[];
 }
 
 // ============================================================================
 // GET
 // ============================================================================
 
-export async function getPromotionAdmin(
+export async function getAnnonceAdmin(
   id: string,
-): Promise<PromotionAdminRow | null> {
+): Promise<AnnonceAdminRow | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("promotions")
+    .from("annonces")
     .select(
       "id, title, description, image, cta_label, cta_url, starts_at, ends_at, show_on_home, is_active, ordre, updated_at",
     )
@@ -85,10 +85,10 @@ export async function getPromotionAdmin(
     .maybeSingle();
 
   if (error || !data) {
-    if (error) console.error("getPromotionAdmin error:", error);
+    if (error) console.error("getAnnonceAdmin error:", error);
     return null;
   }
-  return data as PromotionAdminRow;
+  return data as AnnonceAdminRow;
 }
 
 // ============================================================================
@@ -96,7 +96,7 @@ export async function getPromotionAdmin(
 // ============================================================================
 
 export async function upsertPromotion(
-  input: PromotionFormData,
+  input: AnnonceFormData,
 ): Promise<ActionResult<{ id: string }>> {
   const admin = await getAdminUser();
   if (!admin) return { ok: false, error: "Non autorisé." };
@@ -135,32 +135,32 @@ export async function upsertPromotion(
 
   if (input.id) {
     const { error } = await supabase
-      .from("promotions")
+      .from("annonces")
       .update(data)
       .eq("id", input.id);
     if (error) return { ok: false, error: error.message };
-    revalidatePath("/admin/promotions");
-    revalidatePath("/promotions");
+    revalidatePath("/admin/annonces");
+    revalidatePath("/annonces");
     revalidatePath("/");
     return { ok: true, data: { id: input.id } };
   } else {
     const { data: existing } = await supabase
-      .from("promotions")
+      .from("annonces")
       .select("ordre")
       .order("ordre", { ascending: false })
       .limit(1);
     const nextOrdre = ((existing?.[0]?.ordre as number | undefined) ?? 0) + 1;
 
     const { data: created, error } = await supabase
-      .from("promotions")
+      .from("annonces")
       .insert({ ...data, ordre: nextOrdre })
       .select("id")
       .single();
     if (error || !created) {
       return { ok: false, error: error?.message ?? "Erreur de création." };
     }
-    revalidatePath("/admin/promotions");
-    revalidatePath("/promotions");
+    revalidatePath("/admin/annonces");
+    revalidatePath("/annonces");
     revalidatePath("/");
     return { ok: true, data: { id: created.id as string } };
   }
@@ -170,16 +170,16 @@ export async function upsertPromotion(
 // DELETE
 // ============================================================================
 
-export async function deletePromotion(id: string): Promise<ActionResult> {
+export async function deleteAnnonce(id: string): Promise<ActionResult> {
   const admin = await getAdminUser();
   if (!admin) return { ok: false, error: "Non autorisé." };
 
   const supabase = await createClient();
-  const { error } = await supabase.from("promotions").delete().eq("id", id);
+  const { error } = await supabase.from("annonces").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/admin/promotions");
-  revalidatePath("/promotions");
+  revalidatePath("/admin/annonces");
+  revalidatePath("/annonces");
   revalidatePath("/");
   return { ok: true, data: undefined };
 }
@@ -188,7 +188,7 @@ export async function deletePromotion(id: string): Promise<ActionResult> {
 // TOGGLE ACTIVE
 // ============================================================================
 
-export async function togglePromotionActive(
+export async function toggleAnnonceActive(
   id: string,
   isActive: boolean,
 ): Promise<ActionResult> {
@@ -197,13 +197,13 @@ export async function togglePromotionActive(
 
   const supabase = await createClient();
   const { error } = await supabase
-    .from("promotions")
+    .from("annonces")
     .update({ is_active: isActive })
     .eq("id", id);
   if (error) return { ok: false, error: error.message };
 
-  revalidatePath("/admin/promotions");
-  revalidatePath("/promotions");
+  revalidatePath("/admin/annonces");
+  revalidatePath("/annonces");
   revalidatePath("/");
   return { ok: true, data: undefined };
 }
@@ -212,20 +212,20 @@ export async function togglePromotionActive(
 // REORDER
 // ============================================================================
 
-export async function reorderPromotions(ids: string[]): Promise<ActionResult> {
+export async function reorderAnnonces(ids: string[]): Promise<ActionResult> {
   const admin = await getAdminUser();
   if (!admin) return { ok: false, error: "Non autorisé." };
 
   const supabase = await createClient();
   const updates = ids.map((id, ordre) =>
-    supabase.from("promotions").update({ ordre: ordre + 1 }).eq("id", id),
+    supabase.from("annonces").update({ ordre: ordre + 1 }).eq("id", id),
   );
   const results = await Promise.all(updates);
   const errors = results.filter((r) => r.error);
   if (errors.length > 0) return { ok: false, error: errors[0].error!.message };
 
-  revalidatePath("/admin/promotions");
-  revalidatePath("/promotions");
+  revalidatePath("/admin/annonces");
+  revalidatePath("/annonces");
   return { ok: true, data: undefined };
 }
 
@@ -233,10 +233,10 @@ export async function reorderPromotions(ids: string[]): Promise<ActionResult> {
 // Redirect helper
 // ============================================================================
 
-export async function upsertPromotionAndRedirect(input: PromotionFormData) {
+export async function upsertAnnonceAndRedirect(input: AnnonceFormData) {
   const result = await upsertPromotion(input);
   if (result.ok) {
-    redirect("/admin/promotions?flash=saved");
+    redirect("/admin/annonces?flash=saved");
   }
   return result;
 }

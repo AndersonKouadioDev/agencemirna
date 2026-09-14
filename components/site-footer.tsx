@@ -1,5 +1,3 @@
-"use client";
-
 import {
   FacebookIcon,
   InstagramIcon,
@@ -13,6 +11,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "./ui/button";
+import { getSiteSettings } from "@/src/actions/admin/settings";
 
 const STATS = [
   { icon: Home, value: "100+", label: "Biens" },
@@ -21,7 +20,8 @@ const STATS = [
   { icon: Clock, value: "24/7", label: "Support" },
 ];
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const settings = await getSiteSettings();
   return (
     <section className="bg-white pt-20 pb-10 border-t border-stone-100">
       <div className="mx-auto max-w-[1400px] px-6 lg:px-8">
@@ -32,7 +32,7 @@ export function SiteFooter() {
             const Icon = stat.icon;
             return (
               <div key={idx} className="flex items-center gap-4">
-                <Icon className="h-8 w-8 text-stone-400 shrink-0" strokeWidth={1.5} />
+                <Icon className="h-8 w-8 text-[#F5B324] shrink-0" strokeWidth={1.5} />
                 <div className="flex flex-col">
                   <span className="font-bold text-2xl text-secondary">{stat.value}</span>
                   <span className="text-xs font-semibold text-stone-500 uppercase tracking-wide">{stat.label}</span>
@@ -45,10 +45,10 @@ export function SiteFooter() {
              <div className="hidden lg:flex items-center gap-4">
                <span className="text-sm font-semibold text-stone-600">Suivez-nous</span>
                <div className="flex gap-2">
-                 <Link href="#" className="h-8 w-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"><FacebookIcon className="h-4 w-4" /></Link>
-                 <Link href="#" className="h-8 w-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"><InstagramIcon className="h-4 w-4" /></Link>
-                 <Link href="#" className="h-8 w-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"><TwitterIcon className="h-4 w-4" /></Link>
-                 <Link href="#" className="h-8 w-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-600 hover:bg-stone-200 transition-colors"><YoutubeIcon className="h-4 w-4" /></Link>
+                 {settings?.facebook && <a href={settings.facebook} target="_blank" rel="noopener noreferrer" className="h-8 w-8 rounded-full bg-[#FAF5EE] flex items-center justify-center text-[#F5B324] hover:bg-[#F5B324] hover:text-white transition-all shadow-sm"><FacebookIcon className="h-4 w-4" /></a>}
+                 {settings?.instagram && <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="h-8 w-8 rounded-full bg-[#FAF5EE] flex items-center justify-center text-[#F5B324] hover:bg-[#F5B324] hover:text-white transition-all shadow-sm"><InstagramIcon className="h-4 w-4" /></a>}
+                 {settings?.linkedin && <a href={settings.linkedin} target="_blank" rel="noopener noreferrer" className="h-8 w-8 rounded-full bg-[#FAF5EE] flex items-center justify-center text-[#F5B324] hover:bg-[#F5B324] hover:text-white transition-all shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg></a>}
+                 {settings?.whatsapp && <a href={`https://wa.me/${settings.whatsapp.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="h-8 w-8 rounded-full bg-[#FAF5EE] flex items-center justify-center text-[#F5B324] hover:bg-[#F5B324] hover:text-white transition-all shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"></path><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"></path></svg></a>}
                </div>
              </div>
           </div>
@@ -59,8 +59,8 @@ export function SiteFooter() {
           {/* Logo & Intro */}
           <div className="lg:col-span-1 flex flex-col items-start">
             <Link href="/" className="flex items-center gap-3 mb-6">
-              <Image src="/images/icon.png" alt="Logo" width={32} height={32} />
-              <span className="font-bold text-xl text-secondary">Agence Mirna</span>
+              <Image src="/images/logo.png" alt="Agence Mirna Logo" width={140} height={40} className="h-auto w-32" />
+              
             </Link>
             <p className="text-sm text-stone-500 leading-relaxed">
               Nous vous rapprochons des plus belles propriétés avec des expériences inoubliables.
@@ -83,9 +83,9 @@ export function SiteFooter() {
             <h4 className="font-bold text-secondary mb-6">Support</h4>
             <div className="flex flex-col gap-4 text-sm text-stone-500">
               <Link href="/contact_us" className="hover:text-primary transition-colors">Centre d'aide</Link>
-              <Link href="#" className="hover:text-primary transition-colors">FAQ</Link>
-              <Link href="#" className="hover:text-primary transition-colors">Conditions générales</Link>
-              <Link href="#" className="hover:text-primary transition-colors">Confidentialité</Link>
+              <Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link>
+              <Link href="/conditions-generales" className="hover:text-primary transition-colors">Conditions générales</Link>
+              <Link href="/confidentialite" className="hover:text-primary transition-colors">Confidentialité</Link>
             </div>
           </div>
 
@@ -93,10 +93,10 @@ export function SiteFooter() {
           <div className="flex flex-col">
             <h4 className="font-bold text-secondary mb-6">Top Lieux</h4>
             <div className="flex flex-col gap-4 text-sm text-stone-500">
-              <Link href="#" className="hover:text-primary transition-colors">Cocody, Abidjan</Link>
-              <Link href="#" className="hover:text-primary transition-colors">Marcory, Abidjan</Link>
-              <Link href="#" className="hover:text-primary transition-colors">Plateau, Abidjan</Link>
-              <Link href="#" className="hover:text-primary transition-colors">Assinie</Link>
+              <Link href="/properties?loc=Cocody" className="hover:text-primary transition-colors">Cocody, Abidjan</Link>
+              <Link href="/properties?loc=Marcory" className="hover:text-primary transition-colors">Marcory, Abidjan</Link>
+              <Link href="/properties?loc=Plateau" className="hover:text-primary transition-colors">Plateau, Abidjan</Link>
+              <Link href="/properties?loc=Assinie" className="hover:text-primary transition-colors">Assinie</Link>
             </div>
           </div>
 
@@ -106,13 +106,13 @@ export function SiteFooter() {
             <p className="text-sm text-stone-500 mb-4">
               Abonnez-vous pour recevoir des offres exclusives et de l'inspiration.
             </p>
-            <div className="flex bg-stone-50 rounded-md p-1 border border-stone-200">
+            <div className="flex items-center bg-white rounded-full p-1.5 border border-stone-200 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all">
               <input 
                 type="email" 
                 placeholder="Votre email" 
-                className="bg-transparent border-none outline-none text-sm w-full px-3 text-stone-600 placeholder:text-stone-400"
+                className="bg-transparent border-none outline-none text-sm w-full px-4 text-stone-600 placeholder:text-stone-400"
               />
-              <Button size="sm" className="bg-[#1B3C35] hover:bg-[#152e29] text-white">
+              <Button size="sm" className="bg-[#1B3C35] hover:bg-[#152e29] text-white rounded-full px-6">
                 S'abonner
               </Button>
             </div>

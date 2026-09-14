@@ -207,9 +207,9 @@ export default async function AdminDashboardPage() {
             color="bg-purple-500/10 text-purple-600"
           />
           <StatCardComponent
-            label="Promotions"
+            label="Annonces"
             value={promotionsCount}
-            href="/admin/promotions"
+            href="/admin/annonces"
             icon={Megaphone}
             color="bg-orange-500/10 text-orange-600"
           />
@@ -228,7 +228,7 @@ export default async function AdminDashboardPage() {
           <CardContent className="pt-6">
             <h2 className="text-lg font-semibold mb-2">Bienvenue</h2>
             <p className="text-sm text-muted-foreground">
-              Vous pouvez gérer les biens, services, promotions, agents,
+              Vous pouvez gérer les biens, services, annonces, agents,
               quartiers, témoignages, articles, FAQ, mentions sociales et
               leads directement depuis cette interface.
             </p>
@@ -240,7 +240,7 @@ export default async function AdminDashboardPage() {
             <h2 className="text-lg font-semibold mb-2">Prochaines étapes</h2>
             <ul className="text-sm text-muted-foreground space-y-1.5 list-disc list-inside">
               <li>Traiter les leads en attente sous 24h</li>
-              <li>Publier les nouvelles promotions Colombe 5, 6, 7</li>
+              <li>Publier les nouvelles annonces Colombe 5, 6, 7</li>
               <li>Ajouter quelques articles dans le blog</li>
               <li>Compléter les fiches des agents</li>
             </ul>

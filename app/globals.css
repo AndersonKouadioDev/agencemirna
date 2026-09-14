@@ -27,18 +27,18 @@
 
 :root {
   --background: 36 64% 96%; /* Beige/crème #FAF5EE */
-  --foreground: 36 64% 13%; /* Sombre anthracite */
+  --foreground: 167 38% 17%; /* Sombre anthracite */
 
   --card: 0 0% 100%;
-  --card-foreground: 36 64% 13%;
+  --card-foreground: 167 38% 17%;
 
   --popover: 0 0% 100%;
-  --popover-foreground: 36 64% 13%;
+  --popover-foreground: 167 38% 17%;
 
   --primary: 37 76% 54%;
   --primary-foreground: 0 0% 9%;
 
-  --secondary: 36 64% 13%;
+  --secondary: 167 38% 17%;
   --secondary-foreground: 0 0% 98%;
 
   --muted: 36 20% 90%;
@@ -52,7 +52,7 @@
 
   --border: 36 20% 86%;
   --input: 36 20% 86%;
-  --ring: 36 64% 13%;
+  --ring: 167 38% 17%;
 
   --radius: 0.5rem;
 

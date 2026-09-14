@@ -30,15 +30,15 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Tableau de bord", href: "/admin", icon: LayoutDashboard },
   { label: "Leads", href: "/admin/leads", icon: Inbox },
   { label: "Biens", href: "/admin/biens", icon: Home },
+  { label: "Communes", href: "/admin/communes", icon: MapPin },
   { label: "Quartiers", href: "/admin/quartiers", icon: MapPin },
-  { label: "Services", href: "/admin/services", icon: Sparkles },
-  { label: "Promotions", href: "/admin/promotions", icon: Megaphone },
-  { label: "Vidéos", href: "/admin/videos", icon: Video },
+  { label: "Annonces", href: "/admin/annonces", icon: Megaphone },
+  
   { label: "Agents", href: "/admin/agents", icon: Users },
   { label: "Témoignages", href: "/admin/testimonials", icon: MessageSquareQuote },
   { label: "Articles", href: "/admin/articles", icon: Newspaper },
   { label: "FAQ", href: "/admin/faqs", icon: HelpCircle },
-  { label: "Mentions sociales", href: "/admin/social-mentions", icon: MessageCircle },
+  
 ];
 
 const FOOTER_ITEMS: NavItem[] = [

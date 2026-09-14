@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AddressAutocomplete } from "@/components/admin/address-autocomplete";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -41,11 +42,13 @@ type FormState = {
   salle_bains: string;
   capacity: string;
   address: string;
+  adresse_complete: string;
+  latitude: string;
+  longitude: string;
+  lien_video: string;
   ville_commune: string;
   pays: string;
   localisation: string;
-  latitude: string;
-  longitude: string;
   type_bien_id: string;
   service_bien_id: string;
   categorie_bien_id: string;
@@ -66,11 +69,13 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
     salle_bains: bien?.salle_bains?.toString() ?? "",
     capacity: bien?.capacity?.toString() ?? "",
     address: bien?.address ?? "",
+    adresse_complete: bien?.adresse_complete ?? "",
+    latitude: bien?.latitude?.toString() ?? "",
+    longitude: bien?.longitude?.toString() ?? "",
+    lien_video: bien?.lien_video ?? "",
     ville_commune: bien?.ville_commune ?? "Marcory-Abidjan",
     pays: bien?.pays ?? "Côte d'Ivoire",
     localisation: bien?.localisation ?? "",
-    latitude: bien?.latitude?.toString() ?? "",
-    longitude: bien?.longitude?.toString() ?? "",
     type_bien_id: bien?.type_bien_id?.toString() ?? "",
     service_bien_id: bien?.service_bien_id?.toString() ?? "",
     categorie_bien_id: bien?.categorie_bien_id?.toString() ?? "",
@@ -236,11 +241,45 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
           {/* Section : Localisation */}
           <Section title="Localisation">
             <Field label="Adresse">
-              <Input
+              <AddressAutocomplete
                 value={form.address}
-                onChange={(e) => update("address", e.target.value)}
-                placeholder="Ex: Rue du 7 décembre"
+                onChange={(val) => update("address", val)}
+                placeholder="Recherchez une adresse..."
+                onPlaceSelected={(place) => {
+                  if (place.geometry?.location) {
+                    update("latitude", place.geometry.location.lat().toString());
+                    update("longitude", place.geometry.location.lng().toString());
+                  }
+                  if (place.url) {
+                    update("localisation", place.url);
+                  }
+                  
+                  // Extract city and country
+                  if (place.address_components) {
+                    let city = "";
+                    let country = "";
+                    
+                    for (const component of place.address_components) {
+                      const types = component.types;
+                      if (types.includes("locality")) {
+                        city = component.long_name;
+                      } else if (types.includes("administrative_area_level_2") && !city) {
+                        city = component.long_name;
+                      } else if (types.includes("administrative_area_level_1") && !city) {
+                        city = component.long_name;
+                      }
+                      
+                      if (types.includes("country")) {
+                        country = component.long_name;
+                      }
+                    }
+                    
+                    if (city) update("ville_commune", city);
+                    if (country) update("pays", country);
+                  }
+                }}
               />
+              <p className="text-xs text-stone-500 mt-1">L'auto-complétion remplit automatiquement la ville, le pays, le lien et les coordonnées GPS.</p>
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Ville / Commune">

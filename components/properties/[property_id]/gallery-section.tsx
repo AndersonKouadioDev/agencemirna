@@ -31,11 +31,11 @@ export default function GallerySection({ bien }: { bien: { images?: string[]; na
   return (
     <section
       id="gallery"
-      className="relative isolate bg-primary/5 pt-20 pb-24"
+      className="relative isolate bg-[#FAF5EE] pb-32"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
         <header className="mb-10 text-center">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-agate font-bold">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-agate font-bold text-secondary">
             Galerie de la propriété
           </h2>
           <p className="text-sm text-neutral-600 mt-2">

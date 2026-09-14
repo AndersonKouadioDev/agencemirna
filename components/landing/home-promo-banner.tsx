@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Megaphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getHomePromotion } from "@/src/actions/public";
+import { getHomeAnnonce } from "@/src/actions/public";
 
 /**
  * Bandeau promotionnel affiché sur la home si une promo est marquée
@@ -10,8 +10,8 @@ import { getHomePromotion } from "@/src/actions/public";
  * silencieusement s'il n'y a pas de promo, donc transparent à inclure.
  */
 export default async function HomePromoBanner() {
-  const promo = await getHomePromotion();
-  if (!promo) return null;
+  const annonce = await getHomeAnnonce();
+  if (!annonce) return null;
 
   return (
     <section className="relative isolate bg-secondary text-white overflow-hidden">
@@ -24,18 +24,18 @@ export default async function HomePromoBanner() {
               Promotion en cours
             </div>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-agate font-bold leading-tight">
-              {promo.title}
+              {annonce.title}
             </h2>
-            {promo.description && (
+            {annonce.description && (
               <p className="mt-4 text-base sm:text-lg text-white/85 leading-relaxed whitespace-pre-wrap">
-                {promo.description}
+                {annonce.description}
               </p>
             )}
-            {promo.ends_at && (
+            {annonce.ends_at && (
               <p className="mt-4 text-sm text-white/70">
                 Valable jusqu'au{" "}
                 <span className="font-medium text-white">
-                  {new Date(promo.ends_at).toLocaleDateString("fr-FR", {
+                  {new Date(annonce.ends_at).toLocaleDateString("fr-FR", {
                     day: "2-digit",
                     month: "long",
                     year: "numeric",
@@ -44,10 +44,10 @@ export default async function HomePromoBanner() {
               </p>
             )}
             <div className="mt-6 flex flex-wrap gap-3">
-              {promo.cta_url && (
+              {annonce.cta_url && (
                 <Button asChild size="lg">
-                  <Link href={promo.cta_url}>
-                    {promo.cta_label ?? "Découvrir"}
+                  <Link href={annonce.cta_url}>
+                    {annonce.cta_label ?? "Découvrir"}
                     <ArrowRight className="ml-1.5 h-4 w-4" />
                   </Link>
                 </Button>
@@ -58,7 +58,7 @@ export default async function HomePromoBanner() {
                 size="lg"
                 className="bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white"
               >
-                <Link href="/promotions">Voir toutes les offres</Link>
+                <Link href="/annonces">Voir toutes les offres</Link>
               </Button>
             </div>
           </div>
@@ -66,8 +66,8 @@ export default async function HomePromoBanner() {
           {/* Image */}
           <div className="order-1 lg:order-2 relative aspect-[16/10] lg:aspect-[4/3] overflow-hidden rounded-2xl shadow-2xl">
             <Image
-              src={promo.image}
-              alt={promo.title}
+              src={annonce.image || "/images/placeholder.jpg"}
+              alt={annonce.title}
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"
               className="object-cover"

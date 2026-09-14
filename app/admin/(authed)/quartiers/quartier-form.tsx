@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUploader } from "../../_components/image-uploader";
+import { CommuneAdminRow } from "@/src/actions/admin/communes";
 import {
   upsertQuartier,
   type QuartierRow,
@@ -16,12 +17,13 @@ import {
 
 const BADGES = ["Premium", "Business", "Lifestyle", "Familles", "Investir", "Étudiants", "Plage", "Calme"];
 
-export function QuartierForm({ row }: { row?: QuartierRow }) {
+export function QuartierForm({ row, communes = [] }: { row?: QuartierRow, communes?: CommuneAdminRow[] }) {
   const router = useRouter();
   const isEdit = !!row;
 
   const [name, setName] = React.useState(row?.name ?? "");
   const [commune, setCommune] = React.useState(row?.commune ?? "Abidjan");
+  const [communeId, setCommuneId] = React.useState(row?.commune_id ?? "");
   const [badge, setBadge] = React.useState(row?.badge ?? "");
   const [tagline, setTagline] = React.useState(row?.tagline ?? "");
   const [description, setDescription] = React.useState(row?.description ?? "");

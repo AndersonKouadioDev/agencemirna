@@ -62,7 +62,7 @@ export default async function ArticlePage({
         ]}
       />
       {/* HERO ARTICLE */}
-      <section className="relative pt-32 pb-12 sm:pt-40 sm:pb-16">
+      <section className="relative pt-40 sm:pt-48 pb-12 sm:pt-48 sm:pb-16">
         <div className="mx-auto max-w-3xl px-6 lg:px-8">
           <Link
             href="/blog"
