@@ -19,7 +19,7 @@ import {
  * Structure du menu Header — 5 items principaux max.
  *
  * 5 items :
- *   1. Biens       (mega menu : Types + Services + Communes + Quartiers)
+ *   1. Biens       (mega menu : Types + Services + Communes)
  *   2. Services    (dropdown simple, 6 services métier statiques)
  *   3. Annonces    (lien direct)
  *   4. L'agence    (dropdown : À propos, Notre équipe, Blog)
@@ -146,12 +146,6 @@ export type MenuCommune = {
   image?: string | null;
 };
 
-/** Sous-ensemble de `PublicQuartier` dont le menu a besoin. */
-export type MenuQuartier = {
-  id: string;
-  name: string;
-  image?: string | null;
-};
 
 /** Ligne de `types_bien` / `services_bien`. */
 export type MenuReference = {
@@ -161,7 +155,6 @@ export type MenuReference = {
 
 export type MenuData = {
   communes?: MenuCommune[];
-  quartiers?: MenuQuartier[];
   types?: MenuReference[];
   services?: MenuReference[];
   /**
@@ -400,11 +393,6 @@ export const getMenuList = (pathname: string, data?: MenuData): MenuItem[] => {
     (c) => c.id,
     f?.communes,
   ).slice(0, MAX_PAR_COLONNE);
-  const quartiers = garde(
-    data?.quartiers ?? [],
-    (q) => q.id,
-    f?.quartiers,
-  ).slice(0, MAX_PAR_COLONNE);
 
   const colonneType: MenuColumn = {
     title: "Par type",
@@ -443,20 +431,10 @@ export const getMenuList = (pathname: string, data?: MenuData): MenuItem[] => {
     })),
   };
 
-  const colonneQuartier: MenuColumn = {
-    title: "Par quartier",
-    items: quartiers.map<MenuSubItem>((q) => ({
-      label: q.name,
-      href: `/properties?quartier=${encodeURIComponent(q.id)}`,
-      image: q.image ?? null,
-      icon: "lieu",
-    })),
-  };
-
+  // Pas de colonne quartier : le découpage utile au visiteur s'arrête à la
+  // commune. Le filtre ?quartier= reste accepté par /properties, il est émis
+  // par le menu déroulant de localisation du catalogue.
   const colonnes: MenuColumn[] = [colonneType, colonneService, colonneCommune];
-  // Colonne quartiers omise tant que la base n'en renvoie aucun, pour ne pas
-  // laisser un titre sans liens dans le méga-menu.
-  if (colonneQuartier.items.length > 0) colonnes.push(colonneQuartier);
 
   return [
     {

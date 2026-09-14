@@ -177,7 +177,7 @@ function MegaContent({
 }) {
   const [hovered, setHovered] = useState<MenuSubItem | null>(null);
 
-  // Le visuel vient de la donnée elle-même (commune.image, quartier.image) :
+  // Le visuel vient de la donnée elle-même (commune.image) :
   // plus aucune correspondance libellé → image en dur, qui laissait les
   // nouvelles communes sans photo.
   const currentImage =
@@ -197,8 +197,8 @@ function MegaContent({
       <div className="flex-1 p-4">
         <div
           className="grid gap-8"
-          // Le nombre de colonnes dépend des données (la colonne quartiers
-          // disparaît si la base n'en renvoie aucun).
+          // Trois colonnes : type, service, commune. Calculé plutôt que figé,
+          // pour rester juste si une colonne est ajoutée ou retirée.
           style={{
             gridTemplateColumns: `repeat(${Math.max(colonnes.length, 1)}, minmax(0, 1fr))`,
           }}

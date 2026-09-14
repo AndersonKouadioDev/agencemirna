@@ -3,7 +3,6 @@ import { SiteFooter } from "@/components/site-footer";
 import { Header } from "@/components/site-header";
 import { getMenuList } from "@/config/site";
 import {
-  getActiveQuartiers,
   getBienReferenceData,
   getCatalogueFacettes,
   listCommunesPublic,
@@ -18,10 +17,9 @@ export default async function MarketingLayout({
 }: MarketingLayoutProps) {
   // Point d'injection de la navigation dynamique : le Header est un composant
   // client, il ne peut pas interroger Supabase lui-même. On charge donc ici
-  // types / services / communes / quartiers et on lui passe le menu construit.
-  const [communes, quartiers, refData, facettes] = await Promise.all([
+  // types / services / communes et on lui passe le menu construit.
+  const [communes, refData, facettes] = await Promise.all([
     listCommunesPublic(),
-    getActiveQuartiers(),
     getBienReferenceData(),
     getCatalogueFacettes(),
   ]);
@@ -30,7 +28,6 @@ export default async function MarketingLayout({
   // l'état actif côté client via `applyActiveState`.
   const menu = getMenuList("", {
     communes,
-    quartiers,
     types: refData.types,
     services: refData.services,
     facettes,
