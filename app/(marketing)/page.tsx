@@ -10,19 +10,21 @@ import CommunesSection from "@/components/landing/communes-section";
 import { getSiteContact } from "@/src/lib/site-contact";
 import TestimonialsSection from "@/components/landing/testimonials-section";
 import AnnouncementsSection from "@/components/landing/announcements-section";
-import { getActiveQuartiers, getBienReferenceData, listCommunesPublic, getActiveTestimonials } from "@/src/actions/public";
+import { getActiveQuartiers, getBienReferenceData, listCommunesPublic, getActiveTestimonials, getCatalogueFacettes } from "@/src/actions/public";
 import {
   OrganizationJsonLd,
   WebsiteJsonLd,
 } from "@/components/seo/structured-data";
 
 export default async function Page() {
-  const [communes, quartiers, refData, testimonials, contact] = await Promise.all([
+  const [communes, quartiers, refData, testimonials, contact, facettes] =
+    await Promise.all([
     listCommunesPublic(),
     getActiveQuartiers(),
     getBienReferenceData(),
     getActiveTestimonials(),
     getSiteContact(),
+    getCatalogueFacettes(),
   ]);
   return (
     <>
@@ -43,7 +45,7 @@ export default async function Page() {
       <FeaturedPropertiesServer />
 
       {/* 5. Catégories de biens */}
-      <CategoriesSection types={refData.types} />
+      <CategoriesSection types={refData.types} facettes={facettes} />
 
       {/* 6. Quartiers Phares */}
       <CommunesSection communes={communes} />

@@ -68,6 +68,58 @@ export async function listCommunesPublic(opts?: {
   }));
 }
 
+/**
+ * Nombre de biens actifs par entrée de taxonomie.
+ *
+ * Sert à n'offrir dans la navigation que des filtres qui donnent un résultat :
+ * la taxonomie compte 7 services et 10 types, mais la plupart ne sont portés
+ * par aucun bien — la moitié des liens du méga-menu menaient à « 0 bien ».
+ */
+export type CatalogueFacettes = {
+  types: Record<string, number>;
+  services: Record<string, number>;
+  communes: Record<string, number>;
+  quartiers: Record<string, number>;
+  /** false si la requête a échoué : les appelants n'appliquent alors aucun filtre. */
+  disponible: boolean;
+};
+
+export async function getCatalogueFacettes(): Promise<CatalogueFacettes> {
+  const vide: CatalogueFacettes = {
+    types: {},
+    services: {},
+    communes: {},
+    quartiers: {},
+    disponible: false,
+  };
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("biens")
+    .select("type_bien_id, service_bien_id, commune_id, quartier_id")
+    .eq("is_active", true);
+
+  if (error || !data) {
+    if (error) console.error("getCatalogueFacettes error:", error);
+    return vide;
+  }
+
+  const facettes: CatalogueFacettes = { ...vide, disponible: true };
+  const compter = (bucket: Record<string, number>, cle: unknown) => {
+    if (cle === null || cle === undefined) return;
+    const k = String(cle);
+    bucket[k] = (bucket[k] ?? 0) + 1;
+  };
+
+  for (const b of data as Array<Record<string, unknown>>) {
+    compter(facettes.types, b.type_bien_id);
+    compter(facettes.services, b.service_bien_id);
+    compter(facettes.communes, b.commune_id);
+    compter(facettes.quartiers, b.quartier_id);
+  }
+  return facettes;
+}
+
 // ============================================================================
 // Quartiers (configurables via admin, charge la section "Nos quartiers")
 // ============================================================================

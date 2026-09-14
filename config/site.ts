@@ -164,6 +164,17 @@ export type MenuData = {
   quartiers?: MenuQuartier[];
   types?: MenuReference[];
   services?: MenuReference[];
+  /**
+   * Nombre de biens actifs par entrée, pour n'afficher que des filtres qui
+   * donnent un résultat. Absent ou indisponible : tout est affiché.
+   */
+  facettes?: {
+    types: Record<string, number>;
+    services: Record<string, number>;
+    communes: Record<string, number>;
+    quartiers: Record<string, number>;
+    disponible: boolean;
+  };
 };
 
 /** Nombre d'entrées affichées par colonne : au-delà, le méga-menu déborde. */
@@ -365,13 +376,35 @@ export const getMenuList = (pathname: string, data?: MenuData): MenuItem[] => {
   const servicesReels = (data?.services ?? []).length > 0;
   const communesReelles = (data?.communes ?? []).length > 0;
 
-  const types = nonVide(data?.types, REPLI_TYPES);
-  const servicesBien = nonVide(data?.services, REPLI_SERVICES);
-  const communes = nonVide(data?.communes, REPLI_COMMUNES).slice(
-    0,
-    MAX_PAR_COLONNE,
+  // Ne proposer que ce qui donne un résultat. Si le comptage est
+  // indisponible, on n'écarte rien : mieux vaut un lien vide qu'un menu vide.
+  const f = data?.facettes;
+  const garde = <T,>(liste: T[], cle: (x: T) => string, bucket?: Record<string, number>) => {
+    if (!f?.disponible || !bucket) return liste;
+    const filtre = liste.filter((x) => (bucket[cle(x)] ?? 0) > 0);
+    return filtre.length > 0 ? filtre : liste;
+  };
+
+  const types = garde(
+    nonVide(data?.types, REPLI_TYPES),
+    (t) => String(t.id),
+    f?.types,
   );
-  const quartiers = (data?.quartiers ?? []).slice(0, MAX_PAR_COLONNE);
+  const servicesBien = garde(
+    nonVide(data?.services, REPLI_SERVICES),
+    (x) => String(x.id),
+    f?.services,
+  );
+  const communes = garde(
+    nonVide(data?.communes, REPLI_COMMUNES),
+    (c) => c.id,
+    f?.communes,
+  ).slice(0, MAX_PAR_COLONNE);
+  const quartiers = garde(
+    data?.quartiers ?? [],
+    (q) => q.id,
+    f?.quartiers,
+  ).slice(0, MAX_PAR_COLONNE);
 
   const colonneType: MenuColumn = {
     title: "Par type",

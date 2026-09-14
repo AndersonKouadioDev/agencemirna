@@ -5,6 +5,7 @@ import { getMenuList } from "@/config/site";
 import {
   getActiveQuartiers,
   getBienReferenceData,
+  getCatalogueFacettes,
   listCommunesPublic,
 } from "@/src/actions/public";
 
@@ -18,10 +19,11 @@ export default async function MarketingLayout({
   // Point d'injection de la navigation dynamique : le Header est un composant
   // client, il ne peut pas interroger Supabase lui-même. On charge donc ici
   // types / services / communes / quartiers et on lui passe le menu construit.
-  const [communes, quartiers, refData] = await Promise.all([
+  const [communes, quartiers, refData, facettes] = await Promise.all([
     listCommunesPublic(),
     getActiveQuartiers(),
     getBienReferenceData(),
+    getCatalogueFacettes(),
   ]);
 
   // Pathname vide : un Server Component ne le connaît pas. Le Header réapplique
@@ -31,6 +33,7 @@ export default async function MarketingLayout({
     quartiers,
     types: refData.types,
     services: refData.services,
+    facettes,
   });
 
   return (

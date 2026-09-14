@@ -43,16 +43,24 @@ function iconePour(name: string) {
  */
 export default function CategoriesSection({
   types = [],
+  facettes,
 }: {
   types?: TypeBien[];
+  facettes?: { types: Record<string, number>; disponible: boolean };
 }) {
-  if (types.length === 0) return null;
+  // Même règle que le menu : ne pas proposer un raccourci vers un catalogue
+  // vide. Sans comptage disponible, on affiche tout.
+  const visibles =
+    facettes?.disponible
+      ? types.filter((t) => (facettes.types[String(t.id)] ?? 0) > 0)
+      : types;
+  if (visibles.length === 0) return null;
 
   return (
     <section className="py-12 bg-[#FAF5EE]">
       <div className="max-w-[1400px] mx-auto px-4 md:px-8">
         <div className="grid grid-cols-3 sm:flex sm:flex-wrap justify-center gap-y-8 gap-x-4 sm:gap-12 md:gap-16">
-          {types.slice(0, 8).map((t) => {
+          {visibles.slice(0, 8).map((t) => {
             const Icon = iconePour(t.name);
             return (
               <Link
