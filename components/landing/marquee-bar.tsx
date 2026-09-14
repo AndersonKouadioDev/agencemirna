@@ -60,7 +60,9 @@ export default async function MarqueeBar() {
   const promoItems: AnnouncementItem[] = promos.slice(0, 3).map((p) => ({
     icon: Sparkles,
     text: p.title,
-    href: annonceHref(p),
+    // Une annonce sans destination renvoie vers la liste : dans un bandeau
+    // défilant, un élément non cliquable passerait pour un bug d'affichage.
+    href: annonceHref(p) ?? "/annonces",
   }));
 
   const announcements: AnnouncementItem[] =

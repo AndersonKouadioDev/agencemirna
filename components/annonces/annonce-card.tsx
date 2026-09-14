@@ -29,6 +29,7 @@ function badgeClass(type: string | null | undefined) {
  * qu'une modification du bien se répercute sans ressaisie.
  */
 export default function AnnonceCard({ annonce }: { annonce: PublicAnnonce }) {
+  const href = annonceHref(annonce);
   const type = annonce.types_annonce?.name ?? null;
   const bien = annonce.bien;
 
@@ -39,8 +40,7 @@ export default function AnnonceCard({ annonce }: { annonce: PublicAnnonce }) {
   const prix = bien?.prix ?? null;
   const prixMois = bien?.prix_month ?? null;
 
-  return (
-    <Link href={annonceHref(annonce) as any} className="group block h-full">
+  const contenu = (
       <div className="bg-white rounded-[2rem] overflow-hidden h-full flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-stone-100">
         <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
           {image ? (
@@ -132,6 +132,14 @@ export default function AnnonceCard({ annonce }: { annonce: PublicAnnonce }) {
           </div>
         </div>
       </div>
+  );
+
+  // Sans destination, la carte reste affichée mais n'est pas cliquable.
+  return href ? (
+    <Link href={href as any} className="group block h-full">
+      {contenu}
     </Link>
+  ) : (
+    <div className="group block h-full">{contenu}</div>
   );
 }

@@ -47,6 +47,11 @@ const revalider = () => {
  * de création d'un bien. On retente donc avec le jeu minimal.
  */
 export async function listTaxonomy(table: TaxonomyTable): Promise<TaxonomyRow[]> {
+  // Module « use server » : sans cette garde, la fonction est une route
+  // appelable par n'importe qui, au même titre que les écritures du fichier.
+  const admin = await getAdminUser();
+  if (!admin) return [];
+
   const supabase = await createClient();
 
   const complet = await supabase
@@ -206,25 +211,3 @@ export async function deleteTaxonomyEntry(
 // Compteurs (utilisés par StatsSection dynamique)
 // ============================================================================
 
-export type SiteStats = {
-  biens_actifs: number;
-  agents_actifs: number;
-  annonces_actives: number;
-};
-
-export async function getSiteStats(): Promise<SiteStats> {
-  const supabase = await createClient();
-
-  // Note : count avec head:true ne renvoie pas les rows, juste le count
-  const [biens, agents, annonces] = await Promise.all([
-    supabase.from("biens").select("id", { count: "exact", head: true }).eq("is_active", true),
-    supabase.from("agents").select("id", { count: "exact", head: true }).eq("is_active", true),
-    supabase.from("annonces").select("id", { count: "exact", head: true }).eq("is_active", true),
-  ]);
-
-  return {
-    biens_actifs: biens.count ?? 0,
-    agents_actifs: agents.count ?? 0,
-    annonces_actives: annonces.count ?? 0,
-  };
-}

@@ -103,7 +103,6 @@
   --animate-slideInFromRight: slideInFromRight 0.8s ease-out forwards;
   --animate-parallaxEffect: parallaxEffect 1s ease-out forwards;
   --animate-rotateIn: rotateIn 1s ease-out forwards;
-  --animate-border-beam: border-beam calc(var(--duration) * 1s) infinite linear;
   --animate-image-glow: image-glow 4100ms 600ms ease-out forwards;
   --animate-fade-in: fade-in 1000ms var(--animation-delay, 0ms) ease forwards;
   --animate-fade-up: fade-up 1000ms var(--animation-delay, 0ms) ease forwards;
@@ -225,11 +224,6 @@
   }
 }
 
-@keyframes border-beam {
-  100% {
-    offset-distance: 100%;
-  }
-}
 
 @keyframes image-glow {
   0% {

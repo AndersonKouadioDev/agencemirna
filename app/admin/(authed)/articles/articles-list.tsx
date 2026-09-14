@@ -72,6 +72,16 @@ export function ArticlesList({ items }: { items: ArticleRow[] }) {
                 <Calendar className="h-3 w-3" />
                 {formatDate(a.published_at)}
               </span>
+              {/* La vitrine masque un article tant que sa date n'est pas
+                  atteinte : sans ce marqueur, il paraîtrait simplement perdu. */}
+              {a.published_at && new Date(a.published_at) > new Date() && (
+                <>
+                  <span className="text-neutral-300">·</span>
+                  <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-amber-700">
+                    Programmé
+                  </span>
+                </>
+              )}
               {a.read_time_minutes && (
                 <>
                   <span className="text-neutral-300">·</span>

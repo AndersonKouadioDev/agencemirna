@@ -374,6 +374,9 @@ export async function getArticleBySlug(slug: string): Promise<PublicArticle | nu
       "id, slug, title, excerpt, content_md, image, category, read_time_minutes, published_at, ordre",
     )
     .eq("slug", slug)
+    // `published_at` est saisissable en admin : sans ce garde, un article daté
+    // du futur sortait dès son enregistrement.
+    .lte("published_at", new Date().toISOString())
     // Filtre explicite, jamais délégué à la RLS : voir la note en tête de fichier.
     .eq("is_active", true)
     .maybeSingle();
@@ -396,6 +399,9 @@ export async function getActiveArticles(opts?: {
     )
     // Filtre explicite, jamais délégué à la RLS : voir la note en tête de fichier.
     .eq("is_active", true)
+    // Même garde que getArticleBySlug : un article programmé reste masqué
+    // jusqu'à sa date.
+    .lte("published_at", new Date().toISOString())
     .order("ordre", { ascending: true })
     .order("published_at", { ascending: false });
   if (opts?.limit) q = q.limit(opts.limit);
@@ -469,7 +475,7 @@ export type PublicAnnonce = {
 const ANNONCE_SELECT =
   "id, title, description, sous_titre, created_at, cta_url, cta_label, image, starts_at, ends_at, ordre, " +
   "types_annonce:type_annonce_id (id, name), " +
-  "bien:bien_id (id, name, image, prix, prix_month, ville_commune, chambre, salle_bains, area)";
+  "bien:bien_id (id, name, image, prix, prix_month, ville_commune, chambre, salle_bains, area, is_active)";
 
 /**
  * Annonces visibles publiquement.
@@ -505,6 +511,14 @@ export async function getActiveAnnonces(opts?: {
     if (error) console.error("getActiveAnnonces error:", error);
     return [];
   }
-  return data as unknown as PublicAnnonce[];
+  // Filtrage en JS plutôt qu'en PostgREST : `.eq("bien.is_active", true)`
+  // changerait la sémantique de la jointure gauche et ferait disparaître les
+  // annonces sans bien rattaché. Une annonce dont le bien est dépublié reste
+  // affichée, mais cesse d'en emprunter le prix et les caractéristiques.
+  return (data as unknown as PublicAnnonce[]).map((a) =>
+    a.bien && (a.bien as { is_active?: boolean }).is_active === false
+      ? { ...a, bien: null }
+      : a,
+  );
 }
 

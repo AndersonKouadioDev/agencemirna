@@ -27,9 +27,12 @@ function lienSur(url: string | null | undefined): string | null {
  * NB : ce helper vit hors de `src/actions/public.ts`, qui porte la directive
  * `"use server"` et n'accepte donc que des exports async.
  */
-export function annonceHref(a: PublicAnnonce): string {
+export function annonceHref(a: PublicAnnonce): string | null {
   const lien = lienSur(a.cta_url);
   if (lien) return lien;
   if (a.bien?.id) return `/properties/${a.bien.id}`;
-  return "/annonces";
+  // Ni bien rattaché ni lien valide : il n'y a aucune destination. Renvoyer
+  // « /annonces » rendait la carte cliquable vers la page d'où l'on venait ;
+  // l'appelant rend maintenant une carte inerte.
+  return null;
 }

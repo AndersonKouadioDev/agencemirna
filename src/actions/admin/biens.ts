@@ -146,12 +146,17 @@ export async function listBiensAdmin(): Promise<BienAdminRow[]> {
 // GET ONE : bien avec ses images, pour l'édition
 // ============================================================================
 
+/**
+ * Lecture pure : elle n'écrit plus rien.
+ *
+ * L'import des images héritées (`migrateBienImagesFromFolder`) était déclenché
+ * ici, si bien qu'ouvrir une fiche supprimait puis réinsérait des lignes de
+ * `bien_images`. La page d'édition l'appelle désormais explicitement avant de
+ * lire, ce qui rend l'écriture visible là où elle se produit.
+ */
 export async function getBienAdmin(
   id: string,
 ): Promise<{ bien: BienAdminRow; images: BienImage[] } | null> {
-  // Garde indispensable ici et pas seulement par confort d'uniformité : cette
-  // « lecture » déclenche plus bas `migrateBienImagesFromFolder`, qui SUPPRIME
-  // puis réinsère des lignes de `bien_images`.
   const admin = await getAdminUser();
   if (!admin) return null;
 
@@ -167,12 +172,6 @@ export async function getBienAdmin(
     if (error) console.error("getBienAdmin error:", error);
     return null;
   }
-
-  // Auto-import des images legacy : tente d'importer depuis le folder
-  // Storage OU depuis bien.image (cover unique legacy). Idempotent :
-  // ne fait rien si bien_images contient déjà des entries.
-  // Appelé inconditionnellement (la fonction décide elle-même quoi faire).
-  await migrateBienImagesFromFolder(id).catch(() => {});
 
   const { data: images } = await supabase
     .from("bien_images")
