@@ -3,6 +3,37 @@
 import { createClient } from "../supabase/server";
 
 // ============================================================================
+// Communes
+// ============================================================================
+
+export type PublicCommune = {
+  id: string;
+  nom: string;
+  slug: string;
+  ordre: number;
+};
+
+export async function listCommunesPublic(): Promise<PublicCommune[]> {
+  const supabase = await createClient();
+  // NB : la table `communes` (migration 0014) ne contient que
+  // id / created_at / updated_at / nom / slug / is_active / ordre.
+  // Sélectionner des colonnes inexistantes faisait échouer la requête
+  // et renvoyait systématiquement [] (communes invisibles côté public).
+  const { data, error } = await supabase
+    .from("communes")
+    .select("id, nom, slug, ordre")
+    .eq("is_active", true)
+    .order("ordre", { ascending: true })
+    .order("nom", { ascending: true });
+    
+  if (error || !data) {
+    if (error) console.error("listCommunesPublic error:", error);
+    return [];
+  }
+  return data as PublicCommune[];
+}
+
+// ============================================================================
 // Quartiers (configurables via admin, charge la section "Nos quartiers")
 // ============================================================================
 
@@ -120,102 +151,97 @@ export type PublicService = {
   ordre: number;
 };
 
-export async function getActiveServices(): Promise<PublicService[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("services")
-    .select(
-      "id, slug, name, short_description, long_description, icon, image, highlights, cta_label, cta_url, ordre",
-    )
-    // RLS filtre déjà is_active=true
-    .order("ordre", { ascending: true });
-
-  if (error || !data) {
-    if (error) console.error("getActiveServices error:", error);
-    return [];
+const STATIC_SERVICES: PublicService[] = [
+  {
+    id: "vente",
+    slug: "vente",
+    name: "Vente de biens immobiliers",
+    short_description: "Achat et vente de villas, terrains et appartements haut de gamme.",
+    long_description: "Nous vous accompagnons à chaque étape de votre transaction immobilière, de l'estimation de votre bien jusqu'à la signature chez le notaire, en vous garantissant une transaction sécurisée et au meilleur prix.",
+    icon: "Key",
+    image: null,
+    highlights: ["Estimation précise", "Visibilité maximale", "Accompagnement juridique"],
+    cta_label: "Estimer mon bien",
+    cta_url: "/estimation",
+    ordre: 1,
+  },
+  {
+    id: "location",
+    slug: "location-meublee",
+    name: "Location meublée",
+    short_description: "Des appartements et villas meublés prêts à vivre pour de courtes ou longues durées.",
+    long_description: "Profitez de notre sélection de biens meublés de haut standing, idéals pour vos séjours professionnels ou vos vacances. Nos logements sont soigneusement équipés pour vous offrir un confort optimal.",
+    icon: "Sofa",
+    image: null,
+    highlights: ["Biens équipés", "Service de conciergerie", "Flexibilité de durée"],
+    cta_label: "Voir nos meublés",
+    cta_url: "/properties?service=Meublé",
+    ordre: 2,
+  },
+  {
+    id: "gestion",
+    slug: "gestion-immobiliere",
+    name: "Gestion locative",
+    short_description: "Confiez-nous la gestion de votre patrimoine immobilier en toute sérénité.",
+    long_description: "Nous prenons en charge la gestion complète de vos biens immobiliers : recherche de locataires, rédaction des baux, encaissement des loyers, gestion des travaux et de l'entretien.",
+    icon: "Building",
+    image: null,
+    highlights: ["Sélection rigoureuse des locataires", "Suivi comptable et administratif", "Garantie des loyers impayés"],
+    cta_label: "Nous confier votre bien",
+    cta_url: "/contact_us",
+    ordre: 3,
+  },
+  {
+    id: "construction",
+    slug: "construction",
+    name: "Construction",
+    short_description: "Réalisation de vos projets de construction de la conception à la remise des clés.",
+    long_description: "Notre équipe d'experts vous accompagne dans la réalisation de votre projet de construction, en veillant au respect des normes de qualité, des délais et de votre budget.",
+    icon: "HardHat",
+    image: null,
+    highlights: ["Expertise technique", "Suivi de chantier", "Respect des délais"],
+    cta_label: "Discuter de votre projet",
+    cta_url: "/contact_us",
+    ordre: 4,
+  },
+  {
+    id: "decoration",
+    slug: "decoration-amenagement",
+    name: "Décoration d'intérieur",
+    short_description: "Aménagement et décoration sur-mesure pour sublimer vos espaces.",
+    long_description: "Nos architectes d'intérieur conçoivent des espaces uniques et fonctionnels qui reflètent votre style de vie. Du choix des matériaux à la sélection du mobilier, nous sublimons votre intérieur.",
+    icon: "Paintbrush",
+    image: null,
+    highlights: ["Design sur-mesure", "Sélection de mobilier de créateurs", "Optimisation de l'espace"],
+    cta_label: "Découvrir nos réalisations",
+    cta_url: "/contact_us",
+    ordre: 5,
+  },
+  {
+    id: "promotion",
+    slug: "promotion-immobiliere",
+    name: "Promotion immobilière",
+    short_description: "Développement de projets immobiliers résidentiels et commerciaux.",
+    long_description: "Nous développons des programmes immobiliers neufs de qualité, répondant aux attentes du marché et offrant d'excellentes opportunités d'investissement ou d'habitation.",
+    icon: "Briefcase",
+    image: null,
+    highlights: ["Emplacements de choix", "Architecture moderne", "Normes environnementales"],
+    cta_label: "Nos programmes neufs",
+    cta_url: "/contact_us",
+    ordre: 6,
   }
-  return data.map((s) => ({
-    ...s,
-    highlights: Array.isArray(s.highlights) ? (s.highlights as string[]) : [],
-  }));
+];
+
+export async function getActiveServices(): Promise<PublicService[]> {
+  return STATIC_SERVICES;
 }
 
 export async function getServiceBySlug(
   slug: string,
 ): Promise<PublicService | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("services")
-    .select(
-      "id, slug, name, short_description, long_description, icon, image, highlights, cta_label, cta_url, ordre",
-    )
-    .eq("slug", slug)
-    .maybeSingle();
-
-  if (error || !data) {
-    if (error) console.error("getServiceBySlug error:", error);
-    return null;
-  }
-  return {
-    ...data,
-    highlights: Array.isArray(data.highlights)
-      ? (data.highlights as string[])
-      : [],
-  };
+  return STATIC_SERVICES.find((s) => s.slug === slug) || null;
 }
 
-// ============================================================================
-// Promotions
-// ============================================================================
-
-export type PublicPromotion = {
-  id: string;
-  title: string;
-  description: string | null;
-  image: string;
-  cta_label: string | null;
-  cta_url: string | null;
-  starts_at: string | null;
-  ends_at: string | null;
-  show_on_home: boolean;
-};
-
-export async function getActivePromotions(): Promise<PublicPromotion[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("promotions")
-    .select(
-      "id, title, description, image, cta_label, cta_url, starts_at, ends_at, show_on_home",
-    )
-    // RLS filtre déjà is_active=true ET dans plage de dates
-    .order("ordre", { ascending: true });
-
-  if (error || !data) {
-    if (error) console.error("getActivePromotions error:", error);
-    return [];
-  }
-  return data as PublicPromotion[];
-}
-
-/**
- * Retourne la promo à afficher sur la home (1 seule, la 1ère trouvée
- * avec show_on_home=true), ou null si aucune.
- */
-export async function getHomePromotion(): Promise<PublicPromotion | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("promotions")
-    .select(
-      "id, title, description, image, cta_label, cta_url, starts_at, ends_at, show_on_home",
-    )
-    .eq("show_on_home", true)
-    .order("ordre", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !data) return null;
-  return data as PublicPromotion;
-}
 
 // ============================================================================
 // Agents
@@ -361,69 +387,47 @@ export async function getActiveFaqs(): Promise<PublicFaq[]> {
 }
 
 // ============================================================================
-// Videos (section vidéo home, gérée depuis /admin/videos)
+// Annonces
 // ============================================================================
 
-export type PublicVideo = {
+export type PublicAnnonce = {
   id: string;
   title: string;
-  description: string | null;
-  url: string;
-  poster: string | null;
-  ordre: number;
+  description: string;
+  /** Pas de colonne `category` dans la table `annonces` : champ optionnel. */
+  category?: string | null;
+  cta_url?: string | null;
+  image?: string | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  cta_label?: string | null;
+  created_at: string;
 };
 
-/**
- * Retourne la vidéo à afficher sur la home (1 seule, la 1ère trouvée
- * avec show_on_home=true ET is_active=true, triée par ordre). Null sinon
- * → la section vidéo ne se rendra pas.
- */
-export async function getHomeVideo(): Promise<PublicVideo | null> {
+export async function getActiveAnnonces(): Promise<PublicAnnonce[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("videos")
-    .select("id, title, description, url, poster, ordre")
-    // RLS filtre déjà is_active=true côté public
+    .from("annonces")
+    .select("id, title, description, created_at, cta_url, image, starts_at, ends_at, cta_label")
+    .order("created_at", { ascending: false });
+
+  if (error || !data) {
+    if (error) console.error("getActiveAnnonces error:", error);
+    return [];
+  }
+  return data as PublicAnnonce[];
+}
+
+export async function getHomeAnnonce(): Promise<PublicAnnonce | null> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("annonces")
+    .select("id, title, description, created_at, cta_url, image, starts_at, ends_at, cta_label")
     .eq("show_on_home", true)
-    .order("ordre", { ascending: true })
+    .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
 
-  if (error || !data) return null;
-  return data as PublicVideo;
-}
-
-// ============================================================================
-// Social mentions (feed "On parle de nous" dans SocialSection)
-// ============================================================================
-
-export type PublicSocialMention = {
-  id: string;
-  network: "facebook" | "instagram" | "google" | "linkedin" | "twitter" | "youtube";
-  author_name: string;
-  author_handle: string | null;
-  text: string;
-  date_label: string | null;
-  likes: number | null;
-  rating: number | null;
-  ordre: number;
-};
-
-export async function getActiveSocialMentions(opts?: {
-  limit?: number;
-}): Promise<PublicSocialMention[]> {
-  const supabase = await createClient();
-  let q = supabase
-    .from("social_mentions")
-    .select(
-      "id, network, author_name, author_handle, text, date_label, likes, rating, ordre",
-    )
-    .order("ordre", { ascending: true });
-  if (opts?.limit) q = q.limit(opts.limit);
-  const { data, error } = await q;
-  if (error || !data) {
-    if (error) console.error("getActiveSocialMentions error:", error);
-    return [];
-  }
-  return data as PublicSocialMention[];
+  if (error) return null;
+  return data as PublicAnnonce | null;
 }

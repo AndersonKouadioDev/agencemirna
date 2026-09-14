@@ -119,7 +119,7 @@ export async function getSiteStats(): Promise<SiteStats> {
     supabase.from("biens").select("id", { count: "exact", head: true }).eq("is_active", true),
     supabase.from("agents").select("id", { count: "exact", head: true }).eq("is_active", true),
     supabase.from("services").select("id", { count: "exact", head: true }).eq("is_active", true),
-    supabase.from("promotions").select("id", { count: "exact", head: true }).eq("is_active", true),
+    supabase.from("annonces").select("id", { count: "exact", head: true }).eq("is_active", true),
   ]);
 
   return {
