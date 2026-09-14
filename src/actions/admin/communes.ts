@@ -94,8 +94,6 @@ export async function countBiensParZone(): Promise<BiensParZone> {
   if (!admin) return vide;
 
   const supabase = await createClient();
-  const { data, error } = await supabase.from("biens").select("commune_id, quartier_id");
-  if (error || !data) return vide;
 
   const compter = (bucket: Record<string, number>, cle: unknown) => {
     if (cle === null || cle === undefined) return;
@@ -104,9 +102,31 @@ export async function countBiensParZone(): Promise<BiensParZone> {
   };
 
   const resultat: BiensParZone = { communes: {}, quartiers: {} };
-  for (const b of data as Array<Record<string, unknown>>) {
-    compter(resultat.communes, b.commune_id);
-    compter(resultat.quartiers, b.quartier_id);
+
+  // PostgREST plafonne ses réponses (`db-max-rows`, 1000 sur Supabase hébergé)
+  // et tronque SANS erreur : d'un seul `select()`, l'avertissement de
+  // suppression aurait fini par annoncer moins de biens qu'il n'en détache
+  // réellement, sur l'écran qui sert précisément à mesurer une perte
+  // irréversible. La page avance du nombre de lignes effectivement reçues, ce
+  // qui reste juste même si le plafond du serveur est plus bas que le pas.
+  const PAS = 1000;
+  for (let debut = 0; ; ) {
+    const { data, error } = await supabase
+      .from("biens")
+      .select("commune_id, quartier_id")
+      // Sans tri, l'ordre des lignes n'est pas garanti stable d'une page à
+      // l'autre : un bien pourrait être compté deux fois, ou pas du tout.
+      .order("id", { ascending: true })
+      .range(debut, debut + PAS - 1);
+    if (error || !data) return vide;
+
+    for (const b of data as Array<Record<string, unknown>>) {
+      compter(resultat.communes, b.commune_id);
+      compter(resultat.quartiers, b.quartier_id);
+    }
+
+    if (data.length === 0) break;
+    debut += data.length;
   }
   return resultat;
 }
@@ -172,16 +192,49 @@ export async function upsertCommune(input: CommuneFormData): Promise<ActionResul
       // `quartiers.commune` est un libellé texte NOT NULL qui double le
       // rattachement par identifiant. Sans propagation, renommer une commune
       // laissait ses quartiers afficher l'ancien nom.
-      await supabase.from("quartiers").update({ commune: nom }).eq("commune_id", input.id);
-      // Et ceux qui n'ont pas de `commune_id` ne tiennent QUE par ce libellé :
-      // le renommage les faisait basculer dans « Quartiers sans commune » et
-      // les retirait du groupement du dropdown Localisation. On les adopte
-      // par identifiant, pour ne plus jamais dépendre du texte.
-      await supabase
+      const parIdentifiant = await supabase
         .from("quartiers")
-        .update({ commune: nom, commune_id: input.id })
-        .is("commune_id", null)
-        .ilike("commune", ancienNom);
+        .update({ commune: nom })
+        .eq("commune_id", input.id);
+
+      // Ceux qui n'ont pas de `commune_id` ne tiennent QUE par ce libellé : le
+      // renommage les faisait basculer dans « Quartiers sans commune » et les
+      // retirait du groupement du dropdown Localisation. On les adopte par
+      // identifiant, pour ne plus jamais dépendre du texte.
+      //
+      // Le rapprochement se fait en mémoire, et non par `.ilike()` : dans un
+      // motif LIKE, `%` et `_` sont des jokers — et PostgREST traduit en plus
+      // `*` en `%`, ce qu'aucun échappement côté SQL ne rattrape. Une commune
+      // dont le nom porte l'un de ces caractères aurait donc adopté des
+      // quartiers étrangers, en écrasant leur libellé et en leur posant son
+      // identifiant. La table est de l'ordre de la centaine de lignes.
+      const orphelins = await supabase
+        .from("quartiers")
+        .select("id, commune")
+        .is("commune_id", null);
+      const aAdopter = ((orphelins.data ?? []) as Array<{ id: string; commune: string | null }>)
+        .filter((q) => (q.commune ?? "").trim().toLowerCase() === ancienNom.toLowerCase())
+        .map((q) => q.id);
+      const parLibelle = aAdopter.length
+        ? await supabase
+            .from("quartiers")
+            .update({ commune: nom, commune_id: input.id })
+            .in("id", aAdopter)
+        : { error: null };
+
+      // Le renommage de la commune est déjà commité : taire l'échec de la
+      // propagation rendrait invisible le bug même qu'elle corrige — des
+      // quartiers restés sur l'ancien libellé, sous un `{ ok: true }`.
+      const echec = parIdentifiant.error ?? orphelins.error ?? parLibelle.error;
+      if (echec) {
+        revaliderVitrine();
+        return {
+          ok: false,
+          error:
+            "Commune enregistrée, mais le libellé de ses quartiers n'a pas pu " +
+            `être mis à jour : ${echec.message}`,
+        };
+      }
     }
     revaliderVitrine();
     return { ok: true, data: { id: input.id } };

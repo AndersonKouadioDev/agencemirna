@@ -748,7 +748,12 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                                 </h2>
                                 <p className="text-stone-500 flex items-center gap-2 font-medium">
                                   <MapPin className="w-4 h-4 text-primary" />
-                                  {selectedBien.ville_commune ? `${selectedBien.ville_commune}, ${selectedBien.pays ?? ""}` : (selectedBien.address || "Abidjan, CI")}
+                                  {/* `pays` est nullable : le gabarit littéral rendait
+                                      « Cocody, » sur un bien sans pays renseigné. */}
+                                  {[selectedBien.ville_commune, selectedBien.pays]
+                                    .map((part) => part?.trim())
+                                    .filter(Boolean)
+                                    .join(", ") || selectedBien.address || "Abidjan, CI"}
                                 </p>
                               </div>
                               <div className="text-left sm:text-right">
@@ -852,7 +857,18 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                           filteredBiens.slice(0, 12).map((bien) => {
                             const typeName = bien.types_bien?.name ?? "Bien";
                             const serviceName = bien.services_bien?.name ?? "Service";
-                            const pieces = (bien.types_bien?.id ?? 0) > 1 ? `${(bien.chambre ?? 0) + (bien.salon ?? 0)} pièces` : "";
+                            // Le décompte de pièces se déduit des pièces saisies, pas
+                            // du rang de `types_bien` : tester `types_bien.id > 1`
+                            // masquait la mention pour le type dont l'identifiant
+                            // vaut 1, au hasard de l'ordre d'insertion de la table.
+                            const nbPieces = (bien.chambre ?? 0) + (bien.salon ?? 0);
+                            const pieces = nbPieces > 0 ? `${nbPieces} pièce${nbPieces > 1 ? "s" : ""}` : "";
+                            // `pays` est nullable : la concaténation littérale rendait
+                            // « Cocody, » sur un bien sans pays renseigné.
+                            const lieu = [bien.ville_commune, bien.pays]
+                              .map((part) => part?.trim())
+                              .filter(Boolean)
+                              .join(", ");
                             const imageUrl = bien.image || "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop";
                             const priceText = bien.prix != null ? formatNumber(bien.prix) + " FCFA" : (bien.prix_month != null ? formatNumber(bien.prix_month) + " FCFA / mois" : "Prix sur demande");
 
@@ -877,7 +893,7 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                                       </h4>
                                     </div>
                                     <p className="text-stone-500 text-sm mb-4 line-clamp-1">
-                                      {bien.ville_commune ? `${bien.ville_commune}, ${bien.pays ?? ""}` : (bien.address || "Abidjan, CI")}
+                                      {lieu || bien.address || "Abidjan, CI"}
                                     </p>
                                     
                                     <div className="mt-auto pt-4 border-t border-stone-100 flex items-center justify-between">

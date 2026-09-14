@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CheckCircle2, X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const MESSAGES: Record<string, string> = {
   created: "Article créé.",
@@ -13,17 +13,30 @@ const MESSAGES: Record<string, string> = {
 
 export function FlashBanner({ type }: { type: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [visible, setVisible] = useState(true);
   const message = MESSAGES[type];
+
+  // On retire `flash` SANS réécrire l'URL en dur : un filtre ou une page
+  // posés pendant les quatre secondes d'affichage du bandeau étaient effacés
+  // par le retour à l'adresse nue.
+  const nettoyer = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("flash");
+    const qs = params.toString();
+    router.replace(qs ? `/admin/articles?${qs}` : "/admin/articles", {
+      scroll: false,
+    });
+  }, [router, searchParams]);
 
   useEffect(() => {
     if (!message) return;
     const timer = setTimeout(() => {
       setVisible(false);
-      router.replace("/admin/articles", { scroll: false });
+      nettoyer();
     }, 4000);
     return () => clearTimeout(timer);
-  }, [message, router]);
+  }, [message, nettoyer]);
 
   if (!visible || !message) return null;
 
@@ -36,7 +49,7 @@ export function FlashBanner({ type }: { type: string }) {
       <button
         onClick={() => {
           setVisible(false);
-          router.replace("/admin/articles", { scroll: false });
+          nettoyer();
         }}
         className="rounded p-1 text-green-700 hover:bg-green-100"
         aria-label="Fermer"

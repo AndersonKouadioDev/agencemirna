@@ -13,6 +13,7 @@ export const metadata = {
 export default function ConstructionPage() {
   return (
     <ServicePageLayout
+      image="https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=1200"
       slug="construction"
       name="Construction"
       bienService="Construction"

@@ -213,19 +213,27 @@ export async function getReferenceData(): Promise<ReferenceData> {
 
   const supabase = await createClient();
 
+  // Les trois taxonomies se trient d'abord sur `ordre`, comme les communes et
+  // les quartiers juste en dessous et comme la vitrine dans
+  // src/actions/public.ts : sur un `.order("name")` seul, le rang réglé depuis
+  // /admin/taxonomie n'avait aucun effet sur ces listes déroulantes. `name`
+  // reste en second pour départager les rangs égaux (0 par défaut).
   const [typesRes, servicesRes, categoriesRes, communesRes, quartiersRes] =
     await Promise.all([
     supabase
       .from("types_bien")
       .select("id, name")
+      .order("ordre", { ascending: true })
       .order("name", { ascending: true }),
     supabase
       .from("services_bien")
       .select("id, name")
+      .order("ordre", { ascending: true })
       .order("name", { ascending: true }),
     supabase
       .from("categories_bien")
       .select("id, name")
+      .order("ordre", { ascending: true })
       .order("name", { ascending: true }),
     supabase
       .from("communes")
@@ -478,6 +486,12 @@ export async function upsertBien(
   revalidatePath(`/admin/biens/${bienId}`);
   revalidatePath("/properties");
   revalidatePath(`/properties/${bienId}`);
+  // Portée « layout » : app/(marketing)/layout.tsx appelle getCatalogueFacettes(),
+  // et le méga-menu MASQUE les entrées dont le compteur est à zéro. Sans cette
+  // purge, publier le premier bien d'une commune ou d'un type ne faisait pas
+  // réapparaître son lien, et retirer le dernier le laissait pointer sur une
+  // liste vide — sur toutes les pages sauf celles nommées ci-dessus.
+  revalidatePath("/", "layout");
 
   if (echecsPhotos.length > 0) {
     // Le bien, lui, est bien enregistré : on renvoie son identifiant pour que
@@ -528,6 +542,9 @@ export async function deleteBien(id: string): Promise<ActionResult> {
 
   revalidatePath("/admin/biens");
   revalidatePath("/properties");
+  // Même raison qu'à l'enregistrement : les compteurs du méga-menu vivent
+  // dans le layout marketing.
+  revalidatePath("/", "layout");
   return { ok: true, data: undefined };
 }
 

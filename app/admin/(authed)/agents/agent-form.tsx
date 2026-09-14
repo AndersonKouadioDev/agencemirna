@@ -43,6 +43,12 @@ export function AgentForm({ agent }: { agent?: AgentAdminRow }) {
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Nombre de photos en cours d'envoi, remonté par <ImageUploader>. Le
+  // composant n'appelle `onChange` qu'une fois le lot complet monté :
+  // enregistrer pendant ce temps soumettait la liste INCHANGÉE, donc aucune
+  // des photos déposées, et laissait les fichiers déjà montés orphelins.
+  const [photosEnEnvoi, setPhotosEnEnvoi] = React.useState(0);
+
   // Identifiant de brouillon figé au premier rendu : le calculer dans un
   // useMemo appelait une fonction impure, et un re-rendu pouvait déplacer
   // le dossier de destination des images en cours d'envoi.
@@ -55,6 +61,16 @@ export function AgentForm({ agent }: { agent?: AgentAdminRow }) {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // La touche Entrée soumet le formulaire même bouton désactivé : la garde
+    // doit vivre ici aussi, sinon la photo en vol serait perdue.
+    if (photosEnEnvoi > 0) {
+      setError(
+        "La photo est encore en cours d'envoi. Patientez la fin de l'envoi avant d'enregistrer.",
+      );
+      return;
+    }
+
     setError(null);
     setSubmitting(true);
 
@@ -100,14 +116,20 @@ export function AgentForm({ agent }: { agent?: AgentAdminRow }) {
             {isEdit ? fullName || "(sans nom)" : "Nouvel agent"}
           </h1>
         </div>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? (
+        <Button type="submit" disabled={submitting || photosEnEnvoi > 0}>
+          {submitting || photosEnEnvoi > 0 ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Save className="h-4 w-4" />
           )}
           <span className="ml-1.5">
-            {submitting ? "…" : isEdit ? "Enregistrer" : "Créer l'agent"}
+            {photosEnEnvoi > 0
+              ? "Envoi de la photo…"
+              : submitting
+                ? "…"
+                : isEdit
+                  ? "Enregistrer"
+                  : "Créer l'agent"}
           </span>
         </Button>
       </div>
@@ -154,9 +176,17 @@ export function AgentForm({ agent }: { agent?: AgentAdminRow }) {
             <ImageUploader
               value={photoUrls}
               onChange={setPhotoUrls}
+              onUploadingChange={setPhotosEnEnvoi}
               pathPrefix={pathPrefix}
               maxFiles={1}
+              disabled={submitting}
             />
+            {photosEnEnvoi > 0 && (
+              <p className="text-xs text-primary font-medium">
+                Envoi en cours : l&apos;enregistrement est bloqué tant que la
+                photo n&apos;est pas montée.
+              </p>
+            )}
           </Section>
 
           <Section
@@ -276,18 +306,20 @@ export function AgentForm({ agent }: { agent?: AgentAdminRow }) {
         >
           <Link href="/admin/agents">Annuler</Link>
         </Button>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? (
+        <Button type="submit" disabled={submitting || photosEnEnvoi > 0}>
+          {submitting || photosEnEnvoi > 0 ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Save className="h-4 w-4" />
           )}
           <span className="ml-1.5">
-            {submitting
-              ? "Enregistrement…"
-              : isEdit
-                ? "Enregistrer les modifications"
-                : "Créer l'agent"}
+            {photosEnEnvoi > 0
+              ? "Envoi de la photo…"
+              : submitting
+                ? "Enregistrement…"
+                : isEdit
+                  ? "Enregistrer les modifications"
+                  : "Créer l'agent"}
           </span>
         </Button>
       </div>
@@ -319,6 +351,14 @@ function Section({
   );
 }
 
+/**
+ * L'identifiant généré n'était transmis à aucun enfant : le `htmlFor` de
+ * l'étiquette visait un id inexistant, cliquer le libellé ne focalisait rien
+ * et un lecteur d'écran annonçait un champ sans nom. On le pose sur le premier
+ * élément rendu — les enfants suivants ne sont que des textes d'aide — ou on
+ * le confie à l'appelant via un enfant fonction quand la cible dépend d'une
+ * alternative.
+ */
 function Field({
   label,
   required,
@@ -326,16 +366,37 @@ function Field({
 }: {
   label: string;
   required?: boolean;
-  children: React.ReactNode;
+  children: React.ReactNode | ((id: string) => React.ReactNode);
 }) {
   const id = React.useId();
+
+  let cible: string | undefined;
+  let contenu: React.ReactNode;
+  if (typeof children === "function") {
+    cible = id;
+    contenu = children(id);
+  } else {
+    contenu = React.Children.map(children, (child) => {
+      if (
+        cible !== undefined ||
+        !React.isValidElement(child) ||
+        child.type === React.Fragment
+      ) {
+        return child;
+      }
+      const element = child as React.ReactElement<{ id?: string }>;
+      cible = element.props.id ?? id;
+      return element.props.id ? element : React.cloneElement(element, { id });
+    });
+  }
+
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs font-medium text-neutral-700">
+      <Label htmlFor={cible} className="text-xs font-medium text-neutral-700">
         {label}
         {required && <span className="text-red-500 ml-0.5">*</span>}
       </Label>
-      <div>{children}</div>
+      <div>{contenu}</div>
     </div>
   );
 }

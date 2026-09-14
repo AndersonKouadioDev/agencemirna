@@ -63,6 +63,10 @@ const MOCK_BIENS: Bien[] = [
 
 export function PreviewClient() {
   const [images, setImages] = React.useState<string[]>([]);
+  // Cette page ne persiste rien : le compteur n'y garde aucun enregistrement,
+  // il sert à vérifier de visu que l'uploader remonte bien l'envoi en cours —
+  // c'est sur cette remontée que les formulaires réels bloquent leur bouton.
+  const [photosEnEnvoi, setPhotosEnEnvoi] = React.useState(0);
 
   const columns: ColumnDef<Bien>[] = [
     {
@@ -179,9 +183,16 @@ export function PreviewClient() {
           <ImageUploader
             value={images}
             onChange={setImages}
+            onUploadingChange={setPhotosEnEnvoi}
             pathPrefix="dev-preview/test"
             maxFiles={6}
           />
+          {photosEnEnvoi > 0 && (
+            <p className="mt-3 text-xs text-primary font-medium">
+              onUploadingChange : {photosEnEnvoi} envoi
+              {photosEnEnvoi > 1 ? "s" : ""} en cours.
+            </p>
+          )}
           <pre className="mt-4 rounded bg-stone-50 p-3 text-xs text-neutral-600 overflow-x-auto">
 {JSON.stringify(images, null, 2)}
           </pre>

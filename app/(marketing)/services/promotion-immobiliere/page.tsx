@@ -13,6 +13,7 @@ export const metadata = {
 export default function PromotionImmobilierePage() {
   return (
     <ServicePageLayout
+      image="https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=1200"
       slug="promotion-immobiliere"
       name="Promotion immobilière"
       icon="Briefcase"

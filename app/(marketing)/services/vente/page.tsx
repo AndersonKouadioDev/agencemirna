@@ -13,6 +13,7 @@ export const metadata = {
 export default function VentePage() {
   return (
     <ServicePageLayout
+      image="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=1200"
       slug="vente"
       name="Vente de biens immobiliers"
       icon="Key"

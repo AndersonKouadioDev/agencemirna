@@ -65,6 +65,11 @@ export function AnnonceForm({
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Nombre d'images en cours d'envoi, remonté par <ImageUploader>. Le composant
+  // n'appelle `onChange` qu'une fois le lot complet monté : enregistrer pendant
+  // ce temps soumettait la liste INCHANGÉE, donc aucune des images déposées, et
+  // laissait les fichiers déjà montés orphelins dans le bucket.
+  const [photosEnEnvoi, setPhotosEnEnvoi] = useState(0);
 
   // L'annonce ne porte plus que ce qui lui est propre : le prix et les
   // caractéristiques sont lus sur le bien mis en avant, au lieu d'être
@@ -102,6 +107,16 @@ export function AnnonceForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+
+    // La touche Entrée soumet le formulaire même bouton désactivé : la garde
+    // doit vivre ici aussi, sinon le visuel en vol serait perdu.
+    if (photosEnEnvoi > 0) {
+      setError(
+        "Le visuel est encore en cours d'envoi. Patientez la fin de l'envoi avant d'enregistrer.",
+      );
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
 
     if (!bienId) {
       setError("Choisissez le bien mis en avant par cette annonce.");
@@ -325,9 +340,17 @@ export function AnnonceForm({
             <ImageUploader
               value={imageUrls}
               onChange={setImageUrls}
+              onUploadingChange={setPhotosEnEnvoi}
               pathPrefix={pathPrefix}
               maxFiles={1}
+              disabled={submitting}
             />
+            {photosEnEnvoi > 0 && (
+              <p className="text-xs text-primary font-medium mt-2">
+                Envoi en cours : l&apos;enregistrement est bloqué tant que le
+                visuel n&apos;est pas monté.
+              </p>
+            )}
 
             <div className="mt-4 pt-4 border-t border-stone-200">
               <Label
@@ -445,18 +468,24 @@ export function AnnonceForm({
         >
           <Link href="/admin/annonces">Annuler</Link>
         </Button>
-        <Button type="submit" disabled={submitting} className="bg-primary text-secondary hover:bg-[#D4981C]">
-          {submitting ? (
+        <Button
+          type="submit"
+          disabled={submitting || photosEnEnvoi > 0}
+          className="bg-primary text-secondary hover:bg-[#D4981C]"
+        >
+          {submitting || photosEnEnvoi > 0 ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Save className="h-4 w-4" />
           )}
           <span className="ml-1.5">
-            {submitting
-              ? "Enregistrement…"
-              : isEdit
-                ? "Enregistrer les modifications"
-                : "Créer l'annonce"}
+            {photosEnEnvoi > 0
+              ? "Envoi du visuel…"
+              : submitting
+                ? "Enregistrement…"
+                : isEdit
+                  ? "Enregistrer les modifications"
+                  : "Créer l'annonce"}
           </span>
         </Button>
       </div>

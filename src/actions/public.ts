@@ -105,28 +105,55 @@ export async function getCatalogueFacettes(): Promise<CatalogueFacettes> {
   };
 
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("biens")
-    .select("type_bien_id, service_bien_id, commune_id, quartier_id")
-    .eq("is_active", true);
 
-  if (error || !data) {
-    if (error) console.error("getCatalogueFacettes error:", error);
-    return vide;
-  }
-
-  const facettes: CatalogueFacettes = { ...vide, disponible: true };
+  // Buckets propres, et non `{ ...vide }` : un spread copierait les mêmes
+  // références d'objet, et un abandon en cours de pagination renverrait un
+  // `vide` déjà à moitié rempli.
+  const facettes: CatalogueFacettes = {
+    types: {},
+    services: {},
+    communes: {},
+    quartiers: {},
+    disponible: true,
+  };
   const compter = (bucket: Record<string, number>, cle: unknown) => {
     if (cle === null || cle === undefined) return;
     const k = String(cle);
     bucket[k] = (bucket[k] ?? 0) + 1;
   };
 
-  for (const b of data as Array<Record<string, unknown>>) {
-    compter(facettes.types, b.type_bien_id);
-    compter(facettes.services, b.service_bien_id);
-    compter(facettes.communes, b.commune_id);
-    compter(facettes.quartiers, b.quartier_id);
+  // Même plafond silencieux que countBiensParZone (src/actions/admin/communes.ts) :
+  // PostgREST tronque à `db-max-rows` SANS erreur. Ici le prix d'une facette
+  // sous-comptée n'est pas un chiffre faux mais un lien disparu — ces
+  // compteurs servent à MASQUER les entrées à zéro, donc une troncature
+  // retirerait du méga-menu et du footer des communes et des types qui ont
+  // pourtant des biens. On pagine en avançant du nombre de lignes
+  // effectivement reçues, ce qui reste juste si le plafond est plus bas.
+  const PAS = 1000;
+  for (let debut = 0; ; ) {
+    const { data, error } = await supabase
+      .from("biens")
+      .select("type_bien_id, service_bien_id, commune_id, quartier_id")
+      .eq("is_active", true)
+      // Sans tri, l'ordre des lignes n'est pas garanti stable d'une page à
+      // l'autre : un bien pourrait être compté deux fois, ou pas du tout.
+      .order("id", { ascending: true })
+      .range(debut, debut + PAS - 1);
+
+    if (error || !data) {
+      if (error) console.error("getCatalogueFacettes error:", error);
+      return vide;
+    }
+
+    for (const b of data as Array<Record<string, unknown>>) {
+      compter(facettes.types, b.type_bien_id);
+      compter(facettes.services, b.service_bien_id);
+      compter(facettes.communes, b.commune_id);
+      compter(facettes.quartiers, b.quartier_id);
+    }
+
+    if (data.length === 0) break;
+    debut += data.length;
   }
   return facettes;
 }

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Calendar, Clock, Newspaper } from "lucide-react";
 import { getActiveArticles } from "@/src/actions/public";
+import { normaliserUrlImage } from "@/src/lib/image-url";
 import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
 
 /**
@@ -29,7 +30,13 @@ function formatDate(iso: string): string {
 }
 
 export default async function BlogPage() {
-  const articles = await getActiveArticles();
+  // Le formulaire d'article accepte encore une adresse saisie à la main, et
+  // next/image LÈVE sur un hôte absent des `remotePatterns` au lieu de
+  // l'ignorer : on filtre la source une fois ici plutôt qu'à chaque rendu.
+  const articles = (await getActiveArticles()).map((article) => ({
+    ...article,
+    image: normaliserUrlImage(article.image) ?? null,
+  }));
 
   const [featured, ...rest] = articles;
 
@@ -69,14 +76,16 @@ export default async function BlogPage() {
             >
               <article className="grid grid-cols-1 lg:grid-cols-2 gap-0 bg-white rounded-3xl overflow-hidden border border-stone-200 group-hover:shadow-2xl transition-shadow duration-300">
                 <div className="relative aspect-[16/10] lg:aspect-auto bg-stone-100 overflow-hidden">
-                  <Image
-                    src={featured.image}
-                    alt={featured.title}
-                    fill
-                    sizes="(max-width: 1024px) 100vw, 50vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-700"
-                    priority
-                  />
+                  {featured.image && (
+                    <Image
+                      src={featured.image}
+                      alt={featured.title}
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-700"
+                      priority
+                    />
+                  )}
                   {featured.category && (
                     <div className="absolute top-4 left-4">
                       <span className="inline-flex items-center rounded-full bg-white/95 backdrop-blur px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">
@@ -174,13 +183,15 @@ export default async function BlogPage() {
                 >
                   <article className="h-full flex flex-col bg-white rounded-2xl overflow-hidden border border-stone-200 group-hover:shadow-xl group-hover:-translate-y-1 transition-all duration-300">
                     <div className="relative aspect-[16/10] overflow-hidden bg-stone-100">
-                      <Image
-                        src={article.image}
-                        alt={article.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-700"
-                      />
+                      {article.image && (
+                        <Image
+                          src={article.image}
+                          alt={article.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                      )}
                       {article.category && (
                         <div className="absolute top-3 left-3">
                           <span className="inline-flex items-center rounded-full bg-white/95 backdrop-blur px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">

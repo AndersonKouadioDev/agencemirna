@@ -181,6 +181,16 @@ export function TaxonomyManager({
   const [erreurUrl, setErreurUrl] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState<number | "nouveau" | null>(null);
   const [error, setError] = React.useState<string | null>(null);
+  // Nombre d'images en cours d'envoi, remonté par <ImageUploader>. Le composant
+  // n'appelle `onChange` qu'une fois le lot complet monté : enregistrer pendant
+  // ce temps soumettait le brouillon INCHANGÉ, donc sans l'image déposée, et
+  // laissait le fichier déjà monté orphelin dans le bucket. Remis à zéro à
+  // chaque ouverture ou fermeture du formulaire : l'uploader est démonté avec
+  // lui, et un envoi abandonné laisserait sinon le compteur bloqué à jamais.
+  const [photosEnEnvoi, setPhotosEnEnvoi] = React.useState(0);
+  // Préfixe d'identifiants propre à ce bloc : la page en monte un par table,
+  // et deux libellés « Nom » ne peuvent pas viser le même champ.
+  const idChamp = React.useId();
 
   const enEdition = brouillon !== null;
   const avecImage = porteUnVisuel(table);
@@ -204,6 +214,7 @@ export function TaxonomyManager({
     setError(null);
     setErreurUrl(null);
     setUrlManuelle("");
+    setPhotosEnEnvoi(0);
     setBrouillon({ ...VIDE });
   }
 
@@ -211,6 +222,7 @@ export function TaxonomyManager({
     setError(null);
     setErreurUrl(null);
     setUrlManuelle(row.image ?? "");
+    setPhotosEnEnvoi(0);
     setBrouillon({
       id: row.id,
       name: row.name,
@@ -224,6 +236,7 @@ export function TaxonomyManager({
     setBrouillon(null);
     setUrlManuelle("");
     setErreurUrl(null);
+    setPhotosEnEnvoi(0);
   }
 
   /** Report de la saisie manuelle vers le brouillon (au blur, pas à la frappe). */
@@ -241,6 +254,14 @@ export function TaxonomyManager({
   async function enregistrer(e: React.FormEvent) {
     e.preventDefault();
     if (!brouillon) return;
+    // La touche Entrée soumet le formulaire même bouton désactivé : la garde
+    // doit vivre ici aussi, sinon l'image en vol serait perdue.
+    if (photosEnEnvoi > 0) {
+      setError(
+        "L'image est encore en cours d'envoi. Patientez la fin de l'envoi avant d'enregistrer.",
+      );
+      return;
+    }
     // La touche Entrée soumet sans passer par le blur du champ URL : on
     // revalide ici pour ne jamais enregistrer une saisie restée en attente.
     // Sans champ Image, on transmet `undefined` : la colonne est laissée telle
@@ -312,10 +333,11 @@ export function TaxonomyManager({
         >
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_100px] gap-3">
             <div className="space-y-1.5">
-              <Label>
+              <Label htmlFor={`${idChamp}-nom`}>
                 Nom <span className="text-red-500">*</span>
               </Label>
               <Input
+                id={`${idChamp}-nom`}
                 value={brouillon.name}
                 onChange={(e) =>
                   setBrouillon({ ...brouillon, name: e.target.value })
@@ -326,7 +348,7 @@ export function TaxonomyManager({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>Ordre</Label>
+              <Label htmlFor={`${idChamp}-ordre`}>Ordre</Label>
               {/*
                 `ordre` est NOT NULL en base (migration 0018) : vider le champ
                 ne peut pas l'effacer. Sur une entrée existante, la colonne est
@@ -334,6 +356,7 @@ export function TaxonomyManager({
                 de laisser croire à un rang recalculé.
               */}
               <Input
+                id={`${idChamp}-ordre`}
                 type="number"
                 value={brouillon.ordre ?? ""}
                 onChange={(e) =>
@@ -401,6 +424,9 @@ export function TaxonomyManager({
 
           {avecImage && (
             <div className="space-y-1.5">
+              {/* Chapeau de la zone Image : il coiffe l'uploader ET le champ
+                  URL, aucun des deux n'est « le » contrôle à étiqueter — d'où
+                  l'absence de `htmlFor`, que chacun compense à sa façon. */}
               <Label>Image</Label>
               <ImageUploader
                 value={brouillon.image ? [brouillon.image] : []}
@@ -410,10 +436,22 @@ export function TaxonomyManager({
                   setUrlManuelle(url ?? "");
                   setErreurUrl(null);
                 }}
+                onUploadingChange={setPhotosEnEnvoi}
                 pathPrefix={`taxonomie/${table}`}
                 maxFiles={1}
+                disabled={busy !== null}
               />
+              {photosEnEnvoi > 0 && (
+                <p className="text-xs text-primary font-medium">
+                  Envoi en cours : l&apos;enregistrement est bloqué tant que
+                  l&apos;image n&apos;est pas montée.
+                </p>
+              )}
+              {/* Pas de libellé visible ici : le champ est le second recours
+                  de la zone Image. `aria-label` lui donne tout de même un nom
+                  propre, le placeholder n'en tenant pas lieu partout. */}
               <Input
+                aria-label="Ou une URL d'image existante"
                 value={urlManuelle}
                 onChange={(e) => setUrlManuelle(e.target.value)}
                 onBlur={() => validerUrlManuelle()}
@@ -442,13 +480,13 @@ export function TaxonomyManager({
               <X className="h-4 w-4 mr-1.5" />
               Annuler
             </Button>
-            <Button type="submit" disabled={busy !== null}>
-              {busy !== null ? (
+            <Button type="submit" disabled={busy !== null || photosEnEnvoi > 0}>
+              {busy !== null || photosEnEnvoi > 0 ? (
                 <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
               ) : (
                 <Check className="h-4 w-4 mr-1.5" />
               )}
-              Enregistrer
+              {photosEnEnvoi > 0 ? "Envoi de l'image…" : "Enregistrer"}
             </Button>
           </div>
         </form>
@@ -517,12 +555,19 @@ export function TaxonomyManager({
               </span>
 
               <div className="flex items-center gap-1 shrink-0">
+                {/*
+                  Basculer sur une autre entrée pendant un envoi remettait le
+                  compteur à zéro alors que l'uploader, lui, reste monté : le
+                  bouton « Enregistrer » se débloquait et l'image en vol
+                  atterrissait sur l'entrée qu'on venait de quitter.
+                */}
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
                   onClick={() => ouvrirEdition(row)}
+                  disabled={photosEnEnvoi > 0}
                   aria-label={`Modifier ${row.name}`}
                 >
                   <Pencil className="h-4 w-4" />

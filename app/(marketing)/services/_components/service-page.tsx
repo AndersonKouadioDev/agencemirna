@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Building2, Check, MessageCircle } from "lucide-react";
-import { Breadcrumbs, Card } from "@heroui/react";
+import { Card } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { STATIC_SERVICES } from "@/src/data/services";
 import { WHATSAPP_URL_PAR_DEFAUT } from "@/src/data/contact";
@@ -84,11 +84,7 @@ export function ServicePageLayout({
               />
             </div>
             <div className="mx-auto max-w-6xl px-6 lg:px-8 pt-44 sm:pt-52 pb-24 sm:pb-32 text-white">
-              <Breadcrumbs className="mb-8 text-white/80 [&_a]:text-white/80 [&_a:hover]:text-white">
-                <Breadcrumbs.Item href="/">Accueil</Breadcrumbs.Item>
-                <Breadcrumbs.Item href="/services">Services</Breadcrumbs.Item>
-                <Breadcrumbs.Item>{name}</Breadcrumbs.Item>
-              </Breadcrumbs>
+              <div className="flex items-center space-x-2 text-sm text-white/80 mb-8"><Link href="/">Accueil</Link><span>/</span><Link href="/services">Services</Link><span>/</span><span className="text-white">{name}</span></div>
 
               <div className="max-w-3xl">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-3 py-1.5 text-xs font-semibold uppercase tracking-widest mb-6">
@@ -108,11 +104,8 @@ export function ServicePageLayout({
           // Repli sans image : dégradé brand
           <div className="bg-gradient-to-br from-secondary via-secondary/90 to-primary text-white pt-44 sm:pt-52 pb-24 sm:pb-32">
             <div className="mx-auto max-w-6xl px-6 lg:px-8">
-              <Breadcrumbs className="mb-8 text-white/80 [&_a]:text-white/80 [&_a:hover]:text-white">
-                <Breadcrumbs.Item href="/">Accueil</Breadcrumbs.Item>
-                <Breadcrumbs.Item href="/services">Services</Breadcrumbs.Item>
-                <Breadcrumbs.Item>{name}</Breadcrumbs.Item>
-              </Breadcrumbs>
+              <div className="flex items-center space-x-2 text-sm text-white/80 mb-8"><Link href="/">Accueil</Link><span>/</span><Link href="/services">Services</Link><span>/</span><span className="text-white">{name}</span></div>
+
               <div className="flex items-start gap-6">
                 <div className="hidden sm:flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
                   <ServiceIcon name={icon} className="h-10 w-10" />

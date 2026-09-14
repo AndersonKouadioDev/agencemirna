@@ -14,6 +14,7 @@ import {
   getActiveArticles,
   getArticleBySlug,
 } from "@/src/actions/public";
+import { normaliserUrlImage } from "@/src/lib/image-url";
 import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
 import { ArticleMarkdown } from "./article-markdown";
 import { getSiteContact } from "@/src/lib/site-contact";
@@ -49,10 +50,16 @@ export default async function ArticlePage({
   const article = await getArticleBySlug(slug);
   if (!article) notFound();
 
+  // Le formulaire d'article accepte encore une adresse saisie à la main, et
+  // next/image LÈVE sur un hôte absent des `remotePatterns` au lieu de
+  // l'ignorer : la couverture est filtrée avant de lui être passée.
+  const couverture = normaliserUrlImage(article.image);
+
   // Récupère 3 autres articles pour "À lire aussi"
-  const others = (await getActiveArticles({ limit: 6 })).filter(
-    (a) => a.slug !== slug,
-  ).slice(0, 3);
+  const others = (await getActiveArticles({ limit: 6 }))
+    .filter((a) => a.slug !== slug)
+    .slice(0, 3)
+    .map((a) => ({ ...a, image: normaliserUrlImage(a.image) ?? null }));
 
   const contact = await getSiteContact();
 
@@ -115,14 +122,16 @@ export default async function ArticlePage({
       <section className="px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <div className="relative aspect-[16/9] overflow-hidden rounded-3xl shadow-2xl bg-stone-100">
-            <Image
-              src={article.image}
-              alt={article.title}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 1024px"
-              className="object-cover"
-            />
+            {couverture && (
+              <Image
+                src={couverture}
+                alt={article.title}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 1024px"
+                className="object-cover"
+              />
+            )}
           </div>
         </div>
       </section>
@@ -185,13 +194,15 @@ export default async function ArticlePage({
                 >
                   <article className="h-full flex flex-col bg-white rounded-2xl overflow-hidden border border-stone-200 group-hover:shadow-xl group-hover:-translate-y-1 transition-all duration-300">
                     <div className="relative aspect-[16/10] overflow-hidden bg-stone-100">
-                      <Image
-                        src={other.image}
-                        alt={other.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-700"
-                      />
+                      {other.image && (
+                        <Image
+                          src={other.image}
+                          alt={other.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                      )}
                       {other.category && (
                         <div className="absolute top-3 left-3">
                           <span className="inline-flex items-center rounded-full bg-white/95 backdrop-blur px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">

@@ -13,6 +13,7 @@ export const metadata = {
 export default function DecorationAmenagementPage() {
   return (
     <ServicePageLayout
+      image="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=1200"
       slug="decoration-amenagement"
       name="Décoration d'intérieur"
       icon="Paintbrush"

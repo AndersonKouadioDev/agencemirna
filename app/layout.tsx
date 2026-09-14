@@ -1,4 +1,5 @@
 import { Toaster } from "@/components/ui/sonner";
+import { DEFAULT_SITE_CONTACT } from "@/src/data/contact";
 import { cn } from "@/lib/utils";
 import type { Metadata, Viewport } from "next";
 import { Roboto as FontSans } from "next/font/google";
@@ -110,8 +111,13 @@ export const metadata: Metadata = {
   },
   other: {
     "fb:app_id": "1075289994232342",
-    "og:phone_number": "+225 01 43 483 131",
-    "og:email": "info@agencemirna.com",
+    // `metadata` est un export STATIQUE : le brancher sur `getSiteContact()`
+    // imposerait un `generateMetadata()` async et rendrait dynamique TOUTE
+    // l'application, pages /services pré-générées comprises. On se contente
+    // donc du repli partagé, au lieu de recopier deux littéraux qui se
+    // périmeraient séparément. Suivre `site_settings` ici reste un arbitrage.
+    "og:phone_number": DEFAULT_SITE_CONTACT.phone,
+    "og:email": DEFAULT_SITE_CONTACT.email,
     "og:latitude": "5.284599",
     "og:longitude": "-3.974556",
     "og:street-address":

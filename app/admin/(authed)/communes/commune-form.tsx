@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Save, Loader2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,15 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
   const [imageAltUrl, setImageAltUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Nombre d'images en cours d'envoi, remonté par <ImageUploader>. Le composant
+  // n'appelle `onChange` qu'une fois le lot complet monté : enregistrer pendant
+  // ce temps soumettait la liste INCHANGÉE, donc aucune des images déposées, et
+  // laissait les fichiers déjà montés orphelins dans le bucket.
+  const [photosEnEnvoi, setPhotosEnEnvoi] = useState(0);
+  // Les libellés n'avaient aucun `htmlFor` : les cliquer ne focalisait rien et
+  // un lecteur d'écran annonçait des champs sans nom. Un préfixe unique suffit,
+  // les suffixes distinguant les champs.
+  const idChamp = useId();
   const [autoSlug, setAutoSlug] = useState(!isEdit);
 
   // Tant que l'admin n'a pas édité le slug, c'est une valeur DÉRIVÉE du nom :
@@ -50,6 +59,16 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // La touche Entrée soumet le formulaire même bouton désactivé : la garde
+    // doit vivre ici aussi, sinon l'image en vol serait perdue.
+    if (photosEnEnvoi > 0) {
+      setError(
+        "L'image est encore en cours d'envoi. Patientez la fin de l'envoi avant d'enregistrer.",
+      );
+      return;
+    }
+
     setError(null);
     setSubmitting(true);
     const data: CommuneFormData = {
@@ -78,16 +97,17 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
       {error && <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 mb-6">{error}</div>}
       <div className="rounded-lg border border-stone-200 bg-white p-5 space-y-4">
         <div className="space-y-1.5">
-          <Label>Nom de la commune <span className="text-red-500">*</span></Label>
-          <Input value={nom} onChange={(e) => setNom(e.target.value)} required placeholder="Ex: Cocody" />
+          <Label htmlFor={`${idChamp}-nom`}>Nom de la commune <span className="text-red-500">*</span></Label>
+          <Input id={`${idChamp}-nom`} value={nom} onChange={(e) => setNom(e.target.value)} required placeholder="Ex: Cocody" />
         </div>
         <div className="space-y-1.5">
-          <Label>Slug (URL) <span className="text-red-500">*</span></Label>
-          <Input value={slug} onChange={(e) => { setSlugSaisi(e.target.value); setAutoSlug(false); }} required placeholder="ex: cocody" />
+          <Label htmlFor={`${idChamp}-slug`}>Slug (URL) <span className="text-red-500">*</span></Label>
+          <Input id={`${idChamp}-slug`} value={slug} onChange={(e) => { setSlugSaisi(e.target.value); setAutoSlug(false); }} required placeholder="ex: cocody" />
         </div>
         <div className="space-y-1.5">
-          <Label>Ordre d&apos;affichage</Label>
+          <Label htmlFor={`${idChamp}-ordre`}>Ordre d&apos;affichage</Label>
           <Input
+            id={`${idChamp}-ordre`}
             type="number"
             min={0}
             step={1}
@@ -101,7 +121,8 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
             Du plus petit au plus grand. Décide de l&apos;ordre des communes
             dans le menu, le pied de page et la section « Communes phares »,
             qui n&apos;en montre que les trois premières. Laissez vide à la
-            création pour placer la commune en fin de liste.
+            création pour placer la commune en fin de liste ; en modification,
+            un champ vidé conserve le rang actuel.
           </p>
         </div>
         <label className="flex items-center gap-3 cursor-pointer mt-4">
@@ -120,8 +141,9 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
         </div>
 
         <div className="space-y-1.5">
-          <Label>Accroche</Label>
+          <Label htmlFor={`${idChamp}-accroche`}>Accroche</Label>
           <Input
+            id={`${idChamp}-accroche`}
             value={tagline}
             onChange={(e) => setTagline(e.target.value)}
             placeholder="Ex : Le prestige résidentiel"
@@ -132,14 +154,26 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
         </div>
 
         <div className="space-y-1.5">
+          {/* Chapeau de la zone Image : il coiffe l'uploader ET le champ URL,
+              aucun des deux n'est « le » contrôle à étiqueter — d'où l'absence
+              de `htmlFor`, que le champ URL compense par un `aria-label`. */}
           <Label>Image</Label>
           <ImageUploader
             value={imageUrls}
             onChange={setImageUrls}
+            onUploadingChange={setPhotosEnEnvoi}
             pathPrefix={`communes/${item?.id ?? "nouveau"}`}
             maxFiles={1}
+            disabled={submitting}
           />
+          {photosEnEnvoi > 0 && (
+            <p className="text-xs text-primary font-medium">
+              Envoi en cours : l&apos;enregistrement est bloqué tant que
+              l&apos;image n&apos;est pas montée.
+            </p>
+          )}
           <Input
+            aria-label="Ou une URL d'image existante"
             value={imageAltUrl}
             onChange={(e) => setImageAltUrl(e.target.value)}
             placeholder="Ou une URL d'image existante"
@@ -166,9 +200,9 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
       </div>
       <div className="mt-6 flex justify-end gap-2">
         <Button type="button" variant="outline" asChild><Link href="/admin/geographie">Annuler</Link></Button>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Save className="h-4 w-4 mr-1.5" />}
-          Enregistrer
+        <Button type="submit" disabled={submitting || photosEnEnvoi > 0}>
+          {submitting || photosEnEnvoi > 0 ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Save className="h-4 w-4 mr-1.5" />}
+          {photosEnEnvoi > 0 ? "Envoi de l'image…" : "Enregistrer"}
         </Button>
       </div>
     </form>

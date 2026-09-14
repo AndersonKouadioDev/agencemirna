@@ -133,7 +133,13 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
       ? crypto.randomUUID().slice(0, 8)
       : Math.random().toString(36).slice(2, 10),
   );
-  const pathPrefix = bien?.id ? `biens/${bien.id}` : `biens/draft-${brouillonId}`;
+  // `idCree` compte autant que `bien.id` : après un échec partiel, le bien
+  // EXISTE en base, et les photos du second essai doivent être rangées sous son
+  // identifiant définitif plutôt que dans le dossier de brouillon. Le
+  // changement de dossier est sans risque pour un envoi en cours : la garde
+  // `photosEnEnvoi > 0` interdit l'enregistrement qui renseigne `idCree`.
+  const idBien = bien?.id ?? idCree;
+  const pathPrefix = idBien ? `biens/${idBien}` : `biens/draft-${brouillonId}`;
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -771,24 +777,33 @@ function Field({
 }) {
   const id = React.useId();
 
+  // `cible` reste indéfini tant qu'aucun enfant n'a reçu l'identifiant : un
+  // Field sans élément à étiqueter ne doit pas laisser le libellé pointer dans
+  // le vide. Un Fragment est sauté — lui poser un `id` n'aurait aucun effet
+  // sinon un avertissement React.
+  let cible: string | undefined;
   let contenu: React.ReactNode;
   if (typeof children === "function") {
+    cible = id;
     contenu = children(id);
   } else {
-    let pose = false;
     contenu = React.Children.map(children, (child) => {
-      if (pose || !React.isValidElement(child)) return child;
-      pose = true;
+      if (
+        cible !== undefined ||
+        !React.isValidElement(child) ||
+        child.type === React.Fragment
+      ) {
+        return child;
+      }
       const element = child as React.ReactElement<{ id?: string }>;
-      return element.props.id
-        ? element
-        : React.cloneElement(element, { id });
+      cible = element.props.id ?? id;
+      return element.props.id ? element : React.cloneElement(element, { id });
     });
   }
 
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-xs font-medium text-neutral-700">
+      <Label htmlFor={cible} className="text-xs font-medium text-neutral-700">
         {label}
         {required && <span className="text-red-500 ml-0.5">*</span>}
       </Label>

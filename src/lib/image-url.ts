@@ -5,9 +5,13 @@
  * rendu, ce qui fait tomber la page entière — vitrine comprise. Une adresse
  * doit donc être refusée à la saisie, jamais découverte à l'affichage.
  *
- * NB : la même logique vit encore en double dans
- * app/admin/(authed)/taxonomie/taxonomy-manager.tsx (hors périmètre de cette
- * passe) ; ce module est l'endroit où la fusionner.
+ * CE MODULE EST LA VERSION DE RÉFÉRENCE. La même logique vit encore en double
+ * dans app/admin/(authed)/taxonomie/taxonomy-manager.tsx (hors périmètre de
+ * cette passe), mais cette copie-là est en retard sur deux points : elle laisse
+ * passer « //hote » et « /\hote », et sa signature n'accepte qu'une `string`.
+ * Les deux écarts vont dans le même sens : brancher taxonomy-manager.tsx sur
+ * `@/src/lib/image-url` et supprimer sa copie est un remplacement strict, sans
+ * régression de typage ni de comportement.
  */
 
 /**

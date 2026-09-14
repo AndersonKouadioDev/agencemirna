@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Save, Loader2, Phone, Mail, Instagram, Facebook, Linkedin, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,10 @@ export function SettingsForm({ settings }: { settings: SiteSettingsRow | null })
     linkedin: settings?.linkedin || "",
   });
 
+  // Les libellés n'avaient aucun `htmlFor` : les cliquer ne focalisait rien et
+  // un lecteur d'écran annonçait des champs sans nom. Un préfixe unique suffit,
+  // les suffixes distinguant les champs.
+  const idChamp = useId();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -63,11 +67,15 @@ export function SettingsForm({ settings }: { settings: SiteSettingsRow | null })
         </div>
         <div className="p-6 space-y-5">
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-2">
+            <Label
+              htmlFor={`${idChamp}-phone`}
+              className="flex items-center gap-2"
+            >
               <Phone className="h-4 w-4 text-stone-400" />
               Numéro de téléphone
             </Label>
             <Input 
+              id={`${idChamp}-phone`}
               value={formData.phone} 
               onChange={e => setFormData({...formData, phone: e.target.value})} 
               placeholder="+225 00 00 00 00 00" 
@@ -75,11 +83,15 @@ export function SettingsForm({ settings }: { settings: SiteSettingsRow | null })
           </div>
 
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-2">
+            <Label
+              htmlFor={`${idChamp}-whatsapp`}
+              className="flex items-center gap-2"
+            >
               <MessageCircle className="h-4 w-4 text-green-500" />
               Numéro WhatsApp
             </Label>
             <Input 
+              id={`${idChamp}-whatsapp`}
               value={formData.whatsapp} 
               onChange={e => setFormData({...formData, whatsapp: e.target.value})} 
               placeholder="+225 00 00 00 00 00" 
@@ -87,12 +99,16 @@ export function SettingsForm({ settings }: { settings: SiteSettingsRow | null })
           </div>
 
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-2">
+            <Label
+              htmlFor={`${idChamp}-email`}
+              className="flex items-center gap-2"
+            >
               <Mail className="h-4 w-4 text-stone-400" />
               Adresse Email
             </Label>
             <Input 
               type="email"
+              id={`${idChamp}-email`}
               value={formData.email} 
               onChange={e => setFormData({...formData, email: e.target.value})} 
               placeholder="contact@agencemirna.com" 
@@ -108,12 +124,16 @@ export function SettingsForm({ settings }: { settings: SiteSettingsRow | null })
         </div>
         <div className="p-6 space-y-5">
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-2">
+            <Label
+              htmlFor={`${idChamp}-facebook`}
+              className="flex items-center gap-2"
+            >
               <Facebook className="h-4 w-4 text-blue-600" />
               Facebook
             </Label>
             <Input 
               type="url"
+              id={`${idChamp}-facebook`}
               value={formData.facebook} 
               onChange={e => setFormData({...formData, facebook: e.target.value})} 
               placeholder="https://facebook.com/agencemirna" 
@@ -121,12 +141,16 @@ export function SettingsForm({ settings }: { settings: SiteSettingsRow | null })
           </div>
 
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-2">
+            <Label
+              htmlFor={`${idChamp}-instagram`}
+              className="flex items-center gap-2"
+            >
               <Instagram className="h-4 w-4 text-pink-600" />
               Instagram
             </Label>
             <Input 
               type="url"
+              id={`${idChamp}-instagram`}
               value={formData.instagram} 
               onChange={e => setFormData({...formData, instagram: e.target.value})} 
               placeholder="https://instagram.com/agencemirna" 
@@ -134,12 +158,16 @@ export function SettingsForm({ settings }: { settings: SiteSettingsRow | null })
           </div>
 
           <div className="space-y-1.5">
-            <Label className="flex items-center gap-2">
+            <Label
+              htmlFor={`${idChamp}-linkedin`}
+              className="flex items-center gap-2"
+            >
               <Linkedin className="h-4 w-4 text-blue-700" />
               LinkedIn
             </Label>
             <Input 
               type="url"
+              id={`${idChamp}-linkedin`}
               value={formData.linkedin} 
               onChange={e => setFormData({...formData, linkedin: e.target.value})} 
               placeholder="https://linkedin.com/company/agencemirna" 

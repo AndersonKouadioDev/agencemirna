@@ -204,6 +204,13 @@ export function TestimonialForm({ row }: { row?: TestimonialRow }) {
   );
 }
 
+/**
+ * L'identifiant généré n'était transmis à aucun enfant : cliquer l'étiquette
+ * ne focalisait rien et un lecteur d'écran annonçait un champ sans nom. On le
+ * pose sur le premier élément rendu — les enfants suivants ne sont que des
+ * textes d'aide — ou on le confie à l'appelant via un enfant fonction quand la
+ * cible dépend d'une alternative.
+ */
 function Field({
   label,
   required,
@@ -211,14 +218,36 @@ function Field({
 }: {
   label: string;
   required?: boolean;
-  children: React.ReactNode;
+  children: React.ReactNode | ((id: string) => React.ReactNode);
 }) {
+  const id = React.useId();
+
+  let cible: string | undefined;
+  let contenu: React.ReactNode;
+  if (typeof children === "function") {
+    cible = id;
+    contenu = children(id);
+  } else {
+    contenu = React.Children.map(children, (child) => {
+      if (
+        cible !== undefined ||
+        !React.isValidElement(child) ||
+        child.type === React.Fragment
+      ) {
+        return child;
+      }
+      const element = child as React.ReactElement<{ id?: string }>;
+      cible = element.props.id ?? id;
+      return element.props.id ? element : React.cloneElement(element, { id });
+    });
+  }
+
   return (
     <div>
-      <Label className="mb-1.5 block">
+      <Label htmlFor={cible} className="mb-1.5 block">
         {label} {required && <span className="text-red-500">*</span>}
       </Label>
-      {children}
+      {contenu}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight, Calendar, Clock, Newspaper } from "lucide-react";
 import { getActiveArticles } from "@/src/actions/public";
+import { normaliserUrlImage } from "@/src/lib/image-url";
 import {
   MotionSection,
   MotionStagger,
@@ -29,7 +30,13 @@ function formatDate(iso: string): string {
 }
 
 export default async function BlogSection() {
-  const articles = await getActiveArticles({ limit: 3 });
+  // Le formulaire d'article accepte encore une adresse saisie à la main, et
+  // next/image LÈVE sur un hôte absent des `remotePatterns` au lieu de
+  // l'ignorer : on filtre la source une fois ici plutôt qu'à chaque rendu.
+  const articles = (await getActiveArticles({ limit: 3 })).map((article) => ({
+    ...article,
+    image: normaliserUrlImage(article.image) ?? null,
+  }));
 
   return (
     <MotionSection className="bg-[#FAF5EE] py-20 sm:py-28">
@@ -82,13 +89,15 @@ export default async function BlogSection() {
                 >
                   <article className="h-full flex flex-col bg-white rounded-2xl overflow-hidden border border-stone-200 group-hover:shadow-xl group-hover:-translate-y-1 transition-all duration-300">
                     <div className="relative aspect-[16/10] overflow-hidden bg-stone-100">
-                      <Image
-                        src={article.image}
-                        alt={article.title}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-700"
-                      />
+                      {article.image && (
+                        <Image
+                          src={article.image}
+                          alt={article.title}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                      )}
                       {article.category && (
                         <div className="absolute top-3 left-3">
                           <span className="inline-flex items-center rounded-full bg-white/95 backdrop-blur px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary">

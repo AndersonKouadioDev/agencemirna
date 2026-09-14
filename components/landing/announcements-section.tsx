@@ -6,9 +6,11 @@ import { getActiveAnnonces } from "@/src/actions/public";
 import AnnonceCard from "@/components/annonces/annonce-card";
 
 export default async function AnnouncementsSection() {
-  // `show_on_home` pilote enfin cette section : la case du back-office
-  // n'avait jusqu'ici aucun effet, les 3 premières annonces sortaient
-  // quoi qu'il arrive.
+  // `show_on_home` SÉLECTIONNE les annonces de cette section, mais ne la
+  // gouverne pas entièrement : tant qu'aucune annonce n'est cochée, le repli
+  // ci-dessous évite un accueil amputé de sa section « Opportunités ».
+  // Conséquence à connaître avant de relire la case en back-office : décocher
+  // la dernière annonce cochée ne la fait pas disparaître de l'accueil.
   let annonces = await getActiveAnnonces({ onHome: true, limit: 3 });
   if (annonces.length === 0) annonces = await getActiveAnnonces({ limit: 3 });
   if (annonces.length === 0) return null;

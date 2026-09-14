@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ArrowRight, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getActiveArticles } from "@/src/actions/public";
+import { normaliserUrlImage } from "@/src/lib/image-url";
 
 /**
  * Section « Actualités & Guides » de l'accueil.
@@ -16,7 +17,13 @@ import { getActiveArticles } from "@/src/actions/public";
  * plutôt que de servir des cartes factices cliquables.
  */
 export default async function NewsGuidesSection() {
-  const articles = await getActiveArticles({ limit: 2 });
+  // Le formulaire d'article accepte encore une adresse saisie à la main, et
+  // next/image LÈVE sur un hôte absent des `remotePatterns` au lieu de
+  // l'ignorer : on filtre la source une fois ici plutôt qu'à chaque rendu.
+  const articles = (await getActiveArticles({ limit: 2 })).map((article) => ({
+    ...article,
+    image: normaliserUrlImage(article.image) ?? null,
+  }));
 
   return (
     <section className="py-12 md:py-20 bg-[#FAF5EE]">
@@ -62,13 +69,15 @@ export default async function NewsGuidesSection() {
                   >
                     <div className="bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                       <div className="relative aspect-[4/3] w-full overflow-hidden bg-stone-100">
-                        <Image
-                          src={article.image}
-                          alt={article.title}
-                          fill
-                          sizes="(max-width: 640px) 100vw, 33vw"
-                          className="object-cover group-hover:scale-105 transition-transform duration-700"
-                        />
+                        {article.image && (
+                          <Image
+                            src={article.image}
+                            alt={article.title}
+                            fill
+                            sizes="(max-width: 640px) 100vw, 33vw"
+                            className="object-cover group-hover:scale-105 transition-transform duration-700"
+                          />
+                        )}
                       </div>
                       <div className="p-6">
                         <h3 className="font-bold text-lg text-secondary mb-2 leading-tight group-hover:text-primary transition-colors">

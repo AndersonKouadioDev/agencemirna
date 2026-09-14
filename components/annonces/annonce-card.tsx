@@ -4,6 +4,7 @@ import { BedIcon, BathIcon, MapPinIcon, Maximize2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { PublicAnnonce } from "@/src/actions/public";
 import { annonceHref } from "@/src/lib/annonce";
+import { normaliserUrlImage } from "@/src/lib/image-url";
 import { formatNumber } from "@/utils/formatNumber";
 
 /**
@@ -34,7 +35,10 @@ export default function AnnonceCard({ annonce }: { annonce: PublicAnnonce }) {
   const bien = annonce.bien;
 
   // Visuel de l'annonce, sinon photo du bien mis en avant.
-  const image = annonce.image || bien?.image || null;
+  // next/image LÈVE sur un hôte absent des `remotePatterns` et fait tomber la
+  // page : une adresse héritée hors motif retombe ici sur le visuel d'attente.
+  const image =
+    normaliserUrlImage(annonce.image) || normaliserUrlImage(bien?.image) || null;
 
   // Un bien en location affiche son loyer mensuel, un bien en vente son prix.
   const prix = bien?.prix ?? null;

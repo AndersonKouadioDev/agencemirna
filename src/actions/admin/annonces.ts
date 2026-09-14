@@ -228,9 +228,12 @@ export async function upsertPromotion(
       .update(data)
       .eq("id", input.id);
     if (error) return { ok: false, error: error.message };
+    // Portée « layout » et non « page » : MarqueeBar est monté dans le layout
+    // marketing, et les sept pages sous /services sont en `force-static`. Une
+    // purge de « / » seule les laissait défiler l'ancien bandeau indéfiniment.
     revalidatePath("/admin/annonces");
     revalidatePath("/annonces");
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return { ok: true, data: { id: input.id } };
   } else {
     const { data: existing } = await supabase
@@ -250,7 +253,7 @@ export async function upsertPromotion(
     }
     revalidatePath("/admin/annonces");
     revalidatePath("/annonces");
-    revalidatePath("/");
+    revalidatePath("/", "layout");
     return { ok: true, data: { id: created.id as string } };
   }
 }
@@ -269,7 +272,7 @@ export async function deleteAnnonce(id: string): Promise<ActionResult> {
 
   revalidatePath("/admin/annonces");
   revalidatePath("/annonces");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true, data: undefined };
 }
 
@@ -293,7 +296,7 @@ export async function toggleAnnonceActive(
 
   revalidatePath("/admin/annonces");
   revalidatePath("/annonces");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true, data: undefined };
 }
 
@@ -317,7 +320,7 @@ export async function reorderAnnonces(ids: string[]): Promise<ActionResult> {
   revalidatePath("/annonces");
   // L'accueil consomme `ordre` (section Annonces & Promotions, bandeau) : il
   // était la seule surface qu'un réordonnancement laissait en arrière.
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   return { ok: true, data: undefined };
 }
 

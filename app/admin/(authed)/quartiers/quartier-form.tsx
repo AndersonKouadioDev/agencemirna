@@ -80,6 +80,16 @@ export function QuartierForm({
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Nombre de photos en cours d'envoi, remonté par <ImageUploader>. Le
+  // composant n'appelle `onChange` qu'une fois le lot complet monté :
+  // enregistrer pendant ce temps soumettait la liste INCHANGÉE, donc aucune
+  // des photos déposées, et laissait les fichiers déjà montés orphelins.
+  const [photosEnEnvoi, setPhotosEnEnvoi] = React.useState(0);
+
+  // Ce libellé-ci est rendu hors d'un <Field> : sans `htmlFor`, il ne
+  // désignait aucun champ, contrairement à son jumeau du formulaire d'annonce.
+  const idUrlImage = React.useId();
+
   // Identifiant de brouillon figé au premier rendu : le calculer dans un
   // useMemo appelait une fonction impure, et un re-rendu pouvait déplacer
   // le dossier de destination des images en cours d'envoi.
@@ -92,6 +102,17 @@ export function QuartierForm({
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    // La touche Entrée soumet le formulaire même bouton désactivé : la garde
+    // doit vivre ici aussi, sinon l'image en vol serait perdue — et le
+    // formulaire refuserait l'enregistrement, faute d'image.
+    if (photosEnEnvoi > 0) {
+      setError(
+        "L'image est encore en cours d'envoi. Patientez la fin de l'envoi avant d'enregistrer.",
+      );
+      return;
+    }
+
     setError(null);
     setSubmitting(true);
 
@@ -135,13 +156,17 @@ export function QuartierForm({
           <ArrowLeft className="h-4 w-4" />
           Retour aux communes &amp; quartiers
         </Link>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? (
+        <Button type="submit" disabled={submitting || photosEnEnvoi > 0}>
+          {submitting || photosEnEnvoi > 0 ? (
             <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
           ) : (
             <Save className="h-4 w-4 mr-1.5" />
           )}
-          {isEdit ? "Enregistrer" : "Créer le quartier"}
+          {photosEnEnvoi > 0
+            ? "Envoi de l'image…"
+            : isEdit
+              ? "Enregistrer"
+              : "Créer le quartier"}
         </Button>
       </div>
 
@@ -169,50 +194,60 @@ export function QuartierForm({
                   required
                 />
               </Field>
+              {/* L'étiquette vise l'un ou l'autre des deux champs de repli :
+                  l'enfant fonction est le seul moyen de lui transmettre
+                  l'identifiant. */}
               <Field label="Commune" required>
-                {communes.length > 0 ? (
-                  <>
-                    <select
-                      value={communeIdEffectif}
-                      onChange={(e) => handleCommuneChange(e.target.value)}
-                      required
-                      className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
-                    >
-                      <option value="" disabled>
-                        Choisir une commune…
-                      </option>
-                      {communes.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.nom}
-                          {c.is_active ? "" : " (inactive)"}
+                {(idCommune) =>
+                  communes.length > 0 ? (
+                    <>
+                      <select
+                        id={idCommune}
+                        value={communeIdEffectif}
+                        onChange={(e) => handleCommuneChange(e.target.value)}
+                        required
+                        className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                      >
+                        <option value="" disabled>
+                          Choisir une commune…
                         </option>
-                      ))}
-                    </select>
-                    <p className="mt-1 text-[11px] text-neutral-500">
-                      Gérées dans{" "}
-                      <Link href="/admin/geographie" className="underline">
-                        Communes &amp; quartiers
-                      </Link>
-                      .
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <Input
-                      value={commune}
-                      onChange={(e) => setCommune(e.target.value)}
-                      placeholder="Ex : Cocody"
-                      required
-                    />
-                    <p className="mt-1 text-[11px] text-amber-600">
-                      Aucune commune enregistrée :{" "}
-                      <Link href="/admin/communes/nouveau" className="underline">
-                        créez-en une
-                      </Link>{" "}
-                      pour rattacher proprement ce quartier.
-                    </p>
-                  </>
-                )}
+                        {communes.map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.nom}
+                            {c.is_active ? "" : " (inactive)"}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-1 text-[11px] text-neutral-500">
+                        Gérées dans{" "}
+                        <Link href="/admin/geographie" className="underline">
+                          Communes &amp; quartiers
+                        </Link>
+                        .
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <Input
+                        id={idCommune}
+                        value={commune}
+                        onChange={(e) => setCommune(e.target.value)}
+                        placeholder="Ex : Cocody"
+                        required
+                      />
+                      <p className="mt-1 text-[11px] text-amber-600">
+                        Aucune commune enregistrée :{" "}
+                        <Link
+                          href="/admin/communes/nouveau"
+                          className="underline"
+                        >
+                          créez-en une
+                        </Link>{" "}
+                        pour rattacher proprement ce quartier.
+                      </p>
+                    </>
+                  )
+                }
               </Field>
             </div>
 
@@ -255,7 +290,8 @@ export function QuartierForm({
               <p className="mt-1.5 text-xs text-neutral-500">
                 Du plus petit au plus grand : c&apos;est l&apos;ordre des
                 quartiers dans le dropdown Localisation. Laissez vide à la
-                création pour placer le quartier en fin de liste.
+                création pour placer le quartier en fin de liste ; en
+                modification, un champ vidé conserve le rang actuel.
               </p>
             </Field>
           </section>
@@ -269,14 +305,26 @@ export function QuartierForm({
             <ImageUploader
               value={imageUrls}
               onChange={setImageUrls}
+              onUploadingChange={setPhotosEnEnvoi}
               pathPrefix={pathPrefix}
               maxFiles={1}
+              disabled={submitting}
             />
+            {photosEnEnvoi > 0 && (
+              <p className="text-xs text-primary font-medium">
+                Envoi en cours : l&apos;enregistrement est bloqué tant que
+                l&apos;image n&apos;est pas montée.
+              </p>
+            )}
             <div className="pt-4 border-t border-stone-200">
-              <Label className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2 block">
+              <Label
+                htmlFor={idUrlImage}
+                className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2 block"
+              >
                 Ou réutiliser une image existante (URL)
               </Label>
               <Input
+                id={idUrlImage}
                 value={imageAlt}
                 onChange={(e) => setImageAlt(e.target.value)}
                 placeholder="Ex : /images/biens/bien6.jpg"
@@ -313,6 +361,13 @@ export function QuartierForm({
   );
 }
 
+/**
+ * L'identifiant généré n'était transmis à aucun enfant : cliquer l'étiquette
+ * ne focalisait rien et un lecteur d'écran annonçait un champ sans nom. On le
+ * pose sur le premier élément rendu — les enfants suivants ne sont que des
+ * textes d'aide — ou on le confie à l'appelant via un enfant fonction quand la
+ * cible dépend d'une alternative.
+ */
 function Field({
   label,
   required,
@@ -320,14 +375,36 @@ function Field({
 }: {
   label: string;
   required?: boolean;
-  children: React.ReactNode;
+  children: React.ReactNode | ((id: string) => React.ReactNode);
 }) {
+  const id = React.useId();
+
+  let cible: string | undefined;
+  let contenu: React.ReactNode;
+  if (typeof children === "function") {
+    cible = id;
+    contenu = children(id);
+  } else {
+    contenu = React.Children.map(children, (child) => {
+      if (
+        cible !== undefined ||
+        !React.isValidElement(child) ||
+        child.type === React.Fragment
+      ) {
+        return child;
+      }
+      const element = child as React.ReactElement<{ id?: string }>;
+      cible = element.props.id ?? id;
+      return element.props.id ? element : React.cloneElement(element, { id });
+    });
+  }
+
   return (
     <div>
-      <Label className="mb-1.5 block">
+      <Label htmlFor={cible} className="mb-1.5 block">
         {label} {required && <span className="text-red-500">*</span>}
       </Label>
-      {children}
+      {contenu}
     </div>
   );
 }

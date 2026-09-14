@@ -76,7 +76,11 @@ function renduInline(texte: string, cle: string): React.ReactNode[] {
       const href = hrefSur(m[7]);
       const libelle = renduInline(m[6], k);
       if (!href) {
-        noeuds.push(<React.Fragment key={k}>{libelle}</React.Fragment>);
+        // On restitue le markdown brut plutôt que le seul libellé : une URL
+        // refusée qui contient une parenthèse (« javascript:alert(1) ») laissait
+        // la parenthèse fermante orpheline derrière le texte, et le rédacteur
+        // lisait « clic) » sans comprendre que son lien avait été écarté.
+        noeuds.push(<React.Fragment key={k}>{m[0]}</React.Fragment>);
       } else if (href.startsWith("/")) {
         noeuds.push(
           <Link

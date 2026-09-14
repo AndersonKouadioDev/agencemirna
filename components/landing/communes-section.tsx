@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
 import type { PublicCommune, CatalogueFacettes } from "@/src/actions/public";
+import { normaliserUrlImage } from "@/src/lib/image-url";
 
 type Card = {
   id: string;
@@ -39,7 +40,10 @@ export default function CommunesSection({
     id: c.id,
     nom: c.nom,
     tagline: c.tagline,
-    image: c.image,
+    // Le formulaire des communes accepte encore une URL saisie à la main, et
+    // next/image LÈVE sur un hôte absent des `remotePatterns` : une adresse
+    // refusée retombe sur la garde ci-dessous plutôt que sur un accueil en 500.
+    image: normaliserUrlImage(c.image) ?? null,
     slug: c.slug,
   });
 

@@ -7,6 +7,7 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { normaliserUrlImage } from "@/src/lib/image-url";
 import {
   MENU_FALLBACK_IMAGE,
   MENU_IMAGES_PAR_ICONE,
@@ -180,8 +181,11 @@ function MegaContent({
   // Le visuel vient de la donnée elle-même (commune.image) :
   // plus aucune correspondance libellé → image en dur, qui laissait les
   // nouvelles communes sans photo.
+  // L'adresse est filtrée : le formulaire des communes accepte encore une URL
+  // saisie à la main, et next/image LÈVE sur un hôte absent des
+  // `remotePatterns` — ici, dans l'en-tête, cela ferait tomber TOUTES les pages.
   const currentImage =
-    hovered?.image ||
+    normaliserUrlImage(hovered?.image) ||
     (hovered?.icon ? MENU_IMAGES_PAR_ICONE[hovered.icon] : undefined) ||
     MENU_FALLBACK_IMAGE;
   const currentTitle = hovered?.label || item.featured?.title || "Découvrir";
@@ -322,9 +326,10 @@ function SimpleContent({
 
   if (!activeItem) return null;
 
-  // Comme pour le méga-menu : le visuel est porté par l'entrée elle-même.
+  // Comme pour le méga-menu : le visuel est porté par l'entrée elle-même, et
+  // son adresse est filtrée avant d'atteindre next/image.
   const currentImage =
-    activeItem.image ||
+    normaliserUrlImage(activeItem.image) ||
     (activeItem.icon ? MENU_IMAGES_PAR_ICONE[activeItem.icon] : undefined) ||
     MENU_FALLBACK_IMAGE;
 

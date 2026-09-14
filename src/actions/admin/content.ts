@@ -22,7 +22,17 @@ export type ActionResult<T = void> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 
-const REVALIDATE_PATHS = ["/", "/about"];
+/**
+ * Témoignages, articles et FAQ ne sont pas lus que par « / » et « /about » :
+ * ils alimentent aussi /blog, /faq et /actualites/[slug]. L'ancienne liste
+ * `["/", "/about"]` laissait donc en arrière les pages mêmes que ce module
+ * remplit. Purger la racine en portée « layout » couvre toute la branche
+ * vitrine d'un coup, comme le font déjà settings.ts, taxonomy.ts et
+ * communes.ts — et sans avoir à relire le slug d'un article pour le supprimer.
+ */
+function revaliderVitrine() {
+  revalidatePath("/", "layout");
+}
 
 // ============================================================================
 // TESTIMONIALS
@@ -101,7 +111,7 @@ export async function upsertTestimonial(
   if (input.id) {
     const { error } = await supabase.from("testimonials").update(avecOrdre).eq("id", input.id);
     if (error) return { ok: false, error: error.message };
-    REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+    revaliderVitrine();
     revalidatePath("/admin/testimonials");
     return { ok: true, data: { id: input.id } };
   }
@@ -118,7 +128,7 @@ export async function upsertTestimonial(
     .select("id")
     .single();
   if (error || !created) return { ok: false, error: error?.message ?? "Erreur." };
-  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revaliderVitrine();
   revalidatePath("/admin/testimonials");
   return { ok: true, data: { id: created.id as string } };
 }
@@ -129,7 +139,7 @@ export async function deleteTestimonial(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from("testimonials").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
-  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revaliderVitrine();
   revalidatePath("/admin/testimonials");
   return { ok: true, data: undefined };
 }
@@ -143,7 +153,7 @@ export async function toggleTestimonialActive(
   const supabase = await createClient();
   const { error } = await supabase.from("testimonials").update({ is_active: isActive }).eq("id", id);
   if (error) return { ok: false, error: error.message };
-  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revaliderVitrine();
   revalidatePath("/admin/testimonials");
   return { ok: true, data: undefined };
 }
@@ -214,7 +224,7 @@ export async function upsertFaq(
   if (input.id) {
     const { error } = await supabase.from("faqs").update(avecOrdre).eq("id", input.id);
     if (error) return { ok: false, error: error.message };
-    REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+    revaliderVitrine();
     revalidatePath("/admin/faqs");
     return { ok: true, data: { id: input.id } };
   }
@@ -231,7 +241,7 @@ export async function upsertFaq(
     .select("id")
     .single();
   if (error || !created) return { ok: false, error: error?.message ?? "Erreur." };
-  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revaliderVitrine();
   revalidatePath("/admin/faqs");
   return { ok: true, data: { id: created.id as string } };
 }
@@ -242,7 +252,7 @@ export async function deleteFaq(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from("faqs").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
-  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revaliderVitrine();
   revalidatePath("/admin/faqs");
   return { ok: true, data: undefined };
 }
@@ -256,7 +266,7 @@ export async function toggleFaqActive(
   const supabase = await createClient();
   const { error } = await supabase.from("faqs").update({ is_active: isActive }).eq("id", id);
   if (error) return { ok: false, error: error.message };
-  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revaliderVitrine();
   revalidatePath("/admin/faqs");
   return { ok: true, data: undefined };
 }
@@ -361,7 +371,7 @@ export async function upsertArticle(
   if (input.id) {
     const { error } = await supabase.from("articles").update(avecOrdre).eq("id", input.id);
     if (error) return { ok: false, error: error.message };
-    REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+    revaliderVitrine();
     revalidatePath("/admin/articles");
     return { ok: true, data: { id: input.id } };
   }
@@ -378,7 +388,7 @@ export async function upsertArticle(
     .select("id")
     .single();
   if (error || !created) return { ok: false, error: error?.message ?? "Erreur." };
-  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revaliderVitrine();
   revalidatePath("/admin/articles");
   return { ok: true, data: { id: created.id as string } };
 }
@@ -389,7 +399,7 @@ export async function deleteArticle(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from("articles").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
-  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revaliderVitrine();
   revalidatePath("/admin/articles");
   return { ok: true, data: undefined };
 }
@@ -403,7 +413,7 @@ export async function toggleArticleActive(
   const supabase = await createClient();
   const { error } = await supabase.from("articles").update({ is_active: isActive }).eq("id", id);
   if (error) return { ok: false, error: error.message };
-  REVALIDATE_PATHS.forEach((p) => revalidatePath(p));
+  revaliderVitrine();
   revalidatePath("/admin/articles");
   return { ok: true, data: undefined };
 }
