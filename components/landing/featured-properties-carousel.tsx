@@ -6,15 +6,10 @@ import Image from "next/image";
 import useEmblaCarousel from "embla-carousel-react";
 import {
   ArrowRight,
-  Bath,
-  BedDouble,
   ChevronLeft,
   ChevronRight,
-  MapPin,
-  Users,
   Star,
 } from "lucide-react";
-import { Card } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -59,6 +54,10 @@ export default function FeaturedPropertiesCarousel({
       setCanScrollPrev(emblaApi.canScrollPrev());
       setCanScrollNext(emblaApi.canScrollNext());
     };
+    // Embla est un système externe : sa liste de snaps n'existe qu'une fois le
+    // carrousel monté, on la lit donc à l'abonnement. Pas de cascade de rendus
+    // ici, l'effet ne dépend que de `emblaApi`.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setScrollSnaps(emblaApi.scrollSnapList());
     emblaApi.on("select", onSelect);
     onSelect();
@@ -72,7 +71,7 @@ export default function FeaturedPropertiesCarousel({
         {/* Header */}
         <div className="flex items-end justify-between mb-8">
           <h2 className="font-agate text-3xl md:text-5xl font-bold text-secondary leading-tight">
-            Biens d'exception
+            Biens d&apos;exception
           </h2>
           <Link href="/properties" className="hidden sm:flex items-center gap-1.5 text-sm font-bold text-stone-600 hover:text-primary transition-colors">
             Voir tous les biens

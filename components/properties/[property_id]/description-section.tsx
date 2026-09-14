@@ -30,17 +30,47 @@ import Image from "next/image";
 import PropertyLocationMap from "../property-location-map";
 import PropertyVideo from "../property-video";
 import Link from "next/link";
-import { useState, useRef } from "react";
+import { useState, useRef, type ComponentProps } from "react";
 import { useFormStatus } from "react-dom";
 import { BookingRequest } from "@/services/emails/booking_asking.action";
 import { createLead } from "@/src/actions/leads";
 import { Textarea } from "@/components/ui/textarea";
 
+/**
+ * Les lignes de `biens` n'ont pas de type généré : on décrit ici les seules
+ * colonnes que la fiche lit réellement, jointures comprises. Tout est nullable
+ * comme en base — c'est ce que chacun des replis ci-dessous suppose déjà.
+ */
+type BienFicheSource = {
+  id: string;
+  name?: string | null;
+  description?: string | null;
+  short_description?: string | null;
+  address?: string | null;
+  adresse_complete?: string | null;
+  ville_commune?: string | null;
+  pays?: string | null;
+  localisation?: string | null;
+  image?: string | null;
+  lien_video?: string | null;
+  area?: string | number | null;
+  capacity?: number | null;
+  chambre?: number | null;
+  salle_bains?: number | null;
+  prix?: number | null;
+  prix_month?: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  types_bien?: { name?: string | null } | null;
+  services_bien?: { name?: string | null } | null;
+  categories_bien?: { name?: string | null } | null;
+};
+
 export default function DescriptionSection({
   bien,
   contact,
 }: {
-  bien: any;
+  bien: BienFicheSource;
   contact: SiteContact;
 }) {
   const serviceName = (bien?.services_bien?.name || "").toLowerCase();
@@ -136,7 +166,7 @@ export default function DescriptionSection({
                  {bien?.name}
                </h1>
                {mapsHref ? (
-                 <Link href={mapsHref as any} target="_blank" className="flex items-center gap-2 text-stone-500 hover:text-primary transition-colors text-lg">
+                 <Link href={mapsHref} target="_blank" className="flex items-center gap-2 text-stone-500 hover:text-primary transition-colors text-lg">
                    <MapPinIcon className="w-5 h-5 text-primary" />
                    {addressLine}
                  </Link>
@@ -170,7 +200,7 @@ export default function DescriptionSection({
                bloc de 400 à 600 px. On ne rend le visuel que s'il existe. */}
            <div className="w-full h-[400px] md:h-[600px] rounded-[32px] overflow-hidden relative shadow-2xl mb-12 bg-stone-200">
              {bien.image && (
-               <Image src={bien.image} alt={bien.name} fill className="object-cover hover:scale-105 transition-transform duration-1000" priority />
+               <Image src={bien.image} alt={bien.name ?? ""} fill className="object-cover hover:scale-105 transition-transform duration-1000" priority />
              )}
            </div>
          </Motion>
@@ -279,14 +309,27 @@ function SubmitButton() {
   );
 }
 
-const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: any, contact: SiteContact, isMeuble: boolean, isVente: boolean }) => {
+/**
+ * Période de séjour : exactement le type que le DateRangePicker attend et
+ * renvoie — le dériver du composant évite de dépendre de la copie de
+ * `@internationalized/date` que react-stately embarque. `null` tant que la
+ * plage est incomplète : react-aria garde alors la borne déjà saisie dans son
+ * propre état, ce que `onChange={setValue}` lui laisse faire.
+ */
+type PlageSejour = NonNullable<
+  ComponentProps<typeof DateRangePicker>["value"]
+> | null;
+
+const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: BienFicheSource, contact: SiteContact, isMeuble: boolean, isVente: boolean }) => {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const formRef = useRef<HTMLFormElement>(null);
 
-  const [value, setValue] = useState<any>({
-    start: null,
-    end: null,
-  });
+  const [value, setValue] = useState<PlageSejour>(null);
+  // Compteur de remontage du sélecteur. `setValue(null)` ne vide que la valeur
+  // contrôlée : tant que la plage est incomplète, react-aria garde la borne
+  // déjà saisie dans son propre état. Sans ce remontage, une date d'arrivée
+  // saisie seule resterait affichée dans le champ après un envoi réussi.
+  const [sejourKey, setSejourKey] = useState(0);
 
   async function handleSubmit(formData: FormData) {
     let checkIn;
@@ -330,12 +373,12 @@ const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: any, contact: S
       lastName,
       email,
       phone,
-      propertyName: bien.name,
+      propertyName: bien.name ?? "",
       checkIn: checkIn || "",
       checkOut: checkOut || "",
       guests,
       message,
-      propertyImage: bien.image,
+      propertyImage: bien.image ?? "",
     });
 
     // Succès dès que l'un des deux canaux a abouti : l'agence est servie soit
@@ -345,10 +388,8 @@ const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: any, contact: S
     if (leadResult.ok || emailResult.success) {
       setStatus("success");
       formRef.current?.reset();
-      setValue({
-        start: null,
-        end: null,
-      });
+      setValue(null);
+      setSejourKey((k) => k + 1);
     } else {
       setStatus("error");
     }
@@ -435,6 +476,7 @@ const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: any, contact: S
                 />
                 <div className="bg-stone-50 p-2 rounded-xl border border-transparent">
                   <DateRangePicker
+                    key={sejourKey}
                     value={value}
                     onChange={setValue}
                     isRequired
@@ -518,7 +560,7 @@ const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: any, contact: S
           )}
           {status === "error" && (
             <div className="mt-4 p-4 rounded-xl bg-red-50 text-red-700 text-sm font-medium border border-red-200">
-              Une erreur s'est produite. Veuillez réessayer ou nous contacter par téléphone.
+              Une erreur s&apos;est produite. Veuillez réessayer ou nous contacter par téléphone.
             </div>
           )}
         </div>

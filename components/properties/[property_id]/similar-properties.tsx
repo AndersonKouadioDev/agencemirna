@@ -45,7 +45,7 @@ export default async function SimilarProperties({ currentBienId }: { currentBien
           <h2 className="text-3xl md:text-4xl font-agate font-bold text-secondary">
             Ces biens pourraient aussi vous intéresser
           </h2>
-          <p className="text-stone-500 mt-2">Découvrez d'autres propriétés exclusives dans notre catalogue.</p>
+          <p className="text-stone-500 mt-2">Découvrez d&apos;autres propriétés exclusives dans notre catalogue.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

@@ -15,8 +15,8 @@ export default function PropertyVideo({ videoUrl }: { videoUrl?: string | null }
     } else if (url.hostname.includes("youtu.be")) {
       videoId = url.pathname.slice(1);
     }
-  } catch (e) {
-    // invalid URL
+  } catch {
+    // URL invalide
     return null;
   }
 

@@ -134,7 +134,7 @@ export function PreviewClient() {
         </h1>
         <p className="text-sm text-neutral-500 mt-1">
           Outils de développement / migration. Page accessible uniquement aux
-          admins via l'URL directe.
+          admins via l&apos;URL directe.
         </p>
       </div>
 
@@ -146,8 +146,8 @@ export function PreviewClient() {
         <header>
           <h2 className="text-lg font-semibold">DataTable</h2>
           <p className="text-sm text-neutral-500">
-            Tri sur les colonnes "Nom" et "Prix", recherche globale sur la
-            colonne "Nom", pagination (5 lignes/page).
+            Tri sur les colonnes &quot;Nom&quot; et &quot;Prix&quot;, recherche globale sur la
+            colonne &quot;Nom&quot;, pagination (5 lignes/page).
           </p>
         </header>
         <DataTable

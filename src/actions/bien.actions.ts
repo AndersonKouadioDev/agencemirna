@@ -135,10 +135,58 @@ export async function getBienWithImages(bienId: string) {
 }
 
 /**
+ * Ligne de `biens` telle que la vitrine la consomme.
+ *
+ * La table n'a pas de types générés : on décrit donc ici les colonnes
+ * réellement lues par les appelants (catalogue, carrousel, carte, fiche,
+ * sitemap) ainsi que les jointures demandées par le `select`. Les deux
+ * jointures géographiques sont facultatives : le repli sans géographie de
+ * `getAllBiens` ne les renvoie pas.
+ */
+export type BienPublicRow = {
+  id: string;
+  name: string | null;
+  short_description: string | null;
+  description: string | null;
+  /** Cover unique héritée d'avant la table `bien_images`. */
+  image: string | null;
+  prix: number | null;
+  prix_month: number | null;
+  chambre: number | null;
+  salon: number | null;
+  salle_bains: number | null;
+  capacity: number | null;
+  address: string | null;
+  ville_commune: string | null;
+  pays: string | null;
+  localisation: string | null;
+  adresse_complete: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  lien_video: string | null;
+  area: number | null;
+  folder: string | null;
+  type_bien_id: number | null;
+  service_bien_id: number | null;
+  categorie_bien_id: number | null;
+  commune_id: string | null;
+  quartier_id: string | null;
+  is_active: boolean;
+  created_at: string;
+  /** Absente de certains environnements : le sitemap retombe sur la date du jour. */
+  updated_at?: string | null;
+  types_bien: { id: number; name: string | null } | null;
+  services_bien: { id: number; name: string | null } | null;
+  categories_bien: { id: number; name: string | null } | null;
+  communes?: { id: string; nom: string | null; slug: string | null } | null;
+  quartiers?: { id: string; name: string | null } | null;
+};
+
+/**
  * Liste tous les biens (page /properties publique).
  * Retourne toujours un array (jamais null) pour éviter les crashs sur .length.
  */
-export async function getAllBiens() {
+export async function getAllBiens(): Promise<BienPublicRow[]> {
   const supabase = await createClient();
 
   const query = (columns: string) =>
@@ -164,7 +212,8 @@ export async function getAllBiens() {
       quartiers:quartier_id (id, name)
       `,
   );
-  if (!withGeo.error && withGeo.data) return withGeo.data as any[];
+  if (!withGeo.error && withGeo.data)
+    return withGeo.data as unknown as BienPublicRow[];
 
   console.error(
     "getAllBiens : jointure commune/quartier indisponible, repli sans géographie.",
@@ -184,7 +233,7 @@ export async function getAllBiens() {
     return [];
   }
 
-  return (biens ?? []) as any[];
+  return (biens ?? []) as unknown as BienPublicRow[];
 }
 
 // ============================================================================

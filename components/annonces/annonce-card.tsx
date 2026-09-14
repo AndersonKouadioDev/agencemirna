@@ -136,7 +136,7 @@ export default function AnnonceCard({ annonce }: { annonce: PublicAnnonce }) {
 
   // Sans destination, la carte reste affichée mais n'est pas cliquable.
   return href ? (
-    <Link href={href as any} className="group block h-full">
+    <Link href={href} className="group block h-full">
       {contenu}
     </Link>
   ) : (

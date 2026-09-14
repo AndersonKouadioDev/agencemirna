@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/src/supabase/server";
 import { getAdminUser } from "@/src/supabase/admin-auth";
 import { deleteAdminImage } from "./upload";
-import { migrateBienImagesFromFolder } from "@/src/actions/bien.actions";
 
 /**
  * Server Actions admin pour la table `biens`.

@@ -43,10 +43,15 @@ export function AgentForm({ agent }: { agent?: AgentAdminRow }) {
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const pathPrefix = React.useMemo(() => {
-    if (agent?.id) return `agents/${agent.id}`;
-    return `agents/draft-${typeof crypto !== "undefined" ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
-  }, [agent?.id]);
+  // Identifiant de brouillon figé au premier rendu : le calculer dans un
+  // useMemo appelait une fonction impure, et un re-rendu pouvait déplacer
+  // le dossier de destination des images en cours d'envoi.
+  const [brouillonId] = React.useState(() =>
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID().slice(0, 8)
+      : Math.random().toString(36).slice(2, 10),
+  );
+  const pathPrefix = agent?.id ? `agents/${agent.id}` : `agents/draft-${brouillonId}`;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -88,7 +93,7 @@ export function AgentForm({ agent }: { agent?: AgentAdminRow }) {
           >
             <Link href="/admin/agents" className="flex items-center gap-1.5">
               <ArrowLeft className="h-4 w-4" />
-              Retour à l'équipe
+              Retour à l&apos;équipe
             </Link>
           </Button>
           <h1 className="text-2xl font-bold tracking-tight">
@@ -254,7 +259,7 @@ export function AgentForm({ agent }: { agent?: AgentAdminRow }) {
               />
               <Hint>
                 Format wa.me (chiffres uniquement). Si vide, le bouton WhatsApp
-                ne s'affichera pas.
+                ne s&apos;affichera pas.
               </Hint>
             </Field>
           </Section>

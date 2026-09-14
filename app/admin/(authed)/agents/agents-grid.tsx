@@ -44,9 +44,14 @@ export function AgentsGrid({ agents }: { agents: AgentAdminRow[] }) {
     React.useState<AgentAdminRow | null>(null);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
+  // Resynchronisation pendant le rendu plutôt que dans un effet : recopier
+  // une prop via useEffect provoque un second rendu en cascade à chaque
+  // rafraîchissement du serveur.
+  const [propPrecedente, setPropPrecedente] = React.useState(agents);
+  if (propPrecedente !== agents) {
+    setPropPrecedente(agents);
     setItems(agents);
-  }, [agents]);
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -99,7 +104,7 @@ export function AgentsGrid({ agents }: { agents: AgentAdminRow[] }) {
       <div className="rounded-lg border border-stone-200 bg-white p-12 text-center">
         <Users className="h-8 w-8 mx-auto text-neutral-400 mb-3" />
         <p className="text-sm text-neutral-600 mb-4">
-          Aucun agent pour l'instant.
+          Aucun agent pour l&apos;instant.
         </p>
         <Button asChild size="sm">
           <Link href="/admin/agents/nouveau">Ajouter le premier agent</Link>

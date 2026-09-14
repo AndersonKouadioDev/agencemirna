@@ -1,8 +1,6 @@
 import {
   FacebookIcon,
   InstagramIcon,
-  TwitterIcon,
-  YoutubeIcon,
   Home,
   Users,
   Star,
@@ -106,7 +104,7 @@ export async function SiteFooter({
 
           {/* Company */}
           <div className="flex flex-col">
-            <h4 className="font-bold text-secondary mb-6">L'Agence</h4>
+            <h4 className="font-bold text-secondary mb-6">L&apos;Agence</h4>
             <div className="flex flex-col gap-4 text-sm text-stone-500">
               <Link href="/about" className="hover:text-primary transition-colors">À propos</Link>
               <Link href="/agents" className="hover:text-primary transition-colors">Notre équipe</Link>
@@ -119,7 +117,7 @@ export async function SiteFooter({
           <div className="flex flex-col">
             <h4 className="font-bold text-secondary mb-6">Support</h4>
             <div className="flex flex-col gap-4 text-sm text-stone-500">
-              <Link href="/contact_us" className="hover:text-primary transition-colors">Centre d'aide</Link>
+              <Link href="/contact_us" className="hover:text-primary transition-colors">Centre d&apos;aide</Link>
               <Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link>
               <Link href="/conditions-generales" className="hover:text-primary transition-colors">Conditions générales</Link>
               <Link href="/confidentialite" className="hover:text-primary transition-colors">Confidentialité</Link>
@@ -148,7 +146,7 @@ export async function SiteFooter({
           <div className="lg:col-span-1 flex flex-col">
             <h4 className="font-bold text-secondary mb-6">Newsletter</h4>
             <p className="text-sm text-stone-500 mb-4">
-              Abonnez-vous pour recevoir des offres exclusives et de l'inspiration.
+              Abonnez-vous pour recevoir des offres exclusives et de l&apos;inspiration.
             </p>
             <NewsletterForm />
           </div>

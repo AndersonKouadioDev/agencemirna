@@ -15,6 +15,10 @@ export function ServiceIcon({
   if (!name) {
     return <Sparkles className={className} />;
   }
+  // `name` vient de la donnée et n'est connu qu'à l'exécution : on indexe le
+  // namespace de lucide-react, dont les membres sont hétérogènes (composants,
+  // types, utilitaires). Aucun type ne décrit cet accès dynamique, d'où le
+  // `any` ; le garde `if (!Icon)` juste en dessous couvre les noms inconnus.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const Icon = (Lucide as any)[name];
   if (!Icon) {

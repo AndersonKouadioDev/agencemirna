@@ -121,7 +121,7 @@ export default function PropertyCard({
           {/* IMAGE SECTION */}
           <div className="relative p-2 pb-0">
             <Link
-              href={`/properties/${id}` as any}
+              href={`/properties/${id}`}
               className="block relative h-60 overflow-hidden rounded-[20px] bg-stone-100"
             >
               {imageUrl && (
@@ -151,7 +151,7 @@ export default function PropertyCard({
             <div className="mb-4">
               {mapsHref ? (
                 <Link
-                  href={mapsHref as any}
+                  href={mapsHref}
                   target="_blank"
                   className="inline-flex items-center gap-1.5 text-stone-400 mb-2 hover:text-primary transition-colors"
                 >
@@ -166,7 +166,7 @@ export default function PropertyCard({
               )}
               
               <Link
-                href={`/properties/${id}` as any}
+                href={`/properties/${id}`}
                 className="block font-agate text-[24px] leading-tight font-bold text-secondary hover:text-primary transition-colors duration-300 line-clamp-1"
               >
                 {title}
@@ -225,7 +225,7 @@ export default function PropertyCard({
               </div>
               
               <Link 
-                href={`/properties/${id}` as any}
+                href={`/properties/${id}`}
                 className="w-11 h-11 rounded-full bg-stone-50 flex items-center justify-center text-stone-400 hover:bg-secondary hover:text-white transition-all duration-300 group-hover/card:-rotate-45"
               >
                 <ArrowRightIcon className="w-5 h-5 transition-transform" />

@@ -15,7 +15,7 @@ export default function ConfidentialitePage() {
           <p>Dernière mise à jour : {new Date().toLocaleDateString('fr-FR')}</p>
           
           <h2 className="text-2xl font-bold text-secondary mt-8 mb-4">1. Collecte des données</h2>
-          <p>Nous collectons les informations que vous nous fournissez volontairement, notamment lors de l'utilisation des formulaires de contact, de demande d'estimation ou de demande de visite (nom, prénom, email, téléphone).</p>
+          <p>Nous collectons les informations que vous nous fournissez volontairement, notamment lors de l&apos;utilisation des formulaires de contact, de demande d&apos;estimation ou de demande de visite (nom, prénom, email, téléphone).</p>
           
           <h2 className="text-2xl font-bold text-secondary mt-8 mb-4">2. Utilisation des données</h2>
           <p>Les informations recueillies sont utilisées exclusivement pour :</p>
@@ -29,7 +29,7 @@ export default function ConfidentialitePage() {
           <p>Nous mettons en œuvre des mesures de sécurité appropriées pour protéger vos données personnelles contre tout accès, modification ou destruction non autorisée. Vos données ne sont jamais vendues à des tiers.</p>
           
           <h2 className="text-2xl font-bold text-secondary mt-8 mb-4">4. Vos droits</h2>
-          <p>Vous disposez d'un droit d'accès, de rectification, et de suppression de vos données personnelles. Pour exercer ce droit, veuillez nous contacter via la page Contact de notre site.</p>
+          <p>Vous disposez d&apos;un droit d&apos;accès, de rectification, et de suppression de vos données personnelles. Pour exercer ce droit, veuillez nous contacter via la page Contact de notre site.</p>
         </div>
       </div>
     </div>

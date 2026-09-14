@@ -43,7 +43,7 @@ export default function AboutServicesSection() {
           {services.map((service) => (
             <Link
               key={service.id}
-              href={`/services/${service.slug}` as any}
+              href={`/services/${service.slug}`}
               className="group relative flex flex-col gap-4 rounded-[24px] border border-stone-200 bg-[#FAF5EE] p-6 transition-all duration-300 hover:border-primary/40 hover:shadow-[0_20px_40px_-24px_rgba(0,0,0,0.25)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             >
               <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-primary shadow-sm">

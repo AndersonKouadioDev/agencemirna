@@ -33,7 +33,7 @@ export default async function AdminLoginPage(props: {
           <div className="mb-6">
             <h1 className="text-2xl font-bold mb-1">Connexion back-office</h1>
             <p className="text-sm text-muted-foreground">
-              Accès réservé à l'équipe Agence Mirna.
+              Accès réservé à l&apos;équipe Agence Mirna.
             </p>
           </div>
 
@@ -41,7 +41,7 @@ export default async function AdminLoginPage(props: {
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-6">
-          Vous n'êtes pas membre de l'équipe ?{" "}
+          Vous n&apos;êtes pas membre de l&apos;équipe ?{" "}
           <Link href="/" className="text-primary hover:underline">
             Retour au site
           </Link>

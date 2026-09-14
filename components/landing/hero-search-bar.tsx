@@ -11,6 +11,12 @@ import {
 } from "@/lib/constants/properties";
 import { motion, AnimatePresence } from "framer-motion";
 import { useOnClickOutside } from "@/hooks/use-on-click-outside";
+import type {
+  CatalogueFacettes,
+  PublicCommune,
+  PublicQuartier,
+  TaxonomieEntree,
+} from "@/src/actions/public";
 
 const FALLBACK_LOCATIONS_BY_COMMUNE = ABIDJAN_LOCATIONS.reduce(
   (acc, loc) => {
@@ -31,19 +37,13 @@ export default function HeroSearchBar({
   children
 }: { 
   onSearch?: (params: URLSearchParams) => void;
-  communes?: any[];
-  quartiers?: any[];
-  types?: any[];
-  services?: any[];
+  communes?: PublicCommune[];
+  quartiers?: PublicQuartier[];
+  types?: TaxonomieEntree[];
+  services?: TaxonomieEntree[];
   /** Nombre de biens actifs par entrée, pour n'offrir que des filtres qui
    *  donnent un résultat. Absent : tout est proposé. */
-  facettes?: {
-    types: Record<string, number>;
-    services: Record<string, number>;
-    communes: Record<string, number>;
-    quartiers: Record<string, number>;
-    disponible: boolean;
-  };
+  facettes?: CatalogueFacettes;
   children?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -69,11 +69,11 @@ export default function HeroSearchBar({
           .toLowerCase();
       const l = norm(alias);
       const quartier = quartiers.find(
-        (x: any) => norm(x.name) === l || norm(x.search_query) === l,
+        (x) => norm(x.name) === l || norm(x.search_query) === l,
       );
       if (quartier) return `quartier:${quartier.id}`;
       const commune = communes.find(
-        (x: any) => norm(x.nom) === l || norm(x.slug) === l,
+        (x) => norm(x.nom) === l || norm(x.slug) === l,
       );
       if (commune) return `commune:${commune.slug}`;
     }
@@ -91,6 +91,9 @@ export default function HeroSearchBar({
   // empêchaient la remise à zéro, si bien que « Réinitialiser » vidait l'URL
   // mais laissait la barre afficher — et réappliquer — les anciens critères.
   React.useEffect(() => {
+    // L'URL est la source de vérité, extérieure à React : on y resynchronise
+    // l'état de la barre à chaque changement de `searchParams`.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocation(readLocation());
     setType(searchParams.get("type"));
     setService(searchParams.get("service"));
@@ -110,7 +113,7 @@ export default function HeroSearchBar({
         nom,
         value: null as string | null,
         total: 0,
-        quartiers: (items as any[]).map((i) => ({
+        quartiers: items.map((i) => ({
           value: i.value,
           label: i.label,
           total: 0,
@@ -161,7 +164,10 @@ export default function HeroSearchBar({
 
   // Même règle pour le type et le service : on n'affiche pas une option qui
   // ne renverrait aucun bien.
-  const utiles = (liste: any[], bucket?: Record<string, number>) =>
+  const utiles = <T extends { id: number | string }>(
+    liste: T[],
+    bucket?: Record<string, number>,
+  ) =>
     facettes?.disponible && bucket
       ? liste.filter((x) => (bucket[String(x.id)] ?? 0) > 0)
       : liste;

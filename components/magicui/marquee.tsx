@@ -1,13 +1,17 @@
 import { cn } from "@/lib/utils";
 
-interface MarqueeProps {
+/**
+ * Les props non reconnues sont reversées telles quelles sur le `<div>`
+ * racine : on hérite donc des attributs d'un div plutôt que de les typer
+ * par une signature d'index permissive.
+ */
+interface MarqueeProps extends React.ComponentPropsWithoutRef<"div"> {
   className?: string;
   reverse?: boolean;
   pauseOnHover?: boolean;
   children?: React.ReactNode;
   vertical?: boolean;
   repeat?: number;
-  [key: string]: any;
 }
 
 export default function Marquee({

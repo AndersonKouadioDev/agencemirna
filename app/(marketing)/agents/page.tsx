@@ -24,10 +24,12 @@ export const metadata = {
 };
 
 export default async function AgentsPage() {
-  const [agents, contact] = await Promise.all([
-    getActiveAgents(),
-    getSiteContact(),
-  ]);
+  // `contact` n'est pas consommé ici : c'est `EmptyAgents` qui le lit, et il
+  // le relit lui-même. L'appel reste dans ce Promise.all parce que
+  // `getSiteContact` est mémoïsé par `cache()` : le lancer en parallèle de la
+  // liste des agents évite un aller-retour supplémentaire en série le jour où
+  // l'état vide s'affiche.
+  const [agents] = await Promise.all([getActiveAgents(), getSiteContact()]);
 
   return (
     <main className="bg-[#FAF5EE]">

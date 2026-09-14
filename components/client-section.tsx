@@ -35,7 +35,7 @@ export default function ClientSection() {
           </h2>
           <p className="mt-4 text-base text-neutral-700 leading-relaxed">
             Particuliers, expatriés, entreprises et institutions :
-            l'Agence Mirna accompagne toutes les ambitions immobilières.
+            l&apos;Agence Mirna accompagne toutes les ambitions immobilières.
           </p>
         </div>
 

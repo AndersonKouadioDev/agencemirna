@@ -19,6 +19,40 @@ import Image from "next/image";
 import PropertySection from "./property-section";
 import Motion from "../motion";
 import { cn } from "@/lib/utils";
+import type {
+  CatalogueFacettes,
+  PublicCommune,
+  PublicQuartier,
+  TaxonomieEntree,
+} from "@/src/actions/public";
+
+/**
+ * Ligne de `biens` telle que /properties la reçoit. La table n'a pas de type
+ * généré : on liste les colonnes réellement lues ici et par les deux vues
+ * enfants (grille et carte), toutes nullables comme en base.
+ */
+type BienListe = {
+  id: string;
+  name?: string | null;
+  image?: string | null;
+  address?: string | null;
+  localisation?: string | null;
+  ville_commune?: string | null;
+  pays?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  commune_id?: string | null;
+  quartier_id?: string | null;
+  chambre?: number | null;
+  salon?: number | null;
+  salle_bains?: number | null;
+  capacity?: number | null;
+  prix?: number | null;
+  prix_month?: number | null;
+  types_bien?: { id?: number | null; name?: string | null } | null;
+  services_bien?: { name?: string | null } | null;
+  categories_bien?: { name?: string | null } | null;
+};
 
 type Filters = {
   q: string;
@@ -78,13 +112,13 @@ export default function ListPropertiesSection({
   initialFilters,
   facettes,
 }: {
-  initialBiens: any[];
-  types: any[];
-  services: any[];
+  initialBiens: BienListe[];
+  types: TaxonomieEntree[];
+  services: TaxonomieEntree[];
   initialFilters: Partial<Filters>;
-  communes?: any[];
-  quartiers?: any[];
-  facettes?: any;
+  communes?: PublicCommune[];
+  quartiers?: PublicQuartier[];
+  facettes?: CatalogueFacettes;
 }) {
 
 
@@ -99,7 +133,7 @@ export default function ListPropertiesSection({
     const normalize = (str: string | undefined | null) => 
       (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-    let list = initialBiens.filter((bien: any) => {
+    let list = initialBiens.filter((bien) => {
       if (filters.q) {
         const q = normalize(filters.q);
         const haystack = normalize([
@@ -115,7 +149,7 @@ export default function ListPropertiesSection({
       // enregistré avant la migration 0015 ne les a pas encore : on retombe
       // alors sur son adresse texte, sinon il disparaîtrait du catalogue.
       if (filters.quartier) {
-        const q = (quartiers || []).find((x: any) => x.id === filters.quartier);
+        const q = (quartiers || []).find((x) => x.id === filters.quartier);
         if (bien.quartier_id) {
           if (bien.quartier_id !== filters.quartier) return false;
         } else {
@@ -126,7 +160,7 @@ export default function ListPropertiesSection({
           if (!label || !hay.includes(label)) return false;
         }
       } else if (filters.commune) {
-        const c = (communes || []).find((x: any) => x.slug === filters.commune);
+        const c = (communes || []).find((x) => x.slug === filters.commune);
         if (!c) return false;
         if (bien.commune_id) {
           if (bien.commune_id !== c.id) return false;
@@ -346,15 +380,14 @@ export const PropertySearchBar = ({
 }: {
   filters: Filters;
   setFilters: (f: Filters) => void;
-  types: any[];
-  services: any[];
-  communes: any[];
-  quartiers: any[];
-  facettes?: any;
+  types: TaxonomieEntree[];
+  services: TaxonomieEntree[];
+  communes: PublicCommune[];
+  quartiers: PublicQuartier[];
+  facettes?: CatalogueFacettes;
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [localQ, setLocalQ] = React.useState(filters.q);
   const [showAdvanced, setShowAdvanced] = React.useState(false);
 
   React.useEffect(() => {
@@ -386,13 +419,13 @@ export const PropertySearchBar = ({
           .toLowerCase();
       const l = norm(alias);
       const q = (quartiers || []).find(
-        (x: any) => norm(x.name) === l || norm(x.search_query) === l,
+        (x) => norm(x.name) === l || norm(x.search_query) === l,
       );
       if (q) {
         sp = { ...sp, quartier: String(q.id) };
       } else {
         const c = (communes || []).find(
-          (x: any) => norm(x.nom) === l || norm(x.slug) === l,
+          (x) => norm(x.nom) === l || norm(x.slug) === l,
         );
         if (c) sp = { ...sp, commune: String(c.slug) };
       }
@@ -403,8 +436,11 @@ export const PropertySearchBar = ({
     );
     if (hasChange) {
       setFilters(sp);
-      setLocalQ(sp.q);
     }
+    // Effet volontairement piloté par la seule URL : ajouter `filters` aux
+    // dépendances le relancerait à chaque saisie et écraserait les filtres en
+    // cours avec ceux de l'URL. `communes` / `quartiers` sont des props stables
+    // pour la durée de la page.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -423,12 +459,7 @@ export const PropertySearchBar = ({
     syncUrl(next);
   }
 
-  function onSearchSubmit() {
-    update({ q: localQ });
-  }
-
   function handleReset() {
-    setLocalQ("");
     setFilters(EMPTY_FILTERS);
     router.replace("/properties", { scroll: false });
   }

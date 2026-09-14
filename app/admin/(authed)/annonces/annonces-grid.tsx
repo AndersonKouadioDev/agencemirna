@@ -47,7 +47,14 @@ export function PromotionsGrid({
     React.useState<AnnonceAdminRow | null>(null);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
 
-  React.useEffect(() => setItems(promotions), [promotions]);
+  // Resynchronisation pendant le rendu plutôt que dans un effet : recopier
+  // une prop via useEffect provoque un second rendu en cascade à chaque
+  // rafraîchissement du serveur.
+  const [propPrecedente, setPropPrecedente] = React.useState(promotions);
+  if (propPrecedente !== promotions) {
+    setPropPrecedente(promotions);
+    setItems(promotions);
+  }
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -97,8 +104,8 @@ export function PromotionsGrid({
       <div className="rounded-lg border border-stone-200 bg-white p-12 text-center">
         <Megaphone className="h-8 w-8 mx-auto text-neutral-400 mb-3" />
         <p className="text-sm text-neutral-600 mb-4">
-          Aucune annonce pour l'instant. Crée ta première créa pour
-          l'afficher sur le site.
+          Aucune annonce pour l&apos;instant. Crée ta première créa pour
+          l&apos;afficher sur le site.
         </p>
         <Button asChild size="sm">
           <Link href="/admin/annonces/nouveau">Créer la première</Link>

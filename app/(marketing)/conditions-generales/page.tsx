@@ -15,13 +15,13 @@ export default function ConditionsGeneralesPage() {
           <p>Dernière mise à jour : {new Date().toLocaleDateString('fr-FR')}</p>
           
           <h2 className="text-2xl font-bold text-secondary mt-8 mb-4">1. Objet</h2>
-          <p>Les présentes conditions générales ont pour objet de définir les modalités de mise à disposition des services du site Agence Mirna, ainsi que les conditions d'utilisation du service par l'utilisateur.</p>
+          <p>Les présentes conditions générales ont pour objet de définir les modalités de mise à disposition des services du site Agence Mirna, ainsi que les conditions d&apos;utilisation du service par l&apos;utilisateur.</p>
           
           <h2 className="text-2xl font-bold text-secondary mt-8 mb-4">2. Services immobiliers</h2>
-          <p>L'Agence Mirna agit en tant qu'intermédiaire dans les transactions immobilières (vente, location, gestion). Les informations présentées sur le site le sont à titre indicatif et ne constituent pas un document contractuel.</p>
+          <p>L&apos;Agence Mirna agit en tant qu&apos;intermédiaire dans les transactions immobilières (vente, location, gestion). Les informations présentées sur le site le sont à titre indicatif et ne constituent pas un document contractuel.</p>
           
           <h2 className="text-2xl font-bold text-secondary mt-8 mb-4">3. Honoraires</h2>
-          <p>Nos honoraires de transaction ou de location sont affichés en agence et peuvent être consultés sur simple demande. Ils sont conformes à la réglementation en vigueur en Côte d'Ivoire.</p>
+          <p>Nos honoraires de transaction ou de location sont affichés en agence et peuvent être consultés sur simple demande. Ils sont conformes à la réglementation en vigueur en Côte d&apos;Ivoire.</p>
 
           <h2 className="text-2xl font-bold text-secondary mt-8 mb-4">4. Propriété intellectuelle</h2>
           <p>Tous les éléments du site (textes, images, logos) sont protégés par le droit de la propriété intellectuelle. Toute reproduction est interdite sans autorisation préalable.</p>

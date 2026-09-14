@@ -66,12 +66,8 @@ export default function ServicesHubPage() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-              {services.map((service, i) => (
-                <ServiceCard
-                  key={service.id}
-                  service={service}
-                  featured={i === 0}
-                />
+              {services.map((service) => (
+                <ServiceCard key={service.id} service={service} />
               ))}
             </div>
           )}
@@ -128,10 +124,8 @@ export default function ServicesHubPage() {
 
 function ServiceCard({
   service,
-  featured,
 }: {
   service: (typeof STATIC_SERVICES)[number];
-  featured?: boolean;
 }) {
   return (
     <Link

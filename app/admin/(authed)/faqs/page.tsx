@@ -46,7 +46,7 @@ function EmptyState() {
         <HelpCircle className="h-5 w-5" />
       </div>
       <h2 className="font-agate text-xl text-secondary mb-1">
-        Aucune question pour l'instant
+        Aucune question pour l&apos;instant
       </h2>
       <p className="text-sm text-neutral-600 max-w-sm mx-auto mb-6">
         Ajoutez les questions que vos clients vous posent souvent pour les

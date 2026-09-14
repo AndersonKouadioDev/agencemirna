@@ -20,7 +20,7 @@ export default async function AdminTestimonialsPage(props: {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Témoignages</h1>
           <p className="text-sm text-neutral-500 mt-1">
-            Les avis clients affichés dans le carousel de la page d'accueil.{" "}
+            Les avis clients affichés dans le carousel de la page d&apos;accueil.{" "}
             {activeCount} actif{activeCount > 1 ? "s" : ""} sur {items.length}.
           </p>
         </div>
@@ -50,11 +50,11 @@ function EmptyState() {
         <MessageSquareQuote className="h-5 w-5" />
       </div>
       <h2 className="font-agate text-xl text-secondary mb-1">
-        Aucun témoignage pour l'instant
+        Aucun témoignage pour l&apos;instant
       </h2>
       <p className="text-sm text-neutral-600 max-w-sm mx-auto mb-6">
         Ajoutez les avis de vos clients pour les afficher en carousel sur la
-        page d'accueil.
+        page d&apos;accueil.
       </p>
       <Button asChild>
         <Link href="/admin/testimonials/nouveau">

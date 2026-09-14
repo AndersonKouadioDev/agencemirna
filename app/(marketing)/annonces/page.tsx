@@ -28,8 +28,8 @@ export default async function AnnoncesPage() {
             Annonces & Promotions
           </h1>
           <p className="text-stone-600 text-lg">
-            Saisissez l'instant avec nos offres exclusives, nouveautés et promotions
-            limitées sur nos biens d'exception.
+            Saisissez l&apos;instant avec nos offres exclusives, nouveautés et promotions
+            limitées sur nos biens d&apos;exception.
           </p>
         </div>
 
@@ -55,10 +55,10 @@ function EmptyAnnonces() {
           <Megaphone className="h-7 w-7" />
         </div>
         <h2 className="font-agate text-2xl sm:text-3xl font-bold text-secondary mb-2">
-          Pas d'opportunité en cours
+          Pas d&apos;opportunité en cours
         </h2>
         <p className="text-neutral-600 max-w-md mx-auto mb-6">
-          Nos prochaines annonces arrivent bientôt. En attendant, découvrez nos biens d'exception.
+          Nos prochaines annonces arrivent bientôt. En attendant, découvrez nos biens d&apos;exception.
         </p>
         <div className="flex flex-wrap justify-center gap-3">
           <Button asChild className="rounded-full bg-[#1B3C35] hover:bg-[#152e29] text-white">

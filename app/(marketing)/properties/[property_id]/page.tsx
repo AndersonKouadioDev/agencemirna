@@ -12,6 +12,32 @@ const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.agencemirna.com";
 
 /**
+ * La table `biens` n'a pas de types générés : le client Supabase est créé sans
+ * générique `Database`, si bien que `getBienWithImages` renvoie `any`. On
+ * décrit donc ici les seuls champs que cette page lit réellement, joints
+ * compris, pour que les métadonnées et le JSON-LD soient vérifiés.
+ */
+type BienFiche = {
+  id: string;
+  name: string | null;
+  description: string | null;
+  short_description: string | null;
+  address: string | null;
+  ville_commune: string | null;
+  pays: string | null;
+  image: string | null;
+  prix: number | null;
+  prix_month: number | null;
+  chambre: number | null;
+  salle_bains: number | null;
+  capacity: number | null;
+  created_at: string | null;
+  types_bien: { name: string | null } | null;
+  services_bien: { name: string | null } | null;
+  categories_bien: { name: string | null } | null;
+};
+
+/**
  * Métadonnées dynamiques par bien : essentiel SEO local immobilier.
  * Title + description + OG + canonical générés depuis les vraies données.
  */
@@ -21,7 +47,7 @@ export async function generateMetadata({
   params: Promise<{ property_id: string }>;
 }): Promise<Metadata> {
   const { property_id } = await params;
-  const bien: any = await getBienWithImages(property_id);
+  const bien: BienFiche | null = await getBienWithImages(property_id);
 
   if (!bien) {
     return {
@@ -112,7 +138,7 @@ export default async function Page(props: {
 }) {
   const params = await props.params;
   const [bien, contact] = await Promise.all([
-    getBienWithImages(params.property_id) as Promise<any>,
+    getBienWithImages(params.property_id),
     getSiteContact(),
   ]);
 
@@ -120,38 +146,43 @@ export default async function Page(props: {
     notFound();
   }
 
+  // Vue typée de la ligne pour tout ce que cette page lit elle-même. Les
+  // composants enfants continuent de recevoir la valeur brute : leurs props
+  // portent leur propre typage, qu'on ne veut pas contraindre d'ici.
+  const fiche: BienFiche = bien;
+
   // JSON-LD schema.org RealEstateListing pour Google Real Estate.
   // https://developers.google.com/search/docs/appearance/structured-data
   // Permet à Google d'afficher le bien avec image, prix, localisation
   // dans les résultats enrichis.
   const url = `${SITE_URL}/properties/${params.property_id}`;
-  const ville = bien.ville_commune ?? "Abidjan";
-  const coverImage = bien.image
-    ? bien.image.startsWith("http")
-      ? bien.image
-      : `${SITE_URL}${bien.image}`
+  const ville = fiche.ville_commune ?? "Abidjan";
+  const coverImage = fiche.image
+    ? fiche.image.startsWith("http")
+      ? fiche.image
+      : `${SITE_URL}${fiche.image}`
     : null;
 
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "RealEstateListing",
-    name: bien.name,
+    name: fiche.name,
     url,
-    description: bien.description ?? bien.short_description,
+    description: fiche.description ?? fiche.short_description,
     image: coverImage,
-    datePosted: bien.created_at,
+    datePosted: fiche.created_at,
     address: {
       "@type": "PostalAddress",
       addressLocality: ville,
-      addressCountry: bien.pays ?? "Côte d'Ivoire",
-      streetAddress: bien.address ?? undefined,
+      addressCountry: fiche.pays ?? "Côte d'Ivoire",
+      streetAddress: fiche.address ?? undefined,
     },
-    numberOfRooms: bien.chambre,
-    numberOfBathroomsTotal: bien.salle_bains,
-    offers: bien.prix
+    numberOfRooms: fiche.chambre,
+    numberOfBathroomsTotal: fiche.salle_bains,
+    offers: fiche.prix
       ? {
           "@type": "Offer",
-          price: bien.prix,
+          price: fiche.prix,
           priceCurrency: "XOF",
           availability: "https://schema.org/InStock",
           url,
@@ -170,12 +201,12 @@ export default async function Page(props: {
         items={[
           { name: "Accueil", url: "/" },
           { name: "Biens", url: "/properties" },
-          { name: bien.name ?? "Bien", url: `/properties/${params.property_id}` },
+          { name: fiche.name ?? "Bien", url: `/properties/${params.property_id}` },
         ]}
       />
       <DescriptionSection bien={bien} contact={contact} />
       <GallerySection bien={bien} />
-      <SimilarProperties currentBienId={bien.id} />
+      <SimilarProperties currentBienId={fiche.id} />
 
     </>
   );

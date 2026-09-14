@@ -1,4 +1,5 @@
 import React from "react";
+import type { Route } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
@@ -78,7 +79,7 @@ export default function CommunesSection({
           {cards.map((area) => (
             <Link
               key={area.id}
-              href={`/properties?commune=${encodeURIComponent(area.slug)}` as any}
+              href={`/properties?commune=${encodeURIComponent(area.slug)}` as Route}
               className="group relative rounded-[2rem] overflow-hidden aspect-[4/3] md:aspect-square lg:aspect-[4/3] shadow-sm hover:shadow-xl transition-all duration-500 block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary bg-stone-800"
             >
               {/* `communes.image` est nullable : sans garde, next/image casse

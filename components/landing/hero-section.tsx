@@ -17,6 +17,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import HeroSearchBar from "./hero-search-bar";
 import { GoogleMap, useJsApiLoader, OverlayViewF } from "@react-google-maps/api";
 import { getAllBiens, getBienWithImages } from "@/src/actions/bien.actions";
+import type { BienPublicRow } from "@/src/actions/bien.actions";
+import type {
+  CatalogueFacettes,
+  PublicCommune,
+  PublicQuartier,
+  TaxonomieEntree,
+} from "@/src/actions/public";
 import { formatNumber } from "@/utils/formatNumber";
 
 const containerStyle = {
@@ -29,7 +36,10 @@ const center = {
   lng: -4.008256, // Abidjan center
 };
 
-function HeroMap({ biens, selectedBien, onSelectBien }: { biens: any[], selectedBien: any | null, onSelectBien: (b: any) => void }) {
+/** Bien dont la carte est certaine qu'il porte des coordonnées exploitables. */
+type BienGeolocalise = BienPublicRow & { latitude: number; longitude: number };
+
+function HeroMap({ biens, selectedBien, onSelectBien }: { biens: BienPublicRow[], selectedBien: BienPublicRow | null, onSelectBien: (b: BienPublicRow) => void }) {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
@@ -39,7 +49,10 @@ function HeroMap({ biens, selectedBien, onSelectBien }: { biens: any[], selected
   const [hoveredBienId, setHoveredBienId] = React.useState<string | null>(null);
 
   const geolocated = React.useMemo(() => {
-    return biens.filter((b) => typeof b.latitude === "number" && typeof b.longitude === "number");
+    return biens.filter(
+      (b): b is BienGeolocalise =>
+        typeof b.latitude === "number" && typeof b.longitude === "number",
+    );
   }, [biens]);
 
   // Center based on biens or fallback to Abidjan
@@ -65,14 +78,18 @@ function HeroMap({ biens, selectedBien, onSelectBien }: { biens: any[], selected
     }
   }, [geolocated]);
 
-  const onUnmount = React.useCallback(function callback(map: google.maps.Map) {
+  // `onUnmount` reçoit la carte démontée ; ce callback n'en a pas besoin et
+  // ne déclare donc pas le paramètre (la config n'ignore pas le préfixe « _ »).
+  const onUnmount = React.useCallback(function callback() {
     mapRef.current = null;
   }, []);
 
   React.useEffect(() => {
     if (selectedBien && mapRef.current) {
-      const lat = parseFloat(selectedBien.latitude);
-      const lng = parseFloat(selectedBien.longitude);
+      // `latitude` / `longitude` sont numériques en base mais nullables ;
+      // parseFloat convertissait déjà son argument en chaîne, on l'explicite.
+      const lat = parseFloat(String(selectedBien.latitude));
+      const lng = parseFloat(String(selectedBien.longitude));
       if (!isNaN(lat) && !isNaN(lng)) {
         mapRef.current.panTo({ lat, lng });
         mapRef.current.setZoom(16);
@@ -80,10 +97,10 @@ function HeroMap({ biens, selectedBien, onSelectBien }: { biens: any[], selected
     }
   }, [selectedBien]);
 
-  const handleMarkerClick = (b: any) => {
+  const handleMarkerClick = (b: BienPublicRow) => {
     if (mapRef.current) {
-      const lat = parseFloat(b.latitude);
-      const lng = parseFloat(b.longitude);
+      const lat = parseFloat(String(b.latitude));
+      const lng = parseFloat(String(b.longitude));
       if (!isNaN(lat) && !isNaN(lng)) {
         mapRef.current.panTo({ lat, lng });
         mapRef.current.setZoom(16);
@@ -266,13 +283,13 @@ const HERO_SLIDES = [
   }
 ];
 
-export default function HeroSection({ communes = [], quartiers = [], types = [], services = [], whatsappUrl = "", facettes }: { communes?: any[], quartiers?: any[], types?: any[], services?: any[], whatsappUrl?: string, facettes?: any }) {
+export default function HeroSection({ communes = [], quartiers = [], types = [], services = [], whatsappUrl = "", facettes }: { communes?: PublicCommune[], quartiers?: PublicQuartier[], types?: TaxonomieEntree[], services?: TaxonomieEntree[], whatsappUrl?: string, facettes?: CatalogueFacettes }) {
   const [currentSlide, setCurrentSlide] = React.useState(0);
   const [isSearchModalOpen, setIsSearchModalOpen] = React.useState(false);
-  const [biens, setBiens] = React.useState<any[]>([]);
-  const [filteredBiens, setFilteredBiens] = React.useState<any[]>([]);
+  const [biens, setBiens] = React.useState<BienPublicRow[]>([]);
+  const [filteredBiens, setFilteredBiens] = React.useState<BienPublicRow[]>([]);
   const [isLoadingBiens, setIsLoadingBiens] = React.useState(false);
-  const [selectedBien, setSelectedBien] = React.useState<any | null>(null);
+  const [selectedBien, setSelectedBien] = React.useState<BienPublicRow | null>(null);
   const [selectedBienImages, setSelectedBienImages] = React.useState<string[]>([]);
   const [currentImageIndex, setCurrentImageIndex] = React.useState(0);
   const [hasSearched, setHasSearched] = React.useState(false);
@@ -280,6 +297,10 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
 
   React.useEffect(() => {
     if (selectedBien) {
+      // La cover connue est posée tout de suite pour éviter un trou visuel, puis
+      // la galerie complète arrive du serveur : deux états qu'aucun rendu ne
+      // peut dériver seul.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedBienImages([selectedBien.image || "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop"]);
       setCurrentImageIndex(0);
       getBienWithImages(selectedBien.id).then(fullBien => {
@@ -302,6 +323,9 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
 
   React.useEffect(() => {
     if (isSearchModalOpen && biens.length === 0) {
+      // Le chargement du catalogue est déclenché par l'ouverture de la modale ;
+      // l'indicateur doit être posé avant l'appel réseau.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsLoadingBiens(true);
       getAllBiens().then(data => {
         setBiens(data);
@@ -309,7 +333,7 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
         setIsLoadingBiens(false);
       });
     }
-  }, [isSearchModalOpen]);
+  }, [isSearchModalOpen, biens.length]);
 
   // Auto-play du carousel
   React.useEffect(() => {
@@ -575,10 +599,10 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                           (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
                         const communeChoisie = communeSlug
-                          ? communes.find((c: any) => c.slug === communeSlug)
+                          ? communes.find((c) => c.slug === communeSlug)
                           : null;
                         const quartierChoisi = quartierId
-                          ? quartiers.find((q: any) => String(q.id) === quartierId)
+                          ? quartiers.find((q) => String(q.id) === quartierId)
                           : null;
 
                         setLastSearchParams({
@@ -681,7 +705,7 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                               <motion.img
                                 key={currentImageIndex}
                                 src={selectedBienImages[currentImageIndex] || selectedBien.image || "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop"}
-                                alt={selectedBien.name}
+                                alt={selectedBien.name ?? undefined}
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
@@ -769,7 +793,7 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                                   </div>
                                   <div>
                                     <div className="text-lg font-black text-secondary leading-none">{selectedBien.salle_bains}</div>
-                                    <div className="text-xs font-medium text-stone-500 uppercase">Salles d'eau</div>
+                                    <div className="text-xs font-medium text-stone-500 uppercase">Salles d&apos;eau</div>
                                   </div>
                                 </div>
                               )}
@@ -836,7 +860,12 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                               <div key={bien.id} onClick={() => setSelectedBien(bien)}>
                                 <div className="bg-white rounded-[2rem] p-3 shadow-md border border-stone-100 hover:shadow-xl transition-all duration-300 group cursor-pointer flex flex-col h-full">
                                   <div className="w-full h-48 md:h-56 bg-stone-200 rounded-3xl mb-4 relative overflow-hidden">
-                                    <img src={imageUrl} alt={bien.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
+                                    {/* `bien.image` est saisi librement depuis
+                                        l'admin : l'hôte n'est pas garanti
+                                        figurer dans next.config.mjs, et
+                                        next/image échouerait au rendu. */}
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={imageUrl} alt={bien.name ?? undefined} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" />
                                     <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold text-secondary uppercase">
                                       {serviceName}
                                     </div>

@@ -9,17 +9,29 @@ import { formatNumber } from "@/utils/formatNumber";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
-type BienOnMap = {
+/**
+ * Ligne de `biens` telle que le catalogue la fournit. Les lignes n'ont pas de
+ * type généré : on liste ici les seules colonnes lues par la carte, toutes
+ * nullables comme en base — les coordonnées comprises, d'où le filtre
+ * `typeof === "number"` ci-dessous.
+ */
+type BienSource = {
   id: string;
-  name: string | null;
+  name?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  ville_commune?: string | null;
+  prix?: number | null;
+  prix_month?: number | null;
+  image?: string | null;
+  types_bien?: { name?: string | null } | null;
+  services_bien?: { name?: string | null } | null;
+};
+
+/** Même ligne, une fois garanti qu'elle porte des coordonnées exploitables. */
+type BienOnMap = Omit<BienSource, "latitude" | "longitude"> & {
   latitude: number;
   longitude: number;
-  ville_commune: string | null;
-  prix: number | null;
-  prix_month: number | null;
-  image: string | null;
-  types_bien?: { name: string | null } | null;
-  services_bien?: { name: string | null } | null;
 };
 
 const containerStyle = {
@@ -27,7 +39,7 @@ const containerStyle = {
   height: "100%",
 };
 
-export function PropertiesMap({ biens }: { biens: any[] }) {
+export function PropertiesMap({ biens }: { biens: BienSource[] }) {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
@@ -40,13 +52,13 @@ export function PropertiesMap({ biens }: { biens: any[] }) {
   const geolocated: BienOnMap[] = React.useMemo(() => {
     return biens
       .filter(
-        (b: any) =>
+        (b): b is BienOnMap =>
           typeof b.latitude === "number" &&
           typeof b.longitude === "number" &&
           !Number.isNaN(b.latitude) &&
           !Number.isNaN(b.longitude),
       )
-      .map((b: any) => ({
+      .map((b) => ({
         id: b.id,
         name: b.name,
         latitude: b.latitude,
@@ -103,7 +115,7 @@ export function PropertiesMap({ biens }: { biens: any[] }) {
             Aucun bien géolocalisé pour le moment
           </h2>
           <p className="text-sm text-neutral-600 max-w-md mx-auto">
-            Pour afficher les biens sur la carte, l'administrateur doit renseigner les coordonnées GPS.
+            Pour afficher les biens sur la carte, l&apos;administrateur doit renseigner les coordonnées GPS.
           </p>
         </div>
       </div>

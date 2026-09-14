@@ -43,10 +43,15 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const pathPrefix = React.useMemo(() => {
-    if (row?.id) return `articles/${row.id}`;
-    return `articles/draft-${typeof crypto !== "undefined" ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
-  }, [row?.id]);
+  // Identifiant de brouillon figé au premier rendu : le calculer dans un
+  // useMemo appelait une fonction impure, et un re-rendu pouvait déplacer
+  // le dossier de destination des images en cours d'envoi.
+  const [brouillonId] = React.useState(() =>
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID().slice(0, 8)
+      : Math.random().toString(36).slice(2, 10),
+  );
+  const pathPrefix = row?.id ? `articles/${row.id}` : `articles/draft-${brouillonId}`;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -157,8 +162,8 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
                 rows={12}
               />
               <p className="mt-1.5 text-xs text-neutral-500">
-                Pour le moment uniquement stocké en base. L'affichage
-                complet de l'article arrivera dans une page dédiée.
+                Pour le moment uniquement stocké en base. L&apos;affichage
+                complet de l&apos;article arrivera dans une page dédiée.
               </p>
             </Field>
           </section>

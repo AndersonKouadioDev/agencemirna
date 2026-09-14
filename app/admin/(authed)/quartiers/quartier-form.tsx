@@ -17,13 +17,29 @@ import {
 
 const BADGES = ["Premium", "Business", "Lifestyle", "Familles", "Investir", "Étudiants", "Plage", "Calme"];
 
-export function QuartierForm({ row, communes = [] }: { row?: QuartierRow, communes?: CommuneAdminRow[] }) {
+export function QuartierForm({
+  row,
+  communes = [],
+  communeParDefaut,
+}: {
+  row?: QuartierRow;
+  communes?: CommuneAdminRow[];
+  /** Pré-sélection quand on arrive depuis la fiche d'une commune. */
+  communeParDefaut?: string;
+}) {
   const router = useRouter();
   const isEdit = !!row;
 
   const [name, setName] = React.useState(row?.name ?? "");
-  const [commune, setCommune] = React.useState(row?.commune ?? "Abidjan");
-  const [communeId, setCommuneId] = React.useState(row?.commune_id ?? "");
+  const preselection = !row
+    ? communes.find((c) => c.id === communeParDefaut)
+    : undefined;
+  const [commune, setCommune] = React.useState(
+    row?.commune ?? preselection?.nom ?? "",
+  );
+  const [communeId, setCommuneId] = React.useState(
+    row?.commune_id ?? preselection?.id ?? "",
+  );
   const [badge, setBadge] = React.useState(row?.badge ?? "");
   const [tagline, setTagline] = React.useState(row?.tagline ?? "");
   const [description, setDescription] = React.useState(row?.description ?? "");
@@ -38,17 +54,16 @@ export function QuartierForm({ row, communes = [] }: { row?: QuartierRow, commun
     row?.image && row.image.startsWith("/images/") ? row.image : "",
   );
 
-  // Quartiers créés avant la table `communes` : rattache automatiquement
-  // la commune dont le nom correspond, pour ne pas perdre le lien.
-  React.useEffect(() => {
-    if (!communeId && commune && communes.length > 0) {
-      const match = communes.find(
-        (c) => c.nom.trim().toLowerCase() === commune.trim().toLowerCase(),
-      );
-      if (match) setCommuneId(match.id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [communes]);
+  // Quartiers créés avant la table `communes` : on retrouve la commune par
+  // correspondance de nom. C'est une valeur dérivée, pas un effet de bord —
+  // la calculer pendant le rendu évite un second rendu au chargement.
+  const communeIdEffectif =
+    communeId ||
+    (commune
+      ? (communes.find(
+          (c) => c.nom.trim().toLowerCase() === commune.trim().toLowerCase(),
+        )?.id ?? "")
+      : "");
 
   // Choisir une commune synchronise aussi le libellé texte `commune`,
   // utilisé par la recherche publique.
@@ -61,10 +76,15 @@ export function QuartierForm({ row, communes = [] }: { row?: QuartierRow, commun
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const pathPrefix = React.useMemo(() => {
-    if (row?.id) return `quartiers/${row.id}`;
-    return `quartiers/draft-${typeof crypto !== "undefined" ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
-  }, [row?.id]);
+  // Identifiant de brouillon figé au premier rendu : le calculer dans un
+  // useMemo appelait une fonction impure, et un re-rendu pouvait déplacer
+  // le dossier de destination des images en cours d'envoi.
+  const [brouillonId] = React.useState(() =>
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID().slice(0, 8)
+      : Math.random().toString(36).slice(2, 10),
+  );
+  const pathPrefix = row?.id ? `quartiers/${row.id}` : `quartiers/draft-${brouillonId}`;
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -82,7 +102,7 @@ export function QuartierForm({ row, communes = [] }: { row?: QuartierRow, commun
       id: row?.id,
       name,
       commune,
-      commune_id: communeId || null,
+      commune_id: communeIdEffectif || null,
       badge: badge || null,
       tagline: tagline || null,
       description: description || null,
@@ -149,7 +169,7 @@ export function QuartierForm({ row, communes = [] }: { row?: QuartierRow, commun
                 {communes.length > 0 ? (
                   <>
                     <select
-                      value={communeId}
+                      value={communeIdEffectif}
                       onChange={(e) => handleCommuneChange(e.target.value)}
                       required
                       className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"

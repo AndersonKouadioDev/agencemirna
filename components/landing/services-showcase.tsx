@@ -1,7 +1,6 @@
 import * as React from "react";
 import { HardHat, BedDouble, Home, Building2 } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
 /**
  * Construction et Gestion locative ne portent aujourd'hui aucun bien au

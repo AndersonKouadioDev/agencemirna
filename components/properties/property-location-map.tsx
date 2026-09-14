@@ -25,7 +25,9 @@ export default function PropertyLocationMap({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
   });
 
-  const [map, setMap] = React.useState<google.maps.Map | null>(null);
+  // L'instance n'est jamais relue ici : seule sa mise en état est conservée,
+  // pour que le cycle de rendu du composant reste identique.
+  const [, setMap] = React.useState<google.maps.Map | null>(null);
   const [infoOpen, setInfoOpen] = React.useState(true);
 
   // Les Hooks doivent précéder tout retour conditionnel : déclarés après le
@@ -35,7 +37,7 @@ export default function PropertyLocationMap({
     setMap(map);
   }, []);
 
-  const onUnmount = React.useCallback(function callback(_map: google.maps.Map) {
+  const onUnmount = React.useCallback(function callback() {
     setMap(null);
   }, []);
 

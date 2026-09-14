@@ -1,4 +1,5 @@
 import * as React from "react";
+import type { Route } from "next";
 import Link from "next/link";
 import {
   Building2,
@@ -65,7 +66,7 @@ export default function CategoriesSection({
             return (
               <Link
                 key={t.id}
-                href={`/properties?type=${encodeURIComponent(t.name)}` as any}
+                href={`/properties?type=${encodeURIComponent(t.name)}` as Route}
                 className="flex flex-col items-center gap-3 group"
               >
                 <div className="h-16 w-16 md:h-20 md:w-20 rounded-full border border-stone-200 bg-white flex items-center justify-center text-stone-600 group-hover:border-primary group-hover:text-primary transition-all shadow-sm group-hover:shadow-md">

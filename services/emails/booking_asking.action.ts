@@ -86,7 +86,9 @@ export async function BookingRequest({
     }
 
     return { success: true, data: { requestData, confirmationData } };
-  } catch (error) {
+  } catch {
+    // Le détail de l'erreur Resend n'est pas exposé au client : on renvoie
+    // le même message générique, la liaison du catch est donc inutile.
     return {
       success: false,
       error: "Une erreur s'est produite lors de l'envoi des e-mails",

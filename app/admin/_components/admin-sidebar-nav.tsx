@@ -6,17 +6,14 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Home,
-  Sparkles,
   Megaphone,
   Users,
   Settings,
   MessageSquareQuote,
   HelpCircle,
   Newspaper,
-  MessageCircle,
   MapPin,
   Inbox,
-  Video,
   Tags,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,8 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Leads", href: "/admin/leads", icon: Inbox },
   { label: "Biens", href: "/admin/biens", icon: Home },
   { label: "Types & services", href: "/admin/taxonomie", icon: Tags },
-  { label: "Communes", href: "/admin/communes", icon: MapPin },
-  { label: "Quartiers", href: "/admin/quartiers", icon: MapPin },
+  { label: "Communes & quartiers", href: "/admin/geographie", icon: MapPin },
   { label: "Annonces", href: "/admin/annonces", icon: Megaphone },
   
   { label: "Agents", href: "/admin/agents", icon: Users },

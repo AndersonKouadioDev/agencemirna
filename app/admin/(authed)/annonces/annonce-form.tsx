@@ -143,7 +143,7 @@ export function AnnonceForm({
             {isEdit ? "Modifier l'annonce" : "Nouvelle annonce / opportunité"}
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
-            Les annonces apparaîtront sur la page /annonces et sur la home si vous cochez l'option.
+            Les annonces apparaîtront sur la page /annonces et sur la home si vous cochez l&apos;option.
           </p>
         </div>
       </div>
@@ -198,6 +198,9 @@ export function AnnonceForm({
             {bienSelectionne && (
               <div className="mt-2 flex items-center gap-3 rounded-md border border-stone-200 bg-stone-50 p-3">
                 {bienSelectionne.image && (
+                  // Vignette de prévisualisation : l'URL du bien peut être une
+                  // adresse externe saisie à la main, donc hors des domaines
+                  // déclarés dans next.config.mjs — next/image échouerait.
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={bienSelectionne.image}
@@ -227,7 +230,7 @@ export function AnnonceForm({
                     </Link>
                   ) : (
                     <p className="text-xs text-amber-700">
-                      Ce bien est dépublié : l'annonce ne mènera nulle part.
+                      Ce bien est dépublié : l&apos;annonce ne mènera nulle part.
                     </p>
                   )}
                 </div>
@@ -250,7 +253,7 @@ export function AnnonceForm({
                 ))}
               </select>
               <p className="text-xs text-stone-500 mt-1">
-                Affiché en pastille sur la carte de l'annonce.
+                Affiché en pastille sur la carte de l&apos;annonce.
               </p>
             </Field>
 

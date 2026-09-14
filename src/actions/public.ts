@@ -199,6 +199,18 @@ export type BienReferenceData = {
 };
 
 /**
+ * Ligne brute d'une table de taxonomie telle que PostgREST la renvoie :
+ * `name` peut être nul en base, et `image` / `ordre` sont absents tant que la
+ * migration 0018 n'est pas appliquée (d'où le repli de `charger`).
+ */
+type TaxonomieBrute = {
+  id: number;
+  name: string | null;
+  image?: string | null;
+  ordre?: number | null;
+};
+
+/**
  * Charge les listes types/services/categories utilisées pour peupler
  * les dropdowns des filtres sur /properties (et autres pages publiques).
  * Lecture publique : aucune restriction RLS sur ces tables référentielles.
@@ -211,20 +223,23 @@ export async function getBienReferenceData(): Promise<BienReferenceData> {
    * appliquée, PostgREST rejette la requête entière et renverrait [] sans
    * erreur visible — ce qui viderait les filtres du catalogue et le menu.
    */
-  const charger = async (table: string) => {
+  const charger = async (table: string): Promise<TaxonomieBrute[]> => {
     const complet = await supabase
       .from(table)
       .select("id, name, image, ordre")
       .order("ordre", { ascending: true })
       .order("name", { ascending: true });
-    if (!complet.error && complet.data) return complet.data as unknown as any[];
+    if (!complet.error && complet.data)
+      return complet.data as unknown as TaxonomieBrute[];
 
     console.error(`getBienReferenceData(${table}) : repli sans image/ordre.`, complet.error);
     const base = await supabase
       .from(table)
       .select("id, name")
       .order("name", { ascending: true });
-    return ((base.data ?? []) as unknown as any[]).map((r) => ({
+    return (
+      (base.data ?? []) as unknown as Pick<TaxonomieBrute, "id" | "name">[]
+    ).map((r) => ({
       ...r,
       image: null,
       ordre: 0,
@@ -237,13 +252,8 @@ export async function getBienReferenceData(): Promise<BienReferenceData> {
     charger("categories_bien"),
   ]);
 
-  const utilisables = (rows: any[]) =>
-    rows.filter((r) => r.name) as {
-      id: number;
-      name: string;
-      image: string | null;
-      ordre: number;
-    }[];
+  const utilisables = (rows: TaxonomieBrute[]) =>
+    rows.filter((r) => r.name) as TaxonomieEntree[];
 
   return {
     types: utilisables(types),

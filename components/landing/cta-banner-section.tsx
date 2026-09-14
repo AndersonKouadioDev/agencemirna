@@ -30,7 +30,7 @@ export default function CtaBannerSection() {
               Vous souhaitez vendre<br/>ou louer votre bien ?
             </h2>
             <p className="text-white/80 font-medium mb-8 max-w-md">
-              Confiez-nous l'estimation de votre bien. Nos experts immobiliers vous garantissent une évaluation au plus juste de la valeur du marché en 48h.
+              Confiez-nous l&apos;estimation de votre bien. Nos experts immobiliers vous garantissent une évaluation au plus juste de la valeur du marché en 48h.
             </p>
             <Button asChild className="rounded-full h-12 px-8 bg-[#F5B324] hover:bg-[#d99f1f] text-secondary font-bold">
               <Link href="/contact_us">

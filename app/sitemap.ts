@@ -85,7 +85,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     getActiveArticles().catch(() => []),
   ]);
 
-  const bienRoutes: MetadataRoute.Sitemap = (biens ?? []).map((b: any) => ({
+  const bienRoutes: MetadataRoute.Sitemap = (biens ?? []).map((b) => ({
     url: `${baseUrl}/properties/${b.id}`,
     lastModified: b.updated_at ? new Date(b.updated_at) : now,
     changeFrequency: "weekly" as const,

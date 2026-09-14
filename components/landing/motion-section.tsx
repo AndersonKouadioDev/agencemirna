@@ -1,6 +1,11 @@
 "use client";
 
-import { motion, useReducedMotion, type Variants } from "framer-motion";
+import {
+  motion,
+  useReducedMotion,
+  type HTMLMotionProps,
+  type Variants,
+} from "framer-motion";
 import * as React from "react";
 
 /**
@@ -27,7 +32,7 @@ export function MotionSection({
   const reduceMotion = useReducedMotion();
 
   if (reduceMotion) {
-    const Tag = as as any;
+    const Tag = as;
     return (
       <Tag className={className} {...rest}>
         {children}
@@ -35,7 +40,12 @@ export function MotionSection({
     );
   }
 
-  const Comp = motion[as] as any;
+  // Les trois balises animées partagent la même surface de props ; on fixe la
+  // vue sur `motion.div` pour que TypeScript n'ait pas à résoudre l'union.
+  const Comp = motion[as] as typeof motion.div;
+  // `rest` porte les attributs HTML de React, dont framer-motion redéfinit
+  // quelques gestionnaires (onDrag, onAnimationStart) avec sa propre signature.
+  const restMotion = rest as HTMLMotionProps<"div">;
   return (
     <Comp
       className={className}
@@ -47,7 +57,7 @@ export function MotionSection({
         ease: [0.22, 1, 0.36, 1],
         delay,
       }}
-      {...rest}
+      {...restMotion}
     >
       {children}
     </Comp>

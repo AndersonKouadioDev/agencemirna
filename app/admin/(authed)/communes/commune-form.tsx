@@ -1,6 +1,6 @@
 
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Save, Loader2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ function slugify(text: string) {
 export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
   const isEdit = !!item;
   const [nom, setNom] = useState(item?.nom || "");
-  const [slug, setSlug] = useState(item?.slug || "");
+  const [slugSaisi, setSlugSaisi] = useState(item?.slug || "");
   const [isActive, setIsActive] = useState(item?.is_active ?? true);
   // Champs de présentation : ils alimentent la section « Communes phares »
   // de l'accueil et le visuel du méga-menu.
@@ -43,9 +43,10 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
   const [error, setError] = useState<string | null>(null);
   const [autoSlug, setAutoSlug] = useState(!isEdit);
 
-  useEffect(() => {
-    if (autoSlug) setSlug(slugify(nom));
-  }, [nom, autoSlug]);
+  // Tant que l'admin n'a pas édité le slug, c'est une valeur DÉRIVÉE du nom :
+  // la calculer pendant le rendu évite l'aller-retour d'un useEffect, qui
+  // affichait brièvement l'ancien slug après chaque frappe.
+  const slug = autoSlug ? slugify(nom) : slugSaisi;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -85,7 +86,7 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
         </div>
         <div className="space-y-1.5">
           <Label>Slug (URL) <span className="text-red-500">*</span></Label>
-          <Input value={slug} onChange={(e) => { setSlug(e.target.value); setAutoSlug(false); }} required placeholder="ex: cocody" />
+          <Input value={slug} onChange={(e) => { setSlugSaisi(e.target.value); setAutoSlug(false); }} required placeholder="ex: cocody" />
         </div>
         <label className="flex items-center gap-3 cursor-pointer mt-4">
           <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-4 w-4 rounded border-stone-300 text-primary" />

@@ -103,13 +103,16 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
   // pathPrefix : pour l'édition, utilise le bien.id (chemin stable).
   // Pour la création, un random temporaire (les fichiers orphelins seront
   // nettoyés au save côté upsertBien via diff).
-  const pathPrefix = React.useMemo(() => {
-    if (bien?.id) return `biens/${bien.id}`;
-    // Random non persisté pour la création : sera remplacé par bien_id réel
-    // après save (mais comme on stocke storage_path en DB, pas besoin
-    // de renommer les fichiers).
-    return `biens/draft-${typeof crypto !== "undefined" ? crypto.randomUUID().slice(0, 8) : Date.now()}`;
-  }, [bien?.id]);
+  // Identifiant de brouillon figé au premier rendu : le calculer dans un
+  // useMemo appelait une fonction impure, et un re-rendu pouvait déplacer le
+  // dossier de destination des images en cours d'envoi. Non persisté : le
+  // chemin réel est stocké dans `storage_path`, rien n'est à renommer ensuite.
+  const [brouillonId] = React.useState(() =>
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID().slice(0, 8)
+      : Math.random().toString(36).slice(2, 10),
+  );
+  const pathPrefix = bien?.id ? `biens/${bien.id}` : `biens/draft-${brouillonId}`;
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -337,7 +340,7 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
                   }
                 }}
               />
-              <p className="text-xs text-stone-500 mt-1">L'auto-complétion remplit automatiquement la ville, le pays, le lien et les coordonnées GPS.</p>
+              <p className="text-xs text-stone-500 mt-1">L&apos;auto-complétion remplit automatiquement la ville, le pays, le lien et les coordonnées GPS.</p>
             </Field>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <Field label="Commune">

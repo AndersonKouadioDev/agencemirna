@@ -20,7 +20,7 @@ export default async function AdminArticlesPage(props: {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Articles</h1>
           <p className="text-sm text-neutral-500 mt-1">
-            Le blog "Le marché immobilier décodé" sur la page À propos.{" "}
+            Le blog &quot;Le marché immobilier décodé&quot; sur la page À propos.{" "}
             {activeCount} actif{activeCount > 1 ? "s" : ""} sur {items.length}.
           </p>
         </div>

@@ -21,7 +21,7 @@ export default async function AdminPromotionsPage(props: {
           <p className="text-sm text-neutral-500 mt-1">
             Publiez vos créas et offres sur le site :{" "}
             {promotions.length} annonce{promotions.length > 1 ? "s" : ""}.
-            Cochez "afficher sur la home" pour mettre en avant une promo.
+            Cochez &quot;afficher sur la home&quot; pour mettre en avant une promo.
           </p>
         </div>
         <Button asChild>

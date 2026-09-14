@@ -30,13 +30,13 @@ export default function HeroSection() {
           <Motion variant="verticalSlideIn" animationParams={{ delay: 0.1 }}>
             <h1 className="text-4xl sm:text-5xl text-white font-agate md:text-6xl font-bold tracking-tight">
               Parcourir nos propriétés <br/>
-              <span className="italic font-light text-[#F5B324]">d'exception</span>
+              <span className="italic font-light text-[#F5B324]">d&apos;exception</span>
             </h1>
           </Motion>
 
           <Motion animationParams={{ delay: 0.4 }}>
             <p className="text-base md:text-lg text-white/80 mt-6 max-w-2xl mx-auto font-light leading-relaxed">
-              L'Agence Mirna vous propose une large sélection de biens à la location et à la vente. 
+              L&apos;Agence Mirna vous propose une large sélection de biens à la location et à la vente. 
               Nos experts sont à votre disposition pour vous guider vers la propriété qui correspond parfaitement à vos attentes.
             </p>
           </Motion>

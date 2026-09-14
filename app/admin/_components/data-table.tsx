@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import {
+  type Column,
   ColumnDef,
   flexRender,
   getCoreRowModel,
@@ -93,6 +94,11 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = React.useState<string>("");
 
+  // Le compilateur React renonce à mémoïser ce composant : useReactTable
+  // renvoie des fonctions qu'il ne peut pas mémoïser sans risquer un rendu
+  // périmé. C'est un choix délibéré de TanStack, pas un défaut à corriger —
+  // s'en passer supposerait de remplacer la bibliothèque.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
@@ -192,7 +198,7 @@ export function DataTable<TData, TValue>({
                         <>
                           Aucun résultat pour{" "}
                           <span className="font-medium text-neutral-700">
-                            "{globalFilter}"
+                            &laquo;&nbsp;{globalFilter}&nbsp;&raquo;
                           </span>
                         </>
                       ) : (
@@ -266,8 +272,7 @@ export function SortableHeader<TData, TValue>({
   column,
   children,
 }: {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  column: any;
+  column: Column<TData, TValue>;
   children: React.ReactNode;
 }) {
   const sorted = column.getIsSorted();
