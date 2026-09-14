@@ -16,7 +16,13 @@ export type FaqItem = {
  * Accordion FAQ client. Reçoit la liste depuis le wrapper server (FAQSection).
  * Accessible : aria-expanded, aria-controls, ESC pour fermer.
  */
-export default function FaqAccordionClient({ faqs }: { faqs: FaqItem[] }) {
+export default function FaqAccordionClient({
+  faqs,
+  whatsappUrl,
+}: {
+  faqs: FaqItem[];
+  whatsappUrl: string;
+}) {
   const [openId, setOpenId] = React.useState<string | null>(
     faqs[0]?.id ?? null,
   );
@@ -42,7 +48,7 @@ export default function FaqAccordionClient({ faqs }: { faqs: FaqItem[] }) {
             <Link
               href={
                 process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE ||
-                "https://wa.me/22501434831131"
+                whatsappUrl
               }
               target="_blank"
               rel="noopener noreferrer"

@@ -1,5 +1,6 @@
 import { getActiveFaqs } from "@/src/actions/public";
 import FaqAccordionClient, { type FaqItem } from "./faq-accordion-client";
+import { getSiteContact } from "@/src/lib/site-contact";
 
 /**
  * Wrapper Server Component qui fetch les FAQs actives depuis Supabase.
@@ -56,5 +57,5 @@ export default async function FAQSection() {
           answer: f.answer,
         }))
       : FALLBACK_FAQS;
-  return <FaqAccordionClient faqs={faqs} />;
+  return <FaqAccordionClient faqs={faqs} whatsappUrl={(await getSiteContact()).whatsappUrl} />;
 }

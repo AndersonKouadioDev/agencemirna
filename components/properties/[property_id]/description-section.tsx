@@ -1,5 +1,7 @@
 "use client";
 
+import type { SiteContact } from "@/src/lib/site-contact";
+
 import Motion from "@/components/motion";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -44,7 +46,13 @@ import { useFormStatus } from "react-dom";
 import { BookingRequest } from "@/services/emails/booking_asking.action";
 import { Textarea } from "@/components/ui/textarea";
 
-export default function DescriptionSection({ bien }: { bien: any }) {
+export default function DescriptionSection({
+  bien,
+  contact,
+}: {
+  bien: any;
+  contact: SiteContact;
+}) {
   const serviceName = (bien?.services_bien?.name || "").toLowerCase();
   
   const isVente = serviceName.includes("vente");
@@ -224,7 +232,7 @@ export default function DescriptionSection({ bien }: { bien: any }) {
            <div className="lg:col-span-4 relative">
              <div className="sticky top-32">
                 <Motion variant="verticalSlideIn" animationParams={{ delay: 0.2 }}>
-                  <PriceCard bien={bien} isMeuble={isMeuble} theme={theme} displayPrice={displayPrice} isVente={isVente} />
+                  <PriceCard bien={bien} contact={contact} isMeuble={isMeuble} theme={theme} displayPrice={displayPrice} isVente={isVente} />
                 </Motion>
              </div>
            </div>
@@ -244,7 +252,7 @@ function SubmitButton() {
   );
 }
 
-const PriceCard = ({ bien, isMeuble, theme, displayPrice, isVente }: { bien: any, isMeuble: boolean, theme: any, displayPrice: number, isVente: boolean }) => {
+const PriceCard = ({ bien, contact, isMeuble, theme, displayPrice, isVente }: { bien: any, contact: SiteContact, isMeuble: boolean, theme: any, displayPrice: number, isVente: boolean }) => {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -467,8 +475,8 @@ const PriceCard = ({ bien, isMeuble, theme, displayPrice, isVente }: { bien: any
             </Avatar>
             <div>
               <h4 className="font-bold text-secondary text-sm">Agence Mirna</h4>
-              <p className="text-xs text-stone-500 mt-1 font-medium">(225) 01 43 483 131</p>
-              <p className="text-xs text-stone-500 font-medium">info@agencemirna.com</p>
+              <p className="text-xs text-stone-500 mt-1 font-medium">{contact.phone}</p>
+              <p className="text-xs text-stone-500 font-medium">{contact.email}</p>
             </div>
           </div>
         </div>

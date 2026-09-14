@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getSiteContact, type SiteContact } from "@/src/lib/site-contact";
 import {
   Megaphone,
   Phone,
@@ -22,7 +23,8 @@ type AnnouncementItem = {
   href: string;
 };
 
-const FALLBACK_ANNOUNCEMENTS: AnnouncementItem[] = [
+function buildFallbackAnnouncements(contact: SiteContact): AnnouncementItem[] {
+  return [
   {
     icon: Megaphone,
     text: "Estimation gratuite de votre bien : réponse sous 24h",
@@ -30,8 +32,8 @@ const FALLBACK_ANNOUNCEMENTS: AnnouncementItem[] = [
   },
   {
     icon: Phone,
-    text: "Une question ? Appelez-nous au +225 01 43 483 131",
-    href: "tel:+22501434831131",
+    text: `Une question ? Appelez-nous au ${contact.phone}`,
+    href: contact.telHref,
   },
   {
     icon: Newspaper,
@@ -41,12 +43,17 @@ const FALLBACK_ANNOUNCEMENTS: AnnouncementItem[] = [
   {
     icon: Sparkles,
     text: "Nouveau : appartements meublés disponibles dès 50 000 FCFA/nuit",
-    href: "/properties?service=location",
+    href: "/properties?service=Location%20meubl%C3%A9e%20longue%20dur%C3%A9e",
   },
-];
+  ];
+}
 
 export default async function MarqueeBar() {
-  const promos = await getActiveAnnonces();
+  const [promos, contact] = await Promise.all([
+    getActiveAnnonces(),
+    getSiteContact(),
+  ]);
+  const FALLBACK_ANNOUNCEMENTS = buildFallbackAnnouncements(contact);
 
   // Construit la liste : promos actives (max 3) puis fallback pour remplir
   const promoItems: AnnouncementItem[] = promos.slice(0, 3).map((p) => ({

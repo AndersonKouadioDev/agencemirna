@@ -38,6 +38,26 @@ export function QuartierForm({ row, communes = [] }: { row?: QuartierRow, commun
     row?.image && row.image.startsWith("/images/") ? row.image : "",
   );
 
+  // Quartiers créés avant la table `communes` : rattache automatiquement
+  // la commune dont le nom correspond, pour ne pas perdre le lien.
+  React.useEffect(() => {
+    if (!communeId && commune && communes.length > 0) {
+      const match = communes.find(
+        (c) => c.nom.trim().toLowerCase() === commune.trim().toLowerCase(),
+      );
+      if (match) setCommuneId(match.id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [communes]);
+
+  // Choisir une commune synchronise aussi le libellé texte `commune`,
+  // utilisé par la recherche publique.
+  function handleCommuneChange(id: string) {
+    setCommuneId(id);
+    const c = communes.find((x) => x.id === id);
+    if (c) setCommune(c.nom);
+  }
+
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -62,6 +82,7 @@ export function QuartierForm({ row, communes = [] }: { row?: QuartierRow, commun
       id: row?.id,
       name,
       commune,
+      commune_id: communeId || null,
       badge: badge || null,
       tagline: tagline || null,
       description: description || null,
@@ -124,13 +145,50 @@ export function QuartierForm({ row, communes = [] }: { row?: QuartierRow, commun
                   required
                 />
               </Field>
-              <Field label="Commune / Ville" required>
-                <Input
-                  value={commune}
-                  onChange={(e) => setCommune(e.target.value)}
-                  placeholder="Ex : Abidjan"
-                  required
-                />
+              <Field label="Commune" required>
+                {communes.length > 0 ? (
+                  <>
+                    <select
+                      value={communeId}
+                      onChange={(e) => handleCommuneChange(e.target.value)}
+                      required
+                      className="w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30"
+                    >
+                      <option value="" disabled>
+                        Choisir une commune…
+                      </option>
+                      {communes.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nom}
+                          {c.is_active ? "" : " (inactive)"}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-1 text-[11px] text-neutral-500">
+                      Gérées dans{" "}
+                      <Link href="/admin/communes" className="underline">
+                        Communes
+                      </Link>
+                      .
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <Input
+                      value={commune}
+                      onChange={(e) => setCommune(e.target.value)}
+                      placeholder="Ex : Abidjan"
+                      required
+                    />
+                    <p className="mt-1 text-[11px] text-amber-600">
+                      Aucune commune enregistrée :{" "}
+                      <Link href="/admin/communes/nouveau" className="underline">
+                        créez-en une
+                      </Link>{" "}
+                      pour rattacher proprement ce quartier.
+                    </p>
+                  </>
+                )}
               </Field>
             </div>
 

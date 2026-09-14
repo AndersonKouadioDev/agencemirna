@@ -1,4 +1,5 @@
 import DescriptionSection from "@/components/properties/[property_id]/description-section";
+import { getSiteContact } from "@/src/lib/site-contact";
 import GallerySection from "@/components/properties/[property_id]/gallery-section";
 import SimilarProperties from "@/components/properties/[property_id]/similar-properties";
 
@@ -86,7 +87,10 @@ export default async function Page(props: {
   params: Promise<{ property_id: string }>;
 }) {
   const params = await props.params;
-  const bien: any = await getBienWithImages(params.property_id);
+  const [bien, contact] = await Promise.all([
+    getBienWithImages(params.property_id) as Promise<any>,
+    getSiteContact(),
+  ]);
 
   if (!bien) {
     notFound();
@@ -145,7 +149,7 @@ export default async function Page(props: {
           { name: bien.name ?? "Bien", url: `/properties/${params.property_id}` },
         ]}
       />
-      <DescriptionSection bien={bien} />
+      <DescriptionSection bien={bien} contact={contact} />
       <GallerySection bien={bien} />
       <SimilarProperties currentBienId={bien.id} />
 

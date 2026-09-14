@@ -5,6 +5,8 @@
  * Référence : https://developers.google.com/search/docs/appearance/structured-data
  */
 
+import { getSiteContact } from "@/src/lib/site-contact";
+
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.agencemirna.com";
 
@@ -12,7 +14,8 @@ const SITE_URL =
  * Organization : informations sur l'agence (logo, adresse, contact, social).
  * À injecter UNE FOIS sur la home pour aider Google à comprendre l'entité.
  */
-export function OrganizationJsonLd() {
+export async function OrganizationJsonLd() {
+  const contact = await getSiteContact();
   const data = {
     "@context": "https://schema.org",
     "@type": "RealEstateAgent",
@@ -41,9 +44,9 @@ export function OrganizationJsonLd() {
     contactPoint: [
       {
         "@type": "ContactPoint",
-        telephone: "+225-01-43-48-31-31",
+        telephone: contact.phone.replace(/\s+/g, "-"),
         contactType: "customer service",
-        email: "info@agencemirna.com",
+        email: contact.email,
         areaServed: "CI",
         availableLanguage: ["French"],
       },
@@ -56,11 +59,11 @@ export function OrganizationJsonLd() {
       },
     ],
     sameAs: [
-      "https://instagram.com/agencemirna",
-      "https://facebook.com/agencemirna",
-      "https://linkedin.com/company/agencemirna",
+      contact.instagram,
+      contact.facebook,
+      contact.linkedin,
       "https://youtube.com/@agencemirna",
-    ],
+    ].filter(Boolean),
     areaServed: [
       {
         "@type": "City",

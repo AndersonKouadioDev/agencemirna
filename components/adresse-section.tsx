@@ -1,8 +1,10 @@
 import Image from "next/image";
+import { getSiteContact } from "@/src/lib/site-contact";
 import Motion from "./motion";
 import { Building2, Mail, Phone } from "lucide-react";
 
-export default function AdresseSection() {
+export default async function AdresseSection() {
+  const contact = await getSiteContact();
   return (
     <section
       id="hero"
@@ -52,11 +54,11 @@ export default function AdresseSection() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail className="size-5 flex-shrink-0 text-primary" />
-                  <span>info@agencemirna.com</span>
+                  <span>{contact.email}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Phone className="size-5 flex-shrink-0 text-primary" />
-                  <span>(+225) 27 21 536 231 | (+225) 01 43 483 131 | (+225) 07 03 06 42 06</span>
+                  <span>{contact.phones.join(" | ")}</span>
                 </div>
               </div>
             </Motion>

@@ -1,5 +1,7 @@
 "use client";
 
+import type { SiteContact } from "@/src/lib/site-contact";
+
 import { useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,7 +19,11 @@ function SubmitButton() {
   );
 }
 
-export default function ContactContentSection({ settings }: { settings: any }) {
+export default function ContactContentSection({
+  settings,
+}: {
+  settings: SiteContact;
+}) {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -70,11 +76,11 @@ export default function ContactContentSection({ settings }: { settings: any }) {
               </div>
               <div className="flex items-center">
                 <Mail className="w-5 h-5 mr-3 text-gray-400" />
-                <span>{settings?.email || "info@agencemirna.com"}</span>
+                <span>{settings.email}</span>
               </div>
               <div className="flex items-center">
                 <Phone className="w-5 h-5 mr-3 text-gray-400" />
-                <span>{settings?.phone || "(+225) 27 21 536 231 | (+225) 01 43 483 131 | (+225) 07 03 06 42 06"}</span>
+                <span>{settings.phones.join(" | ")}</span>
               </div>
             </div>
           </div>

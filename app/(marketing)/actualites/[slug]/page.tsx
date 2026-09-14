@@ -15,6 +15,7 @@ import {
   getArticleBySlug,
 } from "@/src/actions/public";
 import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
+import { getSiteContact } from "@/src/lib/site-contact";
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", {
@@ -51,6 +52,8 @@ export default async function ArticlePage({
   const others = (await getActiveArticles({ limit: 6 })).filter(
     (a) => a.slug !== slug,
   ).slice(0, 3);
+
+  const contact = await getSiteContact();
 
   return (
     <main className="bg-[#FAF5EE]">
@@ -142,7 +145,7 @@ export default async function ArticlePage({
                   <Link
                     href={
                       process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE ||
-                      "https://wa.me/22501434831131"
+                      contact.whatsappUrl
                     }
                     target="_blank"
                     rel="noopener noreferrer"

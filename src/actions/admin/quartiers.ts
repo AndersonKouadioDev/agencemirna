@@ -52,7 +52,7 @@ export async function listQuartiersAdmin(): Promise<QuartierRow[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("quartiers")
-    .select("id, name, commune, badge, tagline, description, image, search_query, ordre, is_active, is_featured, updated_at")
+    .select("id, name, commune, commune_id, badge, tagline, description, image, search_query, ordre, is_active, is_featured, updated_at")
     .order("ordre", { ascending: true });
   return (data as QuartierRow[]) ?? [];
 }
@@ -61,7 +61,7 @@ export async function getQuartierAdmin(id: string): Promise<QuartierRow | null> 
   const supabase = await createClient();
   const { data } = await supabase
     .from("quartiers")
-    .select("id, name, commune, badge, tagline, description, image, search_query, ordre, is_active, is_featured, updated_at")
+    .select("id, name, commune, commune_id, badge, tagline, description, image, search_query, ordre, is_active, is_featured, updated_at")
     .eq("id", id)
     .maybeSingle();
   return (data as QuartierRow) ?? null;

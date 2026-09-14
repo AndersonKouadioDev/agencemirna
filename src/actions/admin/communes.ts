@@ -55,22 +55,41 @@ export async function upsertCommune(input: CommuneFormData): Promise<ActionResul
 
   const data = {
     nom: input.nom.trim(),
-    slug: input.slug.trim(),
+    slug: input.slug.trim().toLowerCase(),
     is_active: input.is_active ?? true,
-    ordre: input.ordre ?? 0,
   };
 
   if (input.id) {
-    const { error } = await supabase.from("communes").update(data).eq("id", input.id);
-    if (error) return { ok: false, error: error.message };
+    // `ordre` n'est écrit que s'il est explicitement fourni : sinon une
+    // simple édition remettait la commune en tête de liste (ordre = 0).
+    const payload =
+      input.ordre !== undefined ? { ...data, ordre: input.ordre } : data;
+    const { error } = await supabase.from("communes").update(payload).eq("id", input.id);
+    if (error) {
+      return {
+        ok: false,
+        error:
+          error.code === "23505"
+            ? "Ce slug est déjà utilisé par une autre commune."
+            : error.message,
+      };
+    }
     revalidatePath("/admin/communes");
     return { ok: true, data: { id: input.id } };
   } else {
     const { data: existing } = await supabase.from("communes").select("ordre").order("ordre", { ascending: false }).limit(1);
     const nextOrdre = ((existing?.[0]?.ordre as number | undefined) ?? 0) + 1;
 
-    const { data: created, error } = await supabase.from("communes").insert({ ...data, ordre: nextOrdre }).select("id").single();
-    if (error || !created) return { ok: false, error: error?.message ?? "Erreur." };
+    const { data: created, error } = await supabase.from("communes").insert({ ...data, ordre: input.ordre ?? nextOrdre }).select("id").single();
+    if (error || !created) {
+      return {
+        ok: false,
+        error:
+          error?.code === "23505"
+            ? "Ce slug est déjà utilisé par une autre commune."
+            : error?.message ?? "Erreur.",
+      };
+    }
     revalidatePath("/admin/communes");
     return { ok: true, data: { id: created.id } };
   }

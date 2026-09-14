@@ -28,7 +28,7 @@ const OBJECTIFS = [
   { value: "curiosite", label: "Connaître la valeur" },
 ];
 
-export function EstimationForm() {
+export function EstimationForm({ whatsappUrl }: { whatsappUrl: string }) {
   const [submitting, setSubmitting] = React.useState(false);
   const [done, setDone] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -90,7 +90,7 @@ export function EstimationForm() {
         <a
           href={
             process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE ||
-            "https://wa.me/22501434831131"
+            whatsappUrl
           }
           target="_blank"
           rel="noopener noreferrer"

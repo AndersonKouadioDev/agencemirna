@@ -9,12 +9,16 @@ import { Label } from "@/components/ui/label";
 import { CommuneFormData, CommuneAdminRow, upsertCommuneAndRedirect } from "@/src/actions/admin/communes";
 
 function slugify(text: string) {
-  return text.toString().toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^w\-]+/g, '')
-    .replace(/\-\-+/g, '-')
-    .replace(/^-+/, '')
-    .replace(/-+$/, '');
+  // NB : l'ancienne classe [^w\-] signifiait « tout sauf la lettre w »,
+  // ce qui vidait le slug de toutes les communes (« Cocody » -> "").
+  return text
+    .toString()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // retire les accents (Attécoubé -> Attecoube)
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
@@ -34,7 +38,7 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const data: CommuneFormData = { id: item?.id, nom, slug, is_active: isActive };
+    const data: CommuneFormData = { id: item?.id, nom, slug, is_active: isActive, ordre: item?.ordre };
     const result = await upsertCommuneAndRedirect(data);
     if (!result.ok) { setError(result.error); setSubmitting(false); }
   }

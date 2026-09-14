@@ -1,10 +1,10 @@
 import ContactContentSection from "@/components/contact_us/contact-content-section";
 import HeroSection from "@/components/contact_us/hero-section";
 import MapsSection from "@/components/contact_us/maps-section";
-import { getSiteSettings } from "@/src/actions/admin/settings";
+import { getSiteContact } from "@/src/lib/site-contact";
 
 export default async function Page() {
-  const settings = await getSiteSettings();
+  const settings = await getSiteContact();
   return (
     <>
       <HeroSection />

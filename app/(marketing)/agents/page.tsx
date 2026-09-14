@@ -15,6 +15,7 @@ import {
 import { Card, Chip } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { getActiveAgents } from "@/src/actions/public";
+import { getSiteContact } from "@/src/lib/site-contact";
 
 export const metadata = {
   title: "Notre équipe : Agence Mirna",
@@ -23,7 +24,10 @@ export const metadata = {
 };
 
 export default async function AgentsPage() {
-  const agents = await getActiveAgents();
+  const [agents, contact] = await Promise.all([
+    getActiveAgents(),
+    getSiteContact(),
+  ]);
 
   return (
     <main className="bg-[#FAF5EE]">
@@ -171,7 +175,8 @@ function AgentCard({
 
 // ============================================================================
 
-function EmptyAgents() {
+async function EmptyAgents() {
+  const contact = await getSiteContact();
   const promises = [
     {
       icon: ShieldCheck,
@@ -214,7 +219,7 @@ function EmptyAgents() {
             <Link
               href={
                 process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE ||
-                "https://wa.me/22501434831131"
+                contact.whatsappUrl
               }
               target="_blank"
               rel="noopener noreferrer"

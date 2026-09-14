@@ -1,5 +1,6 @@
 import { Calculator, CheckCircle2, Clock, ShieldCheck } from "lucide-react";
 import { EstimationForm } from "./estimation-form";
+import { getSiteContact } from "@/src/lib/site-contact";
 
 export const metadata = {
   title: "Estimation gratuite de votre bien : Agence Mirna",
@@ -25,7 +26,8 @@ const REASONS = [
   },
 ];
 
-export default function EstimationPage() {
+export default async function EstimationPage() {
+  const contact = await getSiteContact();
   return (
     <main className="bg-[#FAF5EE]">
       {/* HERO */}
@@ -52,7 +54,7 @@ export default function EstimationPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-10 lg:gap-16 items-start">
             {/* Formulaire */}
             <div className="rounded-3xl bg-white border border-stone-200 p-6 sm:p-10 shadow-sm">
-              <EstimationForm />
+              <EstimationForm whatsappUrl={contact.whatsappUrl} />
             </div>
 
             {/* Bénéfices + témoignage */}
