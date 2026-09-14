@@ -5,6 +5,12 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/src/supabase/server";
 import { getAdminUser } from "@/src/supabase/admin-auth";
 
+/**
+ * Lectures comprises, chaque export vérifie `getAdminUser()` : un identifiant
+ * de Server Action est global, donc POSTable depuis n'importe quelle route, y
+ * compris hors de /admin que le middleware est seul à filtrer.
+ */
+
 export type CommuneAdminRow = {
   id: string;
   nom: string;
@@ -41,6 +47,8 @@ export type ActionResult<T = void> =
   | { ok: false; error: string };
 
 export async function listCommunesAdmin(): Promise<CommuneAdminRow[]> {
+  const admin = await getAdminUser();
+  if (!admin) return [];
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("communes")
@@ -52,6 +60,8 @@ export async function listCommunesAdmin(): Promise<CommuneAdminRow[]> {
 }
 
 export async function getCommuneAdmin(id: string): Promise<CommuneAdminRow | null> {
+  const admin = await getAdminUser();
+  if (!admin) return null;
   const supabase = await createClient();
   const { data, error } = await supabase.from("communes").select("*").eq("id", id).maybeSingle();
   if (error || !data) return null;

@@ -164,9 +164,13 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
           />
           <span className="text-sm">
             <span className="font-medium">Afficher sur l&apos;accueil</span>
+            {/* Le libellé promettait un « ordre défini sur la liste » : aucun
+                écran n'expose `communes.ordre`, qui est attribué à la création
+                (max + 1) et jamais modifiable. On ne promet donc que ce que
+                l'admin contrôle réellement — la case elle-même. */}
             <span className="block text-xs text-neutral-500">
-              La section « Communes phares » montre les trois premières communes
-              cochées, dans l&apos;ordre défini sur la liste.
+              La section « Communes phares » de l&apos;accueil montre les trois
+              premières communes cochées.
             </span>
           </span>
         </label>

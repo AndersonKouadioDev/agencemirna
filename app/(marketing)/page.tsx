@@ -1,4 +1,3 @@
-import ClientSection from "@/components/client-section";
 import FeaturedPropertiesServer from "@/components/landing/featured-properties-server";
 import HeroSection from "@/components/landing/hero-section";
 import ServicesShowcase from "@/components/landing/services-showcase";
@@ -48,7 +47,7 @@ export default async function Page() {
       <CategoriesSection types={refData.types} facettes={facettes} />
 
       {/* 6. Quartiers Phares */}
-      <CommunesSection communes={communes} />
+      <CommunesSection communes={communes} facettes={facettes} />
 
       {/* 7. Expertise & Services Détaillés (Construction, Gestion...) */}
       <ServicesBento />

@@ -1,16 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Calendar, Clock, Newspaper } from "lucide-react";
-import {
-  getActiveArticles,
-  type PublicArticle,
-} from "@/src/actions/public";
+import { getActiveArticles } from "@/src/actions/public";
 import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
 
 /**
  * Page publique /blog : liste complète des articles publiés.
- * Fallback statique si la table `articles` est vide (réutilise les
- * mêmes articles que BlogSection sur la home pour éviter "Aucun article").
+ *
+ * Le repli statique était pire que l'absence d'article : ses slugs n'existent
+ * pas en base, or les cartes émettent `/actualites/<slug>` et la route de
+ * détail fait `notFound()` dès que `getArticleBySlug` ne trouve rien. Tant que
+ * la table `articles` ne renvoie rien, 100 % des liens de la page étaient donc
+ * morts. On assume désormais l'état vide, avec un renvoi vers le contact.
  */
 
 export const metadata = {
@@ -18,48 +19,6 @@ export const metadata = {
   description:
     "Conseils, guides et actualités du marché immobilier à Abidjan par les experts d'Agence Mirna.",
 };
-
-const FALLBACK_ARTICLES: PublicArticle[] = [
-  {
-    id: "fb-1",
-    slug: "estimer-prix-bien-abidjan-2026",
-    title: "Comment estimer le juste prix de votre bien à Abidjan en 2026",
-    excerpt:
-      "Méthode pas-à-pas pour fixer un prix de vente ou de location réaliste, basée sur les comparables, l'état du bien et la dynamique du quartier.",
-    content_md: null,
-    image: "/images/biens/bien15.jpg",
-    category: "Guide propriétaire",
-    read_time_minutes: 6,
-    published_at: "2026-05-12T00:00:00Z",
-    ordre: 1,
-  },
-  {
-    id: "fb-2",
-    slug: "top-5-quartiers-investir-abidjan",
-    title: "Top 5 des quartiers où investir à Abidjan cette année",
-    excerpt:
-      "De Cocody Riviera à Marcory Zone 4 en passant par Bingerville, notre classement des zones avec le meilleur potentiel de plus-value.",
-    content_md: null,
-    image: "/images/biens/bien21.jpg",
-    category: "Investissement",
-    read_time_minutes: 8,
-    published_at: "2026-04-28T00:00:00Z",
-    ordre: 2,
-  },
-  {
-    id: "fb-3",
-    slug: "location-meublee-vs-vide-cote-ivoire",
-    title: "Location meublée vs vide : quelle stratégie en Côte d'Ivoire ?",
-    excerpt:
-      "Fiscalité, rentabilité, profil de locataire, charges récurrentes : on compare les deux modèles pour vous aider à choisir.",
-    content_md: null,
-    image: "/images/biens/bien8.jpg",
-    category: "Stratégie",
-    read_time_minutes: 5,
-    published_at: "2026-04-15T00:00:00Z",
-    ordre: 3,
-  },
-];
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", {
@@ -70,8 +29,7 @@ function formatDate(iso: string): string {
 }
 
 export default async function BlogPage() {
-  const fromDb = await getActiveArticles();
-  const articles = fromDb.length > 0 ? fromDb : FALLBACK_ARTICLES;
+  const articles = await getActiveArticles();
 
   const [featured, ...rest] = articles;
 
@@ -161,6 +119,34 @@ export default async function BlogPage() {
                 </div>
               </article>
             </Link>
+          </div>
+        </section>
+      )}
+
+      {/* AUCUN ARTICLE PUBLIÉ */}
+      {articles.length === 0 && (
+        <section className="pb-32">
+          <div className="mx-auto max-w-3xl px-6 lg:px-8">
+            <div className="bg-white rounded-3xl border border-dashed border-stone-300 p-10 sm:p-14 text-center">
+              <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-[#FAF5EE] text-primary mb-5">
+                <Newspaper className="h-6 w-6" />
+              </div>
+              <h2 className="font-agate text-2xl sm:text-3xl font-bold text-secondary">
+                Aucun article publié pour le moment
+              </h2>
+              <p className="mt-4 text-base text-neutral-700 leading-relaxed">
+                Nos guides sont en cours de rédaction. D&apos;ici là, nos
+                conseillers répondent directement à vos questions sur le marché
+                immobilier abidjanais.
+              </p>
+              <Link
+                href="/contact_us"
+                className="mt-8 inline-flex items-center gap-1.5 rounded-full bg-[#1B3C35] px-6 py-3 text-sm font-semibold text-white hover:bg-[#152e29] transition-colors"
+              >
+                Nous poser une question
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
           </div>
         </section>
       )}

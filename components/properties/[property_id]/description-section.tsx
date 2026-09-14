@@ -21,21 +21,10 @@ import dayjs from "dayjs";
 import {
   BathIcon,
   BedIcon,
-  CarIcon,
   MapPinIcon,
   SpaceIcon,
-  Flower2Icon,
-  PenToolIcon,
-  ShirtIcon,
-  TvIcon,
-  UtensilsCrossedIcon,
-  WavesIcon,
-  WifiIcon,
-  AirVentIcon,
-  ArrowUpDownIcon,
   Users,
   ChevronLeft,
-  ChevronRightIcon,
 } from "lucide-react";
 import Image from "next/image";
 import PropertyLocationMap from "../property-location-map";
@@ -44,6 +33,7 @@ import Link from "next/link";
 import { useState, useRef } from "react";
 import { useFormStatus } from "react-dom";
 import { BookingRequest } from "@/services/emails/booking_asking.action";
+import { createLead } from "@/src/actions/leads";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function DescriptionSection({
@@ -58,43 +48,65 @@ export default function DescriptionSection({
 
   const isVente = serviceName.includes("vente");
   // L'ameublement est porté par `categories_bien` (Meublé / Semi-meublé /
-  // Non meublé) : s'y fier plutôt qu'au libellé du service, qui peut ne pas
-  // contenir le mot « meublé » — c'était le cas du service générique
-  // « Location », sous lequel le sélecteur de dates et le tarif à la nuitée
-  // ne s'affichaient jamais.
-  const isMeuble =
-    categorieName.includes("meubl") && !categorieName.includes("non meubl")
-      ? true
-      : serviceName.includes("meublé") ||
-        serviceName.includes("courte") ||
-        serviceName.includes("vacance");
+  // Non meublé). Quand la catégorie est renseignée elle tranche SEULE, dans
+  // les deux sens : le libellé du service « Location meublée » contient le mot
+  // « meublé » et annulait donc une catégorie « Non meublé », rouvrant le
+  // sélecteur de dates et le tarif à la nuitée sur un bien vide de meubles.
+  // Le service n'est consulté qu'à défaut de catégorie, pour le service
+  // générique « Location » qui ne dit pas s'il est meublé.
+  const isMeuble = categorieName
+    ? categorieName.includes("meubl") && !categorieName.includes("non meubl")
+    : serviceName.includes("meublé") ||
+      serviceName.includes("courte") ||
+      serviceName.includes("vacance");
+
   
   let theme = {
     badge: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
     dot: "bg-emerald-500",
-    priceLabel: "Loyer mensuel",
-    priceSuffix: "/ mois"
   };
 
   if (isVente) {
-    theme = { badge: "bg-[#F5B324]/10 text-[#F5B324] border-[#F5B324]/20", dot: "bg-[#F5B324]", priceLabel: "Prix de vente", priceSuffix: "" };
+    theme = { badge: "bg-[#F5B324]/10 text-[#F5B324] border-[#F5B324]/20", dot: "bg-[#F5B324]" };
   } else if (isMeuble) {
-    theme = { badge: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20", dot: "bg-indigo-500", priceLabel: "À partir de", priceSuffix: "/ nuitée" };
+    theme = { badge: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20", dot: "bg-indigo-500" };
   }
 
-  const displayPrice = isVente ? bien.prix : (isMeuble ? (bien.prix || bien.prix_month) : (bien.prix_month || bien.prix));
+  // Le montant et son unité doivent être choisis ensemble. Auparavant l'unité
+  // était figée par le thème : un bien meublé sans `prix` retombait sur
+  // `prix_month` tout en gardant « / nuitée », affichant donc un loyer mensuel
+  // à la nuitée — contredit à l'écran par la PriceCard de la même page, qui
+  // annonce le même montant « / mois ».
+  let priceLabel = "Loyer mensuel";
+  let priceSuffix = "/ mois";
+  let displayPrice: number | null = null;
 
-  const amenities = [
-    { icon: AirVentIcon, text: "Climatisation" },
-    { icon: TvIcon, text: "Télévision" },
-    { icon: UtensilsCrossedIcon, text: "Lave-vaisselle" },
-    { icon: ArrowUpDownIcon, text: "Ascenseur" },
-    { icon: Flower2Icon, text: "Jardin" },
-    { icon: WifiIcon, text: "Internet" },
-    { icon: WavesIcon, text: "Jacuzzi" },
-    { icon: ShirtIcon, text: "Buanderie" },
-    { icon: PenToolIcon, text: "Piscine" },
-  ];
+  if (isVente) {
+    priceLabel = "Prix de vente";
+    priceSuffix = "";
+    displayPrice = bien.prix ?? null;
+  } else if (isMeuble && bien.prix != null) {
+    priceLabel = "À partir de";
+    priceSuffix = "/ nuitée";
+    displayPrice = bien.prix;
+  } else if (bien.prix_month != null) {
+    displayPrice = bien.prix_month;
+  } else if (bien.prix != null) {
+    // `prix` est le tarif journalier partout ailleurs sur la fiche.
+    priceLabel = "À partir de";
+    priceSuffix = "/ nuitée";
+    displayPrice = bien.prix;
+  }
+
+  const addressLine = `${bien?.address ? `${bien.address}, ` : ""}${bien?.ville_commune ?? ""}, ${bien?.pays ?? ""}`;
+
+  // `biens.localisation` est un champ texte libre et nullable : injecté tel
+  // quel dans un href, null donnait `href=""` — soit la page courante rouverte
+  // dans un nouvel onglet. On ne rend le lien que pour une URL absolue.
+  const mapsHref =
+    typeof bien?.localisation === "string" && /^https?:\/\//i.test(bien.localisation)
+      ? bien.localisation
+      : null;
 
   return (
     <section className="relative bg-[#FAF5EE] pt-32 sm:pt-40 pb-20">
@@ -123,25 +135,43 @@ export default function DescriptionSection({
                <h1 className="text-4xl md:text-5xl lg:text-6xl font-agate font-bold text-secondary leading-tight mb-2">
                  {bien?.name}
                </h1>
-               <Link href={bien.localisation ?? ""} target="_blank" className="flex items-center gap-2 text-stone-500 hover:text-primary transition-colors text-lg">
-                 <MapPinIcon className="w-5 h-5 text-primary" />
-                 {bien?.address ? `${bien.address}, ` : ''}{bien?.ville_commune}, {bien?.pays}
-               </Link>
+               {mapsHref ? (
+                 <Link href={mapsHref as any} target="_blank" className="flex items-center gap-2 text-stone-500 hover:text-primary transition-colors text-lg">
+                   <MapPinIcon className="w-5 h-5 text-primary" />
+                   {addressLine}
+                 </Link>
+               ) : (
+                 <div className="flex items-center gap-2 text-stone-500 text-lg">
+                   <MapPinIcon className="w-5 h-5 text-primary" />
+                   {addressLine}
+                 </div>
+               )}
              </div>
              
-             <div className="md:text-right">
-               <div className="text-sm text-stone-400 font-bold uppercase tracking-widest mb-1">{theme.priceLabel}</div>
-               <div className="text-3xl md:text-4xl font-bold text-secondary">
-                 {formatNumber(displayPrice ?? 0)} FCFA <span className="text-lg font-normal text-stone-500">{theme.priceSuffix}</span>
+             {/* Un bien sans aucun montant saisi affichait « Loyer mensuel /
+                 0 FCFA / mois » : le repli `?? 0` annonce un prix aussi faux
+                 qu'un prix inventé, et `formatNumber(null)` rendrait de son
+                 côté un « FCFA » orphelin. On masque le bloc entier. */}
+             {displayPrice != null && (
+               <div className="md:text-right">
+                 <div className="text-sm text-stone-400 font-bold uppercase tracking-widest mb-1">{priceLabel}</div>
+                 <div className="text-3xl md:text-4xl font-bold text-secondary">
+                   {formatNumber(displayPrice)} FCFA <span className="text-lg font-normal text-stone-500">{priceSuffix}</span>
+                 </div>
                </div>
-             </div>
+             )}
            </div>
          </Motion>
 
          {/* HERO IMAGE */}
          <Motion variant="verticalSlideIn" animationParams={{ delay: 0.1 }}>
-           <div className="w-full h-[400px] md:h-[600px] rounded-[32px] overflow-hidden relative shadow-2xl mb-12">
-             <Image src={bien.image ?? ""} alt={bien.name} fill className="object-cover hover:scale-105 transition-transform duration-1000" priority />
+           {/* `biens.image` est nullable : next/image bascule silencieusement en
+               `unoptimized` pour une src vide et rend un <img src=""> sur un
+               bloc de 400 à 600 px. On ne rend le visuel que s'il existe. */}
+           <div className="w-full h-[400px] md:h-[600px] rounded-[32px] overflow-hidden relative shadow-2xl mb-12 bg-stone-200">
+             {bien.image && (
+               <Image src={bien.image} alt={bien.name} fill className="object-cover hover:scale-105 transition-transform duration-1000" priority />
+             )}
            </div>
          </Motion>
 
@@ -178,12 +208,6 @@ export default function DescriptionSection({
                        </div>
                      </div>
                    )}
-                   <div className="flex flex-col gap-1">
-                     <span className="text-xs text-stone-400 font-bold uppercase tracking-widest">Garages</span>
-                     <div className="flex items-center gap-2 text-secondary font-semibold text-lg">
-                       <CarIcon className="w-5 h-5 text-primary" /> 1
-                     </div>
-                   </div>
                    {bien?.capacity != null && (
                      <div className="flex flex-col gap-1">
                        <span className="text-xs text-stone-400 font-bold uppercase tracking-widest">Capacité</span>
@@ -203,20 +227,12 @@ export default function DescriptionSection({
                 </div>
               </Motion>
 
-              {/* Amenities */}
-              <Motion variant="verticalSlideIn">
-                <h3 className="text-3xl font-agate font-bold text-secondary mb-6">Commodités</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                  {amenities.map((amenity, idx) => (
-                    <div key={idx} className="flex items-center gap-3 bg-white p-4 rounded-2xl border border-stone-100 shadow-sm">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                        <amenity.icon className="w-5 h-5" />
-                      </div>
-                      <span className="text-stone-700 font-medium">{amenity.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </Motion>
+              {/* Aucun bloc « Commodités » : les 28 colonnes de `biens` ne
+                  portent ni équipements ni stationnement. La liste qui se
+                  trouvait ici était une constante locale de 9 items rendue à
+                  l'identique sur chaque bien — la fiche d'un terrain annonçait
+                  ascenseur, jacuzzi et piscine. À rétablir le jour où une
+                  colonne d'équipements existera. */}
 
               {/* Video */}
               <PropertyVideo videoUrl={bien.lien_video} />
@@ -243,7 +259,7 @@ export default function DescriptionSection({
            <div className="lg:col-span-4 relative">
              <div className="sticky top-32">
                 <Motion variant="verticalSlideIn" animationParams={{ delay: 0.2 }}>
-                  <PriceCard bien={bien} contact={contact} isMeuble={isMeuble} theme={theme} displayPrice={displayPrice} isVente={isVente} />
+                  <PriceCard bien={bien} contact={contact} isMeuble={isMeuble} isVente={isVente} />
                 </Motion>
              </div>
            </div>
@@ -263,7 +279,7 @@ function SubmitButton() {
   );
 }
 
-const PriceCard = ({ bien, contact, isMeuble, theme, displayPrice, isVente }: { bien: any, contact: SiteContact, isMeuble: boolean, theme: any, displayPrice: number, isVente: boolean }) => {
+const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: any, contact: SiteContact, isMeuble: boolean, isVente: boolean }) => {
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -281,20 +297,52 @@ const PriceCard = ({ bien, contact, isMeuble, theme, displayPrice, isVente }: { 
       checkOut = dayjs(value.end.toDate(getLocalTimeZone())).format("DD/MM/YYYY");
     }
 
-    const result = await BookingRequest({
-      firstName: formData.get("firstName") as string,
-      lastName: formData.get("lastName") as string,
-      email: formData.get("email") as string,
-      phone: formData.get("phone") as string,
+    const firstName = formData.get("firstName") as string;
+    const lastName = formData.get("lastName") as string;
+    const email = formData.get("email") as string;
+    const phone = formData.get("phone") as string;
+    const message = formData.get("message") as string;
+    const guests = Number(formData.get("people") || 1);
+
+    // La demande la plus qualifiée du site — la seule qui porte un `bien_id` —
+    // ne passait que par Resend et n'atteignait jamais /admin/leads. On
+    // enregistre donc le lead d'abord : l'e-mail n'est plus qu'une
+    // notification, dont l'échec ne doit plus faire perdre la demande.
+    const leadResult = await createLead({
+      source: "contact",
+      full_name: `${firstName ?? ""} ${lastName ?? ""}`.trim(),
+      email,
+      phone,
+      message,
+      bien_id: bien?.id ?? null,
+      source_url:
+        typeof window !== "undefined" ? window.location.pathname : null,
+      metadata: {
+        bien_name: bien?.name ?? null,
+        check_in: checkIn ?? null,
+        check_out: checkOut ?? null,
+        guests,
+      },
+    });
+
+    const emailResult = await BookingRequest({
+      firstName,
+      lastName,
+      email,
+      phone,
       propertyName: bien.name,
       checkIn: checkIn || "",
       checkOut: checkOut || "",
-      guests: Number(formData.get("people") || 1),
-      message: formData.get("message") as string,
+      guests,
+      message,
       propertyImage: bien.image,
     });
 
-    if (result.success) {
+    // Succès dès que l'un des deux canaux a abouti : l'agence est servie soit
+    // par /admin/leads, soit par l'e-mail. Cela neutralise aussi le cas où
+    // seul l'accusé de réception AU CLIENT échoue, que BookingRequest remonte
+    // aujourd'hui en `{success:false}` alors que l'agence a bien été notifiée.
+    if (leadResult.ok || emailResult.success) {
       setStatus("success");
       formRef.current?.reset();
       setValue({

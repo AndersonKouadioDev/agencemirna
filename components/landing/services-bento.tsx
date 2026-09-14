@@ -3,6 +3,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, HardHat, Home, BedDouble, Building2 } from "lucide-react";
 
+/**
+ * Même arbitrage que services-showcase : Construction et Gestion locative
+ * n'ont aucun bien au catalogue, leurs tuiles renvoient donc à leur page de
+ * service et non à un filtre `?service=` qui donnerait une liste vide.
+ */
 const BENTO_ITEMS = [
   {
     id: "vente",
@@ -18,7 +23,7 @@ const BENTO_ITEMS = [
     title: "Construction & Rénovation",
     desc: "Des projets bâtis de A à Z par nos experts en architecture et ingénierie.",
     icon: HardHat,
-    href: "/properties?service=Construction",
+    href: "/services/construction",
     image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=800",
     className: "md:col-span-1 md:row-span-2",
   },
@@ -36,7 +41,7 @@ const BENTO_ITEMS = [
     title: "Gestion Locative",
     desc: "Rentabilisez votre patrimoine en toute sérénité.",
     icon: Building2,
-    href: "/properties?service=Gestion%20locative",
+    href: "/services/gestion-immobiliere",
     image: "https://images.unsplash.com/photo-1554469384-e58fac16e23a?auto=format&fit=crop&q=80&w=800",
     className: "md:col-span-1 md:row-span-1",
   }

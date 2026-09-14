@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { MapPin, Building2, Briefcase, Search, ChevronDown, Check } from "lucide-react";
+import { MapPin, Building2, Briefcase, Search, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   ABIDJAN_LOCATIONS,
@@ -54,8 +54,31 @@ export default function HeroSearchBar({
     if (q) return `quartier:${q}`;
     const c = searchParams.get("commune");
     if (c) return `commune:${c}`;
+
+    // Alias historiques ?location= / ?loc= : /properties les résout pour
+    // filtrer la liste, mais la barre les ignorait. Elle affichait « Où ? »
+    // sur un catalogue pourtant filtré, puis `construireParams` effaçait
+    // l'alias à la soumission suivante — le lieu disparaissait sans un mot.
+    const alias = searchParams.get("location") || searchParams.get("loc");
+    if (alias) {
+      const norm = (v: unknown) =>
+        String(v ?? "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim()
+          .toLowerCase();
+      const l = norm(alias);
+      const quartier = quartiers.find(
+        (x: any) => norm(x.name) === l || norm(x.search_query) === l,
+      );
+      if (quartier) return `quartier:${quartier.id}`;
+      const commune = communes.find(
+        (x: any) => norm(x.nom) === l || norm(x.slug) === l,
+      );
+      if (commune) return `commune:${commune.slug}`;
+    }
     return null;
-  }, [searchParams]);
+  }, [searchParams, communes, quartiers]);
 
   const [location, setLocation] = React.useState<string | null>(readLocation);
   const [type, setType] = React.useState<string | null>(searchParams.get("type") || null);
@@ -113,10 +136,15 @@ export default function HeroSearchBar({
             value: `quartier:${q.id}`,
             label: q.name as string,
             total: compte(facettes?.quartiers, q.id),
-          }))
-          .filter((q) => q.total !== 0),
+          })),
       }))
-      .filter((g) => g.total !== 0 || g.quartiers.length > 0);
+      // Une commune est proposée si elle porte des biens, ou si l'un de ses
+      // quartiers en porte. Les quartiers à zéro restent affichés — ils disent
+      // au visiteur comment le catalogue est découpé — mais sont désactivés
+      // au rendu plutôt que de mener à une page vide.
+      .filter(
+        (g) => g.total !== 0 || g.quartiers.some((q) => q.total !== 0),
+      );
   }, [communes, quartiers, facettes]);
 
   /** Toutes les options à plat, pour retrouver un libellé depuis une valeur. */
@@ -124,7 +152,9 @@ export default function HeroSearchBar({
     () =>
       groupesLocalisation.flatMap((g) => [
         ...(g.value ? [{ value: g.value, label: g.nom }] : []),
-        ...g.quartiers.map((q) => ({ value: q.value, label: q.label })),
+        ...g.quartiers
+          .filter((q) => q.total !== 0)
+          .map((q) => ({ value: q.value, label: q.label })),
       ]),
     [groupesLocalisation],
   );
@@ -152,33 +182,48 @@ export default function HeroSearchBar({
 
   useOnClickOutside(containerRef, () => setActiveTab(null));
 
-  function onSubmit(e?: React.FormEvent) {
-    e?.preventDefault();
-    setActiveTab(null);
-
-    // On repart des paramètres existants : reconstruire à vide effaçait
-    // silencieusement prix min/max, chambres et tri à chaque recherche.
+  /**
+   * Construit les paramètres d'une recherche.
+   *
+   * Unique pour les trois chemins de soumission : chacun refaisait ce travail
+   * de son côté et deux d'entre eux perdaient le lieu. Deux invariants s'y
+   * jouent. On repart des paramètres existants, sinon prix min/max, chambres
+   * et tri sont effacés à chaque recherche. Et le préfixe de l'état interne
+   * (« commune:<slug> », « quartier:<id> ») est décodé ici : émis tel quel
+   * sous ?location=, ni /properties ni la modale de l'accueil ne savent le
+   * relire, et le critère de lieu disparaît sans un message d'erreur.
+   */
+  function construireParams(
+    lieu: string | null,
+    typeChoisi: string | null,
+    serviceChoisi: string | null,
+  ) {
     const params = new URLSearchParams(searchParams.toString());
     ["location", "loc", "commune", "quartier"].forEach((k) => params.delete(k));
 
-    if (location) {
-      const [kind, id] = location.split(":");
+    if (lieu) {
+      const [kind, id] = lieu.split(":");
       if (kind === "quartier" || kind === "commune") params.set(kind, id);
-      else params.set("commune", location);
+      else params.set("commune", lieu);
     }
 
-    if (type) {
-      const tLabel = dynamicTYPES.find((t) => t.value === type)?.label;
-      if (tLabel) params.set("type", tLabel);
-      else params.delete("type");
-    } else params.delete("type");
+    const tLabel = typeChoisi
+      ? dynamicTYPES.find((t) => t.value === typeChoisi)?.label
+      : undefined;
+    if (tLabel) params.set("type", tLabel);
+    else params.delete("type");
 
-    if (service) {
-      const sLabel = dynamicSERVICES.find((s) => s.value === service)?.label;
-      if (sLabel) params.set("service", sLabel);
-      else params.delete("service");
-    } else params.delete("service");
+    const sLabel = serviceChoisi
+      ? dynamicSERVICES.find((s) => s.value === serviceChoisi)?.label
+      : undefined;
+    if (sLabel) params.set("service", sLabel);
+    else params.delete("service");
 
+    return params;
+  }
+
+  /** Le parent filtre sur place s'il fournit `onSearch` ; sinon on navigue. */
+  function soumettre(params: URLSearchParams) {
     if (onSearch) {
       onSearch(params);
       return;
@@ -186,6 +231,12 @@ export default function HeroSearchBar({
 
     const qs = params.toString();
     router.push(qs ? `/properties?${qs}` : "/properties");
+  }
+
+  function onSubmit(e?: React.FormEvent) {
+    e?.preventDefault();
+    setActiveTab(null);
+    soumettre(construireParams(location, type, service));
   }
 
   const getLocationLabel = () => {
@@ -399,9 +450,20 @@ export default function HeroSearchBar({
                                 <div className="flex flex-col gap-1 pl-3 border-l-2 border-stone-100 ml-4">
                                   {groupe.quartiers.map((q) => {
                                     const selectionne = location === q.value;
+                                    // Un quartier sans bien reste listé pour
+                                    // montrer le découpage, mais n'est pas
+                                    // cliquable : le filtre ne renverrait rien.
+                                    const vide = q.total === 0;
                                     return (
                                       <button
                                         key={q.value}
+                                        type="button"
+                                        disabled={vide}
+                                        title={
+                                          vide
+                                            ? `Aucun bien disponible à ${q.label} pour le moment`
+                                            : undefined
+                                        }
                                         onClick={() => {
                                           setLocation(q.value);
                                           setActiveTab("type");
@@ -410,18 +472,18 @@ export default function HeroSearchBar({
                                           "text-left px-3 py-2 rounded-xl text-sm transition-all duration-200 flex items-center justify-between gap-2",
                                           selectionne
                                             ? "bg-primary text-white font-semibold"
-                                            : "hover:bg-stone-50 text-stone-500",
+                                            : vide
+                                              ? "text-stone-300 cursor-not-allowed"
+                                              : "hover:bg-stone-50 text-stone-500",
                                         )}
                                       >
                                         <span className="truncate">{q.label}</span>
                                         {selectionne ? (
                                           <Check className="h-3.5 w-3.5 text-white shrink-0" />
                                         ) : (
-                                          q.total > 0 && (
-                                            <span className="text-xs text-stone-400 shrink-0">
-                                              {q.total}
-                                            </span>
-                                          )
+                                          <span className="text-xs text-stone-400 shrink-0">
+                                            {q.total > 0 ? q.total : "—"}
+                                          </span>
                                         )}
                                       </button>
                                     );
@@ -510,24 +572,11 @@ export default function HeroSearchBar({
                               setService(opt.value);
                               setActiveTab(null); // On ferme
                               
-                              // Auto submit après un court délai pour laisser voir la sélection
+                              // Auto submit après un court délai pour laisser voir la sélection.
+                              // `service` porte encore la valeur précédente dans
+                              // cette frame : on passe opt.value directement.
                               setTimeout(() => {
-                                const params = new URLSearchParams();
-                                if (location) params.set("location", location);
-                                if (type) {
-                                  const tLabel = dynamicTYPES.find(t => t.value === type)?.label;
-                                  if (tLabel) params.set("type", tLabel);
-                                }
-                                
-                                const sLabel = dynamicSERVICES.find(s => s.value === opt.value)?.label;
-                                if (sLabel) params.set("service", sLabel);
-                                
-                                if (onSearch) {
-                                  onSearch(params);
-                                } else {
-                                  const qs = params.toString();
-                                  router.push(qs ? `/properties?${qs}` : "/properties");
-                                }
+                                soumettre(construireParams(location, type, opt.value));
                               }, 300);
                             }}
                             className={cn(

@@ -1,33 +1,21 @@
 import React from "react";
-import Image from "next/image";
 import { Star, Quote } from "lucide-react";
+import type { PublicTestimonial } from "@/src/actions/public";
 
-const TESTIMONIALS = [
-  {
-    id: 1,
-    name: "Jean-Marc R.",
-    role: "Acheteur",
-    text: "Une équipe professionnelle qui a su trouver exactement ce que je cherchais à Cocody en un temps record. Le suivi après-vente est également irréprochable.",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200",
-  },
-  {
-    id: 2,
-    name: "Sophie T.",
-    role: "Investisseuse",
-    text: "Je leur ai confié la gestion de mes deux appartements meublés en Zone 4. Tranquillité d'esprit garantie, locataires triés sur le volet. Je recommande vivement.",
-    avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200",
-  },
-  {
-    id: 3,
-    name: "Marc & Valérie",
-    role: "Vendeurs",
-    text: "L'estimation était juste, et la mise en valeur de notre villa a permis une vente rapide au bon prix. Une véritable agence premium.",
-    avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&q=80&w=200",
-  }
-];
-
-export default function TestimonialsSection({ testimonials = [] }: { testimonials?: any[] }) {
-  const dynamicTestimonials = testimonials && testimonials.length > 0 ? testimonials : TESTIMONIALS;
+/**
+ * Section « Ils nous ont fait confiance ».
+ *
+ * Le repli affichait trois avis inventés, attribués à des personnes nommées et
+ * illustrés de portraits d'agence photo : présentés sous ce titre, ce sont des
+ * allégations commerciales, pas un habillage. Sans témoignage en base, on
+ * masque donc la section plutôt que de la meubler.
+ */
+export default function TestimonialsSection({
+  testimonials = [],
+}: {
+  testimonials?: PublicTestimonial[];
+}) {
+  if (testimonials.length === 0) return null;
 
   return (
     <section className="py-24 md:py-32 bg-white">
@@ -42,39 +30,60 @@ export default function TestimonialsSection({ testimonials = [] }: { testimonial
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-          {dynamicTestimonials.map((testimonial) => (
-            <div
-              key={testimonial.id}
-              className="bg-[#FAF5EE] rounded-[2rem] p-8 md:p-10 relative shadow-sm border border-stone-100/50"
-            >
-              <Quote className="absolute top-8 right-8 h-12 w-12 text-[#F5B324] opacity-20" />
-              
-              <div className="flex gap-1 mb-6">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-[#F5B324] text-[#F5B324]" />
-                ))}
-              </div>
-              
-              <p className="text-stone-700 font-medium text-lg leading-relaxed mb-8 relative z-10">
-                "{testimonial.text}"
-              </p>
-              
-              <div className="flex items-center gap-4 mt-auto">
-                <div className="h-12 w-12 rounded-full overflow-hidden relative">
-                  <Image
-                    src={testimonial.avatar || "/images/placeholder-avatar.png"}
-                    alt={testimonial.name}
-                    fill
-                    className="object-cover"
-                  />
+          {testimonials.map((testimonial) => {
+            // `rating` est la note réellement saisie : on n'affiche plus cinq
+            // étoiles pleines quel que soit l'avis.
+            const notePleine = Math.max(
+              0,
+              Math.min(5, Math.round(testimonial.rating ?? 5)),
+            );
+            return (
+              <div
+                key={testimonial.id}
+                className="bg-[#FAF5EE] rounded-[2rem] p-8 md:p-10 relative shadow-sm border border-stone-100/50"
+              >
+                <Quote className="absolute top-8 right-8 h-12 w-12 text-[#F5B324] opacity-20" />
+
+                <div
+                  className="flex gap-1 mb-6"
+                  aria-label={`Note : ${notePleine} sur 5`}
+                >
+                  {[...Array(5)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className={
+                        i < notePleine
+                          ? "h-4 w-4 fill-[#F5B324] text-[#F5B324]"
+                          : "h-4 w-4 text-stone-300"
+                      }
+                    />
+                  ))}
                 </div>
-                <div>
-                  <h4 className="font-bold text-secondary">{testimonial.name}</h4>
-                  <p className="text-sm font-medium text-stone-500">{testimonial.role}</p>
+
+                <p className="text-stone-700 font-medium text-lg leading-relaxed mb-8 relative z-10">
+                  &laquo;&nbsp;{testimonial.quote}&nbsp;&raquo;
+                </p>
+
+                <div className="flex items-center gap-4 mt-auto">
+                  {/* Le schéma ne stocke que des initiales, pas de portrait. */}
+                  <div className="h-12 w-12 rounded-full bg-[#1B3C35] text-white flex items-center justify-center font-bold text-sm shrink-0">
+                    {testimonial.avatar_initials ??
+                      testimonial.author_name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-secondary">
+                      {testimonial.author_name}
+                    </h4>
+                    {testimonial.author_role && (
+                      <p className="text-sm font-medium text-stone-500">
+                        {testimonial.author_role}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>

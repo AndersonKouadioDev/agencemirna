@@ -15,10 +15,9 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import HeroSearchBar from "./hero-search-bar";
-import { GoogleMap, useJsApiLoader, Marker, OverlayViewF } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, OverlayViewF } from "@react-google-maps/api";
 import { getAllBiens, getBienWithImages } from "@/src/actions/bien.actions";
 import { formatNumber } from "@/utils/formatNumber";
-import { ABIDJAN_LOCATIONS } from "@/lib/constants/properties";
 
 const containerStyle = {
   width: "100%",
@@ -561,52 +560,93 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                       </div>
                     ) : (
                       <HeroSearchBar communes={communes} quartiers={quartiers} types={types} services={services} facettes={facettes} onSearch={(params) => {
-                         const locVal = params.get("location");
-                         const typeVal = params.get("type");
-                         const serviceVal = params.get("service");
-                         
-                         setLastSearchParams({ loc: locVal, type: typeVal, service: serviceVal });
-                         setHasSearched(true);
+                        // La barre n'émet plus ?location= mais ?commune=<slug> /
+                        // ?quartier=<id> : relire « location » revenait à ignorer
+                        // purement et simplement le lieu choisi, et la valeur
+                        // préfixée que l'ancien parcours guidé y déposait ne
+                        // correspondait à aucune entrée d'ABIDJAN_LOCATIONS.
+                        const communeSlug = params.get("commune");
+                        const quartierId = params.get("quartier");
+                        const typeVal = params.get("type");
+                        const serviceVal = params.get("service");
 
-                     // Normalize string helper
-                     const normalize = (str: string | undefined | null) => 
-                       (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+                        // Normalize string helper
+                        const normalize = (str: string | undefined | null) =>
+                          (str || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
-                     const loc = normalize(locVal);
-                     const typeStr = normalize(typeVal);
-                     const serviceStr = normalize(serviceVal).replace("_", " ");
+                        const communeChoisie = communeSlug
+                          ? communes.find((c: any) => c.slug === communeSlug)
+                          : null;
+                        const quartierChoisi = quartierId
+                          ? quartiers.find((q: any) => String(q.id) === quartierId)
+                          : null;
 
-                     const filtered = biens.filter(b => {
-                        let match = true;
-                        
-                        if (loc && locVal !== "toute la ville") {
-                           const locObj = ABIDJAN_LOCATIONS.find(l => l.value === locVal);
-                           const locLabel = locObj ? locObj.label.replace(" (toute la commune)", "") : locVal;
-                           const searchLoc = normalize(locLabel);
-                           
-                           const ville = normalize(b.ville_commune);
-                           const adresse = normalize(b.address);
-                           match = match && (ville.includes(searchLoc) || adresse.includes(searchLoc) || searchLoc.includes(ville));
-                        }
-                        
-                        if (typeStr) {
-                           const dbType = normalize(b.types_bien?.name);
-                           match = match && dbType.includes(typeStr);
-                        }
-                        
-                        if (serviceStr) {
-                           const dbService = normalize(b.services_bien?.name);
-                           match = match && dbService.includes(serviceStr);
-                        }
-                        
-                        return match;
-                     });
+                        setLastSearchParams({
+                          loc: quartierChoisi?.name ?? communeChoisie?.nom ?? null,
+                          type: typeVal,
+                          service: serviceVal,
+                        });
+                        setHasSearched(true);
 
-                     setFilteredBiens(filtered);
-                     setSelectedBien(null);
-                     // setActiveSearchStep removed
+                        const typeStr = normalize(typeVal);
+                        const serviceStr = normalize(serviceVal).replace(/_/g, " ");
 
-                  }} />
+                        const filtered = biens.filter(b => {
+                           let match = true;
+
+                           // Localisation : on s'appuie sur les clés étrangères du
+                           // bien, avec repli sur l'adresse texte pour ceux qui ne
+                           // les portent pas encore. Le test inverse d'origine
+                           // (`searchLoc.includes(ville)`) laissait passer tout
+                           // bien dont `ville_commune` était vide.
+                           if (quartierId) {
+                              // Un quartier que la liste ne connaît pas ne doit
+                              // pas faire disparaître le critère : sans ce test,
+                              // la branche `else if` ne s'appliquait pas non plus
+                              // et la modale rendait tout le catalogue.
+                              if (!quartierChoisi) {
+                                 match = false;
+                              } else if (b.quartier_id) {
+                                 match = match && String(b.quartier_id) === String(quartierChoisi.id);
+                              } else {
+                                 const label = normalize(quartierChoisi.name);
+                                 const hay = normalize([b.address, b.ville_commune].filter(Boolean).join(" "));
+                                 match = match && !!label && hay.includes(label);
+                              }
+                           } else if (communeSlug) {
+                              if (!communeChoisie) {
+                                 match = false;
+                              } else if (b.commune_id) {
+                                 match = match && String(b.commune_id) === String(communeChoisie.id);
+                              } else {
+                                 const label = normalize(communeChoisie.nom);
+                                 const hay = normalize([b.address, b.ville_commune].filter(Boolean).join(" "));
+                                 match = match && !!label && hay.includes(label);
+                              }
+                           }
+
+                           // Égalité stricte sur le libellé normalisé, comme
+                           // list-properties-section.tsx : les deux côtés
+                           // viennent de types_bien / services_bien, et la
+                           // comparaison par sous-chaîne faisait remonter un
+                           // bien « Location meublée » sous le filtre
+                           // « Location » — deux écrans, deux résultats.
+                           if (typeStr) {
+                              const dbType = normalize(b.types_bien?.name);
+                              match = match && !!dbType && dbType === typeStr;
+                           }
+
+                           if (serviceStr) {
+                              const dbService = normalize(b.services_bien?.name);
+                              match = match && !!dbService && dbService === serviceStr;
+                           }
+
+                           return match;
+                        });
+
+                        setFilteredBiens(filtered);
+                        setSelectedBien(null);
+                      }} />
                     )
                   )}
                   

@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/src/supabase/server";
 import { getAdminUser } from "@/src/supabase/admin-auth";
 import { deleteAdminImage } from "./upload";
@@ -13,8 +12,12 @@ import { migrateBienImagesFromFolder } from "@/src/actions/bien.actions";
  * Liste, lecture, upsert (création + édition), suppression, et gestion
  * des images via la table jointure `bien_images`.
  *
- * Toutes les actions vérifient `getAdminUser()` au début et retournent
- * `{ ok: false, error }` si non autorisé.
+ * Toutes les actions vérifient `getAdminUser()` au début. Les écritures
+ * retournent `{ ok: false, error }` si non autorisé ; les lectures retournent
+ * leur valeur vide (null / tableau vide). Un identifiant de Server Action est
+ * global : sans cette garde, un module `"use server"` expose chacun de ses
+ * exports en POST depuis n'importe quelle route, y compris hors de /admin que
+ * le middleware est seul à protéger.
  */
 
 // ============================================================================
@@ -92,6 +95,9 @@ export type ActionResult<T = void> =
  * La cover est calculée depuis bien_images.ordre = MIN(ordre) pour ce bien.
  */
 export async function listBiensAdmin(): Promise<BienAdminRow[]> {
+  const admin = await getAdminUser();
+  if (!admin) return [];
+
   const supabase = await createClient();
 
   // 1. Récupérer tous les biens avec les joints classiques + lat/lng
@@ -143,6 +149,12 @@ export async function listBiensAdmin(): Promise<BienAdminRow[]> {
 export async function getBienAdmin(
   id: string,
 ): Promise<{ bien: BienAdminRow; images: BienImage[] } | null> {
+  // Garde indispensable ici et pas seulement par confort d'uniformité : cette
+  // « lecture » déclenche plus bas `migrateBienImagesFromFolder`, qui SUPPRIME
+  // puis réinsère des lignes de `bien_images`.
+  const admin = await getAdminUser();
+  if (!admin) return null;
+
   const supabase = await createClient();
 
   const { data: bien, error } = await supabase
@@ -193,6 +205,12 @@ export type ReferenceData = {
 };
 
 export async function getReferenceData(): Promise<ReferenceData> {
+  const admin = await getAdminUser();
+  // Objet neuf plutôt qu'une constante de module : les tableaux repartent
+  // vers l'appelant, une constante partagée survivrait à la requête.
+  if (!admin)
+    return { types: [], services: [], categories: [], communes: [], quartiers: [] };
+
   const supabase = await createClient();
 
   const [typesRes, servicesRes, categoriesRes, communesRes, quartiersRes] =
@@ -502,14 +520,4 @@ function extractStoragePath(url: string): string | null {
   } catch {
     return null;
   }
-}
-
-/**
- * Wrapper pratique pour les Server Actions appelées depuis un formulaire :
- * en cas de succès, redirige vers la liste avec un message flash (param URL).
- */
-export async function upsertBienAndRedirect(input: BienFormData) {
-  const result = await upsertBien(input);
-  if (!result.ok) return result;
-  redirect(`/admin/biens?flash=${input.id ? "updated" : "created"}`);
 }

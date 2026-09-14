@@ -5,7 +5,6 @@ import {
   MapPinIcon,
   LocateIcon,
   Users,
-  HeartIcon,
   ArrowRightIcon,
 } from "lucide-react";
 import Image from "next/image";
@@ -31,7 +30,9 @@ export default function PropertyCard({
   furnished,
 }: {
   id: string;
-  imageUrl: string;
+  /** `biens.image` est nullable : on accepte l'absence plutôt que de laisser
+   *  next/image rendre un <img src=""> à la place de la vignette. */
+  imageUrl?: string | null;
   altText: string;
   address: string;
   title: string;
@@ -45,13 +46,21 @@ export default function PropertyCard({
   status: string;
   price: string;
   pricePerMonth?: string;
-  /** Vient de `categories_bien`. Le libellé du service ne dit pas toujours
-   *  « meublé » — le service générique « Location » ne le disait pas. */
+  /** Vient de `categories_bien`. Quand elle est renseignée, la catégorie
+   *  tranche SEULE : le libellé du service « Location meublée » contient le mot
+   *  « meublé » et annulerait une catégorie « Non meublé ». Laisser `undefined`
+   *  quand aucune catégorie n'est saisie : on retombe alors sur le service,
+   *  pour le service générique « Location » qui ne dit rien de l'ameublement. */
   furnished?: boolean;
 }) {
   const s = (status || "").toLowerCase();
-  
-  let theme = {
+
+  const isFurnished =
+    furnished != null
+      ? furnished
+      : s.includes("meublé") || s.includes("courte") || s.includes("vacance");
+
+  const theme = {
     dotColor: "bg-secondary",
   };
 
@@ -59,27 +68,50 @@ export default function PropertyCard({
 
   if (s.includes("vente")) {
     theme.dotColor = "bg-[#F5B324]";
-    priceBlock = <div className="text-xl font-bold text-secondary">{price}</div>;
-  } else if (furnished || s.includes("meublé") || s.includes("courte") || s.includes("vacance")) {
+    priceBlock = price ? (
+      <div className="text-xl font-bold text-secondary">{price}</div>
+    ) : null;
+  } else if (isFurnished) {
     theme.dotColor = "bg-indigo-500";
-    priceBlock = (
+    // Le montant ne peut pas être dissocié de son unité : `{price ||
+    // pricePerMonth}` suivi d'un « /jour » en dur présentait le loyer mensuel
+    // à la journée dès que le tarif journalier était absent.
+    priceBlock = price ? (
       <div className="flex flex-col">
         <div className="text-xl font-bold text-secondary">
-          {price || pricePerMonth} <span className="text-sm font-normal text-stone-500">/jour</span>
+          {price} <span className="text-sm font-normal text-stone-500">/jour</span>
         </div>
-        {pricePerMonth && price && (
+        {pricePerMonth && (
           <div className="text-[11px] text-stone-400 font-medium">{pricePerMonth} /mois</div>
         )}
       </div>
-    );
+    ) : pricePerMonth ? (
+      <div className="text-xl font-bold text-secondary">
+        {pricePerMonth} <span className="text-sm font-normal text-stone-500">/mois</span>
+      </div>
+    ) : null;
   } else {
     theme.dotColor = "bg-emerald-500";
-    priceBlock = (
+    // Même règle que la branche meublée : `price` porte `biens.prix`, que la
+    // fiche du bien présente « / nuitée ». Le repli `pricePerMonth || price`
+    // le republiait « /mois » dès que le loyer mensuel manquait — la carte
+    // contredisait donc la fiche du même bien.
+    priceBlock = pricePerMonth ? (
       <div className="text-xl font-bold text-secondary">
-        {pricePerMonth || price} <span className="text-sm font-normal text-stone-500">/mois</span>
+        {pricePerMonth} <span className="text-sm font-normal text-stone-500">/mois</span>
       </div>
-    );
+    ) : price ? (
+      <div className="text-xl font-bold text-secondary">
+        {price} <span className="text-sm font-normal text-stone-500">/nuitée</span>
+      </div>
+    ) : null;
   }
+
+  // `biens.localisation` est un champ texte libre et nullable. Le repli `?? "#"`
+  // produisait un onglet inutile sur la page courante ; on n'ouvre le lien que
+  // pour une URL absolue, l'adresse restant lisible en texte sinon.
+  const mapsHref =
+    localisation && /^https?:\/\//i.test(localisation) ? localisation : null;
 
   return (
     <div className="self-stretch w-full max-w-xl mx-auto h-full">
@@ -90,15 +122,17 @@ export default function PropertyCard({
           <div className="relative p-2 pb-0">
             <Link
               href={`/properties/${id}` as any}
-              className="block relative h-60 overflow-hidden rounded-[20px]"
+              className="block relative h-60 overflow-hidden rounded-[20px] bg-stone-100"
             >
-              <Image
-                src={imageUrl}
-                alt={altText}
-                className="w-full h-full object-cover object-bottom transition-transform duration-1000 group-hover/card:scale-110"
-                width={500}
-                height={500}
-              />
+              {imageUrl && (
+                <Image
+                  src={imageUrl}
+                  alt={altText}
+                  className="w-full h-full object-cover object-bottom transition-transform duration-1000 group-hover/card:scale-110"
+                  width={500}
+                  height={500}
+                />
+              )}
               
               {/* GRADIENT OVERLAY */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-500" />
@@ -115,14 +149,21 @@ export default function PropertyCard({
           <div className="flex flex-col flex-1 p-5 pt-4">
             {/* Header */}
             <div className="mb-4">
-              <Link
-                href={(localisation ?? "#") as any}
-                target="_blank"
-                className="inline-flex items-center gap-1.5 text-stone-400 mb-2 hover:text-primary transition-colors"
-              >
-                <MapPinIcon className="w-3.5 h-3.5" />
-                <span className="text-[11px] font-bold uppercase tracking-wider truncate">{address}</span>
-              </Link>
+              {mapsHref ? (
+                <Link
+                  href={mapsHref as any}
+                  target="_blank"
+                  className="inline-flex items-center gap-1.5 text-stone-400 mb-2 hover:text-primary transition-colors"
+                >
+                  <MapPinIcon className="w-3.5 h-3.5" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider truncate">{address}</span>
+                </Link>
+              ) : (
+                <div className="inline-flex items-center gap-1.5 text-stone-400 mb-2">
+                  <MapPinIcon className="w-3.5 h-3.5" />
+                  <span className="text-[11px] font-bold uppercase tracking-wider truncate">{address}</span>
+                </div>
+              )}
               
               <Link
                 href={`/properties/${id}` as any}
@@ -172,9 +213,15 @@ export default function PropertyCard({
 
             {/* FOOTER: PRICE & ACTION */}
             <div className="flex items-end justify-between">
+              {/* Aucun montant : on masque aussi le libellé, qui annonçait
+                  sinon un « Prix demandé » suivi du seul suffixe d'unité. */}
               <div>
-                <div className="text-[10px] text-stone-400 uppercase tracking-widest font-bold mb-1">Prix demandé</div>
-                {priceBlock}
+                {priceBlock && (
+                  <>
+                    <div className="text-[10px] text-stone-400 uppercase tracking-widest font-bold mb-1">Prix demandé</div>
+                    {priceBlock}
+                  </>
+                )}
               </div>
               
               <Link 

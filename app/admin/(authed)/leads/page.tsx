@@ -2,11 +2,12 @@ import { Inbox } from "lucide-react";
 import { listLeadsAdmin, type LeadSource, type LeadStatus } from "@/src/actions/admin/leads";
 import { LeadsTable } from "./leads-table";
 import { LeadsFilters } from "./leads-filters";
+import { FlashBanner } from "./flash-banner";
 
 export const metadata = { title: "Leads · Admin Mirna" };
 
 export default async function AdminLeadsPage(props: {
-  searchParams: Promise<{ status?: string; source?: string }>;
+  searchParams: Promise<{ status?: string; source?: string; flash?: string }>;
 }) {
   const sp = await props.searchParams;
   const status = (sp.status as LeadStatus | "all" | undefined) ?? "all";
@@ -29,6 +30,8 @@ export default async function AdminLeadsPage(props: {
 
   return (
     <div className="space-y-6">
+      {sp.flash && <FlashBanner type={sp.flash} />}
+
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Leads</h1>
         <p className="text-sm text-neutral-500 mt-1">
@@ -58,7 +61,7 @@ function EmptyState() {
         Aucun lead pour ce filtre
       </h2>
       <p className="text-sm text-neutral-600 max-w-sm mx-auto">
-        Les demandes entrantes du site apparaîtront ici dès qu'un visiteur
+        Les demandes entrantes du site apparaîtront ici dès qu&apos;un visiteur
         soumet un formulaire (contact, estimation, demande de visite,
         inscription newsletter).
       </p>

@@ -242,8 +242,8 @@ export function QuartierForm({ row, communes = [] }: { row?: QuartierRow, commun
               />
               <p className="mt-1.5 text-xs text-neutral-500">
                 Utilisé pour préfilter /properties?q=... au clic sur la card.
-                Permet par exemple de chercher "Riviera" sur un quartier nommé
-                "Riviera Bonoumin".
+                Permet par exemple de chercher « Riviera » sur un quartier nommé
+                « Riviera Bonoumin ».
               </p>
             </Field>
           </section>
@@ -302,7 +302,7 @@ export function QuartierForm({ row, communes = [] }: { row?: QuartierRow, commun
                   Mis en avant sur la home
                 </span>
                 <span className="block text-xs text-neutral-500">
-                  Affiché en grande card dans la section "Nos quartiers" de la home.
+                  Affiché en grande card dans la section « Nos quartiers » de la home.
                 </span>
               </span>
             </label>

@@ -53,8 +53,16 @@ export async function updateSession(request: NextRequest) {
   if (isAdminRoute && !isAdminPublicRoute && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
-    // garder l'URL d'origine pour redirection post-login
-    url.searchParams.set("next", pathname);
+    // Le clone hérite de la query string de la page demandée : on la vide,
+    // sinon /admin/login recevrait des paramètres qui ne le concernent pas
+    // (il lit `next` et `error`).
+    url.search = "";
+    // Garder l'URL d'origine, QUERY STRING COMPRISE : les raccourcis du
+    // tableau de bord pointent vers des vues filtrées (/admin/leads?status=new)
+    // et l'admin se retrouvait sinon sur la liste complète après connexion.
+    // `safeNext` (src/actions/admin/auth.ts) reste satisfait : la valeur
+    // commence toujours par « /admin ».
+    url.searchParams.set("next", pathname + request.nextUrl.search);
     return NextResponse.redirect(url);
   }
 

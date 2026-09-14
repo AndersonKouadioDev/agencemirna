@@ -1,28 +1,17 @@
 "use client";
 
 import * as React from "react";
-import type { Key } from "@heroui/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Search,
   SlidersHorizontal,
   X,
-  MapPin,
-  Building2,
-  Briefcase,
   ArrowDownUp,
   Map as MapIcon,
   List,
 } from "lucide-react";
 import { PropertiesMap } from "./properties-map";
 import HeroSearchBar from "../landing/hero-search-bar";
-import {
-  Header,
-  Label as HeroLabel,
-  ListBox,
-  Select,
-  Separator,
-} from "@heroui/react";
+import { ListBox, Select } from "@heroui/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ResetIcon } from "@radix-ui/react-icons";
@@ -30,9 +19,6 @@ import Image from "next/image";
 import PropertySection from "./property-section";
 import Motion from "../motion";
 import { cn } from "@/lib/utils";
-import { ABIDJAN_LOCATIONS } from "@/lib/abidjan-locations";
-
-type RefItem = { id: number; name: string };
 
 type Filters = {
   q: string;
@@ -60,16 +46,6 @@ const EMPTY_FILTERS: Filters = {
   sort: "",
 };
 
-// Groupe les locations par commune pour ListBox.Section
-const LOCATIONS_BY_COMMUNE = ABIDJAN_LOCATIONS.reduce(
-  (acc, loc) => {
-    if (!acc[loc.group]) acc[loc.group] = [];
-    acc[loc.group].push(loc);
-    return acc;
-  },
-  {} as Record<string, typeof ABIDJAN_LOCATIONS>,
-);
-
 const CHAMBRES_OPTIONS = [
   { value: "1", label: "1+ chambre" },
   { value: "2", label: "2+ chambres" },
@@ -86,12 +62,12 @@ const SORT_OPTIONS = [
 ];
 
 /**
- * Listing + filtres /properties, uniformisé avec le hero search.
+ * Listing + filtres /properties.
  *
- * Composants : HeroUI Select compound (Select.Trigger / Select.Popover /
- * ListBox.Item) partout, plus shadcn pour les Inputs. Le dropdown
- * Localisation expose toutes les communes/quartiers d'Abidjan groupés
- * (comme dans le hero), pour une cohérence visuelle stricte.
+ * Localisation, type et service sont délégués à HeroSearchBar : deux
+ * dropdowns concurrents divergeaient, celui d'ici listant les communes
+ * codées en dur alors que la recherche filtre sur celles de la base.
+ * Ne restent ici que les filtres avancés (prix, chambres) et le tri.
  */
 export default function ListPropertiesSection({
   communes = [],
@@ -209,7 +185,9 @@ export default function ListPropertiesSection({
       );
     }
     return list;
-  }, [initialBiens, filters]);
+    // communes/quartiers servent à résoudre le filtre de lieu : les omettre
+    // fige le résultat sur la première valeur reçue.
+  }, [initialBiens, filters, communes, quartiers]);
 
   return (
     <section
@@ -380,7 +358,7 @@ export const PropertySearchBar = ({
   const [showAdvanced, setShowAdvanced] = React.useState(false);
 
   React.useEffect(() => {
-    const sp: Filters = {
+    let sp: Filters = {
       q: searchParams.get("q") ?? "",
       type: searchParams.get("type") ?? "",
       service: searchParams.get("service") ?? "",
@@ -391,6 +369,35 @@ export const PropertySearchBar = ({
       chambres: searchParams.get("chambres") ?? "",
       sort: searchParams.get("sort") ?? "",
     };
+
+    // Les alias historiques ?location= / ?loc= sont résolus côté serveur et
+    // servent d'état initial. Relire les paramètres bruts ici remettait
+    // commune/quartier à vide dès le premier rendu et annulait cette
+    // résolution : le visiteur venu d'un vieux lien recevait le catalogue
+    // entier. On applique donc la même équivalence, à l'identique de
+    // app/(marketing)/properties/page.tsx.
+    const alias = searchParams.get("location") || searchParams.get("loc") || "";
+    if (alias && !sp.commune && !sp.quartier) {
+      const norm = (v: unknown) =>
+        String(v ?? "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .trim()
+          .toLowerCase();
+      const l = norm(alias);
+      const q = (quartiers || []).find(
+        (x: any) => norm(x.name) === l || norm(x.search_query) === l,
+      );
+      if (q) {
+        sp = { ...sp, quartier: String(q.id) };
+      } else {
+        const c = (communes || []).find(
+          (x: any) => norm(x.nom) === l || norm(x.slug) === l,
+        );
+        if (c) sp = { ...sp, commune: String(c.slug) };
+      }
+    }
+
     const hasChange = (Object.keys(sp) as (keyof Filters)[]).some(
       (k) => sp[k] !== filters[k],
     );

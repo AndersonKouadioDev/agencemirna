@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/src/supabase/server";
 import { getAdminUser } from "@/src/supabase/admin-auth";
 
@@ -13,6 +12,10 @@ import { getAdminUser } from "@/src/supabase/admin-auth";
  *
  * Pattern factorisé : un seul fichier pour 4 tables qui suivent la même
  * forme (CRUD simple, RLS lecture publique active + admin all, ordre).
+ *
+ * Lectures comprises, chaque export vérifie `getAdminUser()` : un identifiant
+ * de Server Action est global, donc POSTable depuis n'importe quelle route, y
+ * compris hors de /admin que le middleware est seul à filtrer.
  */
 
 export type ActionResult<T = void> =
@@ -49,6 +52,8 @@ export type TestimonialFormData = {
 };
 
 export async function listTestimonialsAdmin(): Promise<TestimonialRow[]> {
+  const admin = await getAdminUser();
+  if (!admin) return [];
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("testimonials")
@@ -59,6 +64,8 @@ export async function listTestimonialsAdmin(): Promise<TestimonialRow[]> {
 }
 
 export async function getTestimonialAdmin(id: string): Promise<TestimonialRow | null> {
+  const admin = await getAdminUser();
+  if (!admin) return null;
   const supabase = await createClient();
   const { data } = await supabase
     .from("testimonials")
@@ -137,12 +144,6 @@ export async function toggleTestimonialActive(
   return { ok: true, data: undefined };
 }
 
-export async function upsertTestimonialAndRedirect(input: TestimonialFormData) {
-  const result = await upsertTestimonial(input);
-  if (result.ok) redirect("/admin/testimonials?flash=saved");
-  return result;
-}
-
 // ============================================================================
 // FAQS
 // ============================================================================
@@ -165,6 +166,8 @@ export type FaqFormData = {
 };
 
 export async function listFaqsAdmin(): Promise<FaqRow[]> {
+  const admin = await getAdminUser();
+  if (!admin) return [];
   const supabase = await createClient();
   const { data } = await supabase
     .from("faqs")
@@ -174,6 +177,8 @@ export async function listFaqsAdmin(): Promise<FaqRow[]> {
 }
 
 export async function getFaqAdmin(id: string): Promise<FaqRow | null> {
+  const admin = await getAdminUser();
+  if (!admin) return null;
   const supabase = await createClient();
   const { data } = await supabase
     .from("faqs")
@@ -249,12 +254,6 @@ export async function toggleFaqActive(
   return { ok: true, data: undefined };
 }
 
-export async function upsertFaqAndRedirect(input: FaqFormData) {
-  const result = await upsertFaq(input);
-  if (result.ok) redirect("/admin/faqs?flash=saved");
-  return result;
-}
-
 // ============================================================================
 // ARTICLES (blog)
 // ============================================================================
@@ -289,6 +288,8 @@ export type ArticleFormData = {
 };
 
 export async function listArticlesAdmin(): Promise<ArticleRow[]> {
+  const admin = await getAdminUser();
+  if (!admin) return [];
   const supabase = await createClient();
   const { data } = await supabase
     .from("articles")
@@ -298,6 +299,8 @@ export async function listArticlesAdmin(): Promise<ArticleRow[]> {
 }
 
 export async function getArticleAdmin(id: string): Promise<ArticleRow | null> {
+  const admin = await getAdminUser();
+  if (!admin) return null;
   const supabase = await createClient();
   const { data } = await supabase
     .from("articles")

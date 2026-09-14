@@ -28,6 +28,17 @@ export default function PropertyLocationMap({
   const [map, setMap] = React.useState<google.maps.Map | null>(null);
   const [infoOpen, setInfoOpen] = React.useState(true);
 
+  // Les Hooks doivent précéder tout retour conditionnel : déclarés après le
+  // garde « coordonnées absentes », leur nombre variait d'un rendu à l'autre
+  // et React levait « Rendered fewer hooks than expected ».
+  const onLoad = React.useCallback(function callback(map: google.maps.Map) {
+    setMap(map);
+  }, []);
+
+  const onUnmount = React.useCallback(function callback(_map: google.maps.Map) {
+    setMap(null);
+  }, []);
+
   if (!latitude || !longitude) {
     return (
       <div className="rounded-[24px] border-2 border-dashed border-stone-300 bg-stone-50 p-8 text-center h-[400px] flex flex-col justify-center items-center">
@@ -43,14 +54,6 @@ export default function PropertyLocationMap({
     lat: latitude,
     lng: longitude,
   };
-
-  const onLoad = React.useCallback(function callback(map: google.maps.Map) {
-    setMap(map);
-  }, []);
-
-  const onUnmount = React.useCallback(function callback(map: google.maps.Map) {
-    setMap(null);
-  }, []);
 
   if (!isLoaded) {
     return <div className="h-[400px] w-full bg-stone-100 animate-pulse rounded-[24px]" />;

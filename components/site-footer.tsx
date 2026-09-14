@@ -10,8 +10,12 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { Button } from "./ui/button";
+import NewsletterForm from "./newsletter-form";
 import { getSiteContact } from "@/src/lib/site-contact";
+import {
+  getCatalogueFacettes,
+  type CatalogueFacettes,
+} from "@/src/actions/public";
 
 const STATS = [
   { icon: Home, value: "100+", label: "Biens" },
@@ -29,14 +33,32 @@ type FooterCommune = {
 
 export async function SiteFooter({
   communes = [],
+  facettes,
 }: {
   communes?: FooterCommune[];
+  /** Le layout marketing charge déjà ce comptage pour le méga-menu : sans
+   *  cette prop, le pied de page relance la même requête sur chaque page
+   *  vitrine. On retombe sur un chargement local pour les appelants qui ne
+   *  la transmettent pas encore. */
+  facettes?: CatalogueFacettes;
 } = {}) {
-  const settings = await getSiteContact();
+  const [settings, comptage] = await Promise.all([
+    getSiteContact(),
+    facettes ?? getCatalogueFacettes(),
+  ]);
   // « Top Lieux » émettait `?loc=`, un paramètre que /properties ne lit plus :
   // ces liens renvoyaient la liste complète, sans filtre. On repart des
   // communes en base et du paramètre du contrat d'URL, `?commune=<slug>`.
-  const topLieux = communes.slice(0, 4);
+  //
+  // La liste reçue contient toutes les communes actives, dont la majorité ne
+  // porte aucun bien : le lien menait alors à un catalogue vide que le
+  // visiteur ne pouvait pas expliquer, le sélecteur de localisation masquant
+  // justement ces communes. On applique donc la même garde par facettes que
+  // le méga-menu. Comptage indisponible : on n'écarte rien.
+  const communesAvecBiens = comptage.disponible
+    ? communes.filter((c) => (comptage.communes[c.id] ?? 0) > 0)
+    : communes;
+  const topLieux = communesAvecBiens.slice(0, 4);
   return (
     <section className="bg-white pt-20 pb-10 border-t border-stone-100">
       <div className="mx-auto max-w-[1400px] px-6 lg:px-8">
@@ -128,16 +150,7 @@ export async function SiteFooter({
             <p className="text-sm text-stone-500 mb-4">
               Abonnez-vous pour recevoir des offres exclusives et de l'inspiration.
             </p>
-            <div className="flex items-center bg-white rounded-full p-1.5 border border-stone-200 shadow-sm focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-              <input 
-                type="email" 
-                placeholder="Votre email" 
-                className="bg-transparent border-none outline-none text-sm w-full px-4 text-stone-600 placeholder:text-stone-400"
-              />
-              <Button size="sm" className="bg-[#1B3C35] hover:bg-[#152e29] text-white rounded-full px-6">
-                S'abonner
-              </Button>
-            </div>
+            <NewsletterForm />
           </div>
         </div>
 

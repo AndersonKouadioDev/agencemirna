@@ -1,3 +1,11 @@
+// Ce module lit `site_settings` via un client Supabase qui appelle `cookies()`
+// de next/headers. Deux Client Components n'en importent que le TYPE
+// `SiteContact` — erasé à la compilation, donc sans effet. La directive
+// transforme le jour où l'un d'eux importerait une VALEUR (DEFAULT_SITE_CONTACT
+// est exporté en clair) un plantage next/headers illisible en erreur de build
+// explicite.
+import "server-only";
+
 import { cache } from "react";
 import { createClient } from "@/src/supabase/server";
 

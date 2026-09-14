@@ -99,6 +99,12 @@ export async function getBien(bienId: string) {
       `,
     )
     .eq("id", bienId)
+    // Le filtrage ne peut pas être laissé à la RLS : la policy admin est
+    // `FOR ALL` et se combine en OU avec la policy publique, si bien qu'un
+    // administrateur connecté voyait sur la vitrine la fiche du bien qu'il
+    // venait de dépublier. getBien n'a que des appelants publics ; une
+    // prévisualisation admin devrait passer par un paramètre explicite.
+    .eq("is_active", true)
     .maybeSingle();
 
   if (error) {
@@ -201,6 +207,16 @@ export async function getAllBiens() {
 export async function migrateBienImagesFromFolder(
   bienId: string,
 ): Promise<{ ok: boolean; imported: number }> {
+  // Le fichier est un module "use server" : cette fonction exportée est donc
+  // une route appelable par n'importe qui, alors qu'elle supprime et réinsère
+  // des lignes de bien_images. Ses deux appelants sont internes et réservés à
+  // l'admin (bulkImportAllBienImages fait déjà ce contrôle) : on rétablit ici
+  // la même garde plutôt que de compter sur la seule RLS.
+  const admin = await getAdminUser();
+  if (!admin) {
+    return { ok: false, imported: 0 };
+  }
+
   const supabase = await createClient();
 
   // Récupérer les bien_images existantes (avec leurs storage_path)

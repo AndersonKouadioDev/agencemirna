@@ -33,13 +33,37 @@ export async function generateMetadata({
   const ville = bien.ville_commune ?? "Abidjan";
   const type = bien.types_bien?.name ?? "Bien";
   const service = bien.services_bien?.name ?? "";
-  const priceMonth = bien.prix_month
-    ? `${bien.prix_month.toLocaleString("fr-FR")} FCFA/mois`
+  // L'unité était choisie sur la seule présence de `prix_month` : un bien en
+  // « Vente » n'ayant que `prix` voyait son prix de vente suffixé « FCFA/nuit »
+  // dans la <meta description> et dans la carte Open Graph. On la choisit donc
+  // sur le service et la catégorie, comme le fait la fiche elle-même.
+  const serviceName = service.toLowerCase();
+  const categorieName = (bien.categories_bien?.name ?? "").toLowerCase();
+  const isVente = serviceName.includes("vente");
+  const isMeuble = categorieName
+    ? categorieName.includes("meubl") && !categorieName.includes("non meubl")
+    : serviceName.includes("meublé") ||
+      serviceName.includes("courte") ||
+      serviceName.includes("vacance");
+
+  const montantVente = bien.prix
+    ? `${bien.prix.toLocaleString("fr-FR")} FCFA`
     : null;
-  const priceDay = bien.prix
+  const montantNuit = bien.prix
     ? `${bien.prix.toLocaleString("fr-FR")} FCFA/nuit`
     : null;
-  const price = priceMonth ?? priceDay ?? null;
+  const montantMois = bien.prix_month
+    ? `${bien.prix_month.toLocaleString("fr-FR")} FCFA/mois`
+    : null;
+
+  let price: string | null;
+  if (isVente) {
+    price = montantVente;
+  } else if (isMeuble && montantNuit) {
+    price = montantNuit;
+  } else {
+    price = montantMois ?? montantNuit;
+  }
 
   const titleParts = [type, bien.name, "à", ville].filter(Boolean);
   const title = titleParts.join(" ");

@@ -3,12 +3,19 @@ import { HardHat, BedDouble, Home, Building2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
+/**
+ * Construction et Gestion locative ne portent aujourd'hui aucun bien au
+ * catalogue : un lien `?service=` y menait à une liste vide, alors même que
+ * le filtre correspondant est masqué du sélecteur du hero (le visiteur ne
+ * pouvait donc pas comprendre la page vide). Ces deux tuiles pointent vers
+ * leur page de service dédiée, qui, elle, décrit bien la prestation.
+ */
 const features = [
   {
     icon: HardHat,
     title: "Construction",
     desc: "Projets bâtis de A à Z.",
-    href: "/properties?service=Construction",
+    href: "/services/construction",
   },
   {
     icon: Home,
@@ -26,7 +33,7 @@ const features = [
     icon: Building2,
     title: "Gestion locative",
     desc: "Rentabilité en toute sérénité.",
-    href: "/properties?service=Gestion%20locative",
+    href: "/services/gestion-immobiliere",
   },
 ];
 

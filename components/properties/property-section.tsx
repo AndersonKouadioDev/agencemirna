@@ -10,8 +10,12 @@ export default function PropertySection({ biens }: { biens: any }) {
         const typeName = bien.types_bien?.name ?? "";
         const serviceName = bien.services_bien?.name ?? "";
         const categorie = (bien.categories_bien?.name ?? "").toLowerCase();
-        const furnished =
-          categorie.includes("meubl") && !categorie.includes("non meubl");
+        // `undefined` et non `false` quand aucune catégorie n'est saisie :
+        // PropertyCard doit pouvoir retomber sur le libellé du service dans ce
+        // seul cas, sans qu'une catégorie absente ne soit lue comme « non meublé ».
+        const furnished = categorie
+          ? categorie.includes("meubl") && !categorie.includes("non meubl")
+          : undefined;
         const pieces =
           (bien.types_bien?.id ?? 0) > 1
             ? `${(bien.chambre ?? 0) + (bien.salon ?? 0)} pièces`
@@ -34,7 +38,6 @@ export default function PropertySection({ biens }: { biens: any }) {
             capacity={bien.capacity}
             status={serviceName}
             furnished={furnished}
-            parkingSpaces={1}
             price={bien.prix != null ? formatNumber(bien.prix) + " FCFA" : ""}
             pricePerMonth={
               bien.prix_month != null

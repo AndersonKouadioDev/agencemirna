@@ -4,7 +4,7 @@ import { Plus, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { listCommunesAdmin } from "@/src/actions/admin/communes";
 import { CommunesGrid } from "./communes-grid";
-import { FlashBanner } from "../annonces/flash-banner";
+import { FlashBanner } from "./flash-banner";
 
 export const metadata = { title: "Communes · Admin Mirna" };
 

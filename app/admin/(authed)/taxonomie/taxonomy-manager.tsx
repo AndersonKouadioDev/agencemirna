@@ -24,6 +24,50 @@ type Brouillon = {
 
 const VIDE: Brouillon = { name: "", image: null, ordre: null };
 
+/**
+ * Hôtes acceptés par next/image, avec le préfixe de chemin que chacun impose
+ * dans les remotePatterns de next.config.mjs. Contrôler l'hôte seul ne suffit
+ * pas : next/image lève aussi quand le chemin sort du motif déclaré, et
+ * l'aperçu ferait alors tomber le rendu — exactement ce que ce garde-fou
+ * cherche à éviter.
+ */
+const HOTES_AUTORISES = [
+  {
+    // L'URL Supabase peut porter un « / » final : on ne garde que l'hôte.
+    hote: (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "")
+      .replace(/^https?:\/\//, "")
+      .replace(/\/.*$/, ""),
+    prefixe: "/storage/",
+  },
+  { hote: "i.ytimg.com", prefixe: "/vi/" },
+  { hote: "images.unsplash.com", prefixe: "/" },
+].filter((h) => h.hote);
+
+const MESSAGE_URL_INVALIDE = `Adresse d'image invalide : indiquez un chemin interne (commençant par /) ou une URL https servie par ${HOTES_AUTORISES.map((h) => h.hote + h.prefixe).join(", ")}.`;
+
+/**
+ * Renvoie l'URL à stocker, `null` pour un champ vidé, ou `undefined` si la
+ * saisie n'est pas exploitable. L'aperçu passe par next/image, qui lève
+ * pendant le rendu (en développement) dès que `new URL(src)` échoue : tant que
+ * la valeur n'est pas complète, elle ne doit pas atteindre le brouillon.
+ */
+function normaliserUrlImage(saisie: string): string | null | undefined {
+  const valeur = saisie.trim();
+  if (!valeur) return null;
+  if (valeur.startsWith("/")) return valeur;
+  let url: URL;
+  try {
+    url = new URL(valeur);
+  } catch {
+    return undefined;
+  }
+  if (url.protocol !== "https:") return undefined;
+  const autorise = HOTES_AUTORISES.find((h) => h.hote === url.hostname);
+  return autorise && url.pathname.startsWith(autorise.prefixe)
+    ? valeur
+    : undefined;
+}
+
 export function TaxonomyManager({
   table,
   title,
@@ -37,6 +81,10 @@ export function TaxonomyManager({
 }) {
   const router = useRouter();
   const [brouillon, setBrouillon] = React.useState<Brouillon | null>(null);
+  // La saisie manuelle d'URL vit à part du brouillon : elle n'y est reportée
+  // qu'une fois complète, sinon chaque frappe alimenterait l'aperçu next/image.
+  const [urlManuelle, setUrlManuelle] = React.useState("");
+  const [erreurUrl, setErreurUrl] = React.useState<string | null>(null);
   const [busy, setBusy] = React.useState<number | "nouveau" | null>(null);
   const [error, setError] = React.useState<string | null>(null);
 
@@ -44,11 +92,15 @@ export function TaxonomyManager({
 
   function ouvrirCreation() {
     setError(null);
+    setErreurUrl(null);
+    setUrlManuelle("");
     setBrouillon({ ...VIDE });
   }
 
   function ouvrirEdition(row: TaxonomyRow) {
     setError(null);
+    setErreurUrl(null);
+    setUrlManuelle(row.image ?? "");
     setBrouillon({
       id: row.id,
       name: row.name,
@@ -57,16 +109,38 @@ export function TaxonomyManager({
     });
   }
 
+  function fermerFormulaire() {
+    setBrouillon(null);
+    setUrlManuelle("");
+    setErreurUrl(null);
+  }
+
+  /** Report de la saisie manuelle vers le brouillon (au blur, pas à la frappe). */
+  function validerUrlManuelle(): string | null | undefined {
+    const valeur = normaliserUrlImage(urlManuelle);
+    if (valeur === undefined) {
+      setErreurUrl(MESSAGE_URL_INVALIDE);
+      return undefined;
+    }
+    setErreurUrl(null);
+    setBrouillon((b) => (b ? { ...b, image: valeur } : b));
+    return valeur;
+  }
+
   async function enregistrer(e: React.FormEvent) {
     e.preventDefault();
     if (!brouillon) return;
+    // La touche Entrée soumet sans passer par le blur du champ URL : on
+    // revalide ici pour ne jamais enregistrer une saisie restée en attente.
+    const image = validerUrlManuelle();
+    if (image === undefined) return;
     setError(null);
     setBusy(brouillon.id ?? "nouveau");
 
     const res = await upsertTaxonomyEntry(table, {
       id: brouillon.id,
       name: brouillon.name,
-      image: brouillon.image,
+      image,
       ordre: brouillon.ordre,
     });
 
@@ -75,7 +149,7 @@ export function TaxonomyManager({
       setError(res.error);
       return;
     }
-    setBrouillon(null);
+    fermerFormulaire();
     router.refresh();
   }
 
@@ -158,30 +232,39 @@ export function TaxonomyManager({
             <Label>Image</Label>
             <ImageUploader
               value={brouillon.image ? [brouillon.image] : []}
-              onChange={(urls) =>
-                setBrouillon({ ...brouillon, image: urls[0] ?? null })
-              }
+              onChange={(urls) => {
+                const url = urls[0] ?? null;
+                setBrouillon({ ...brouillon, image: url });
+                setUrlManuelle(url ?? "");
+                setErreurUrl(null);
+              }}
               pathPrefix={`taxonomie/${table}`}
               maxFiles={1}
             />
             <Input
-              value={brouillon.image ?? ""}
-              onChange={(e) =>
-                setBrouillon({ ...brouillon, image: e.target.value || null })
-              }
+              value={urlManuelle}
+              onChange={(e) => setUrlManuelle(e.target.value)}
+              onBlur={() => validerUrlManuelle()}
               placeholder="Ou une URL d'image existante"
               className="text-sm"
+              aria-invalid={erreurUrl ? true : undefined}
             />
-            <p className="text-xs text-neutral-500">
-              Affichée dans le menu du site au survol de cette entrée.
-            </p>
+            {erreurUrl ? (
+              <p className="text-xs text-red-600">{erreurUrl}</p>
+            ) : (
+              <p className="text-xs text-neutral-500">
+                Affichée dans le menu du site au survol de cette entrée.
+                L&apos;aperçu n&apos;apparaît qu&apos;une fois l&apos;adresse
+                complète.
+              </p>
+            )}
           </div>
 
           <div className="flex justify-end gap-2">
             <Button
               type="button"
               variant="ghost"
-              onClick={() => setBrouillon(null)}
+              onClick={fermerFormulaire}
             >
               <X className="h-4 w-4 mr-1.5" />
               Annuler
@@ -202,12 +285,17 @@ export function TaxonomyManager({
         <p className="text-sm text-neutral-500">Aucune entrée pour l&apos;instant.</p>
       ) : (
         <ul className="divide-y divide-stone-100">
-          {items.map((row) => (
+          {items.map((row) => {
+            // Une adresse déjà stockée mais non servable ferait tomber toute la
+            // liste : next/image lève pendant le rendu si l'hôte n'est pas
+            // déclaré. On la traite comme une absence d'image, en le signalant.
+            const apercu = normaliserUrlImage(row.image ?? "");
+            return (
             <li key={row.id} className="flex items-center gap-3 py-2.5">
               <div className="relative h-10 w-14 shrink-0 overflow-hidden rounded bg-stone-100">
-                {row.image ? (
+                {apercu ? (
                   <Image
-                    src={row.image}
+                    src={apercu}
                     alt=""
                     fill
                     sizes="56px"
@@ -224,11 +312,16 @@ export function TaxonomyManager({
                 <p className="text-sm font-medium text-neutral-900 truncate">
                   {row.name}
                 </p>
-                {!row.image && (
+                {!row.image ? (
                   <p className="text-xs text-amber-700">
                     Sans image : repli générique dans le menu.
                   </p>
-                )}
+                ) : !apercu ? (
+                  <p className="text-xs text-amber-700">
+                    Adresse d&apos;image inexploitable : modifiez l&apos;entrée
+                    pour la corriger.
+                  </p>
+                ) : null}
               </div>
 
               <span className="text-xs font-mono text-neutral-400 shrink-0">
@@ -263,7 +356,8 @@ export function TaxonomyManager({
                 </Button>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
     </section>

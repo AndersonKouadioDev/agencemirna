@@ -27,9 +27,18 @@ export type TaxonomyRow = {
 };
 export type TaxonomyTable = "types_bien" | "services_bien" | "categories_bien";
 
-const REVALIDATE = ["/", "/properties", "/admin/taxonomie", "/admin/parametres"];
+const REVALIDATE = ["/properties", "/admin/taxonomie"];
 
-const revalider = () => REVALIDATE.forEach((p) => revalidatePath(p));
+/**
+ * Les types et les services sont lus par app/(marketing)/layout.tsx pour
+ * construire le méga-menu : une purge de "/" en portée « page » par défaut
+ * laisserait ce layout sur l'ancienne liste. Même portée « layout » que
+ * communes.ts, qui touche au même menu.
+ */
+const revalider = () => {
+  REVALIDATE.forEach((p) => revalidatePath(p));
+  revalidatePath("/", "layout");
+};
 
 /**
  * Les colonnes image / icon / ordre viennent de la migration 0018. Tant
@@ -87,25 +96,53 @@ export async function upsertTaxonomyEntry(
   const supabase = await createClient();
 
   // Ces tables n'ont pas toutes une contrainte UNIQUE : on vérifie nous-mêmes.
-  const { data: existant } = await supabase
+  //
+  // Deux pièges dans ce garde-fou. Le second argument d'`ilike` est un motif :
+  // sans échappement, « Local_commercial » serait rejeté comme doublon de
+  // « Local commercial ». Et `maybeSingle()` échoue dès que deux lignes
+  // correspondent, en renvoyant data:null — le garde-fou se désarmait donc
+  // exactement dans le cas où il sert. On lit une page de candidats et on
+  // tranche en JavaScript sur une égalité stricte, insensible à la casse.
+  const motif = name.replace(/[\\%_]/g, "\\$&");
+  const { data: homonymes, error: erreurHomonymes } = await supabase
     .from(table)
-    .select("id")
-    .ilike("name", name)
-    .maybeSingle();
-  if (existant && existant.id !== input.id) {
+    .select("id, name")
+    .ilike("name", motif)
+    .limit(25);
+  if (erreurHomonymes) return { ok: false, error: erreurHomonymes.message };
+  const doublon = (homonymes ?? []).find(
+    (r) =>
+      r.id !== input.id &&
+      String(r.name).trim().toLowerCase() === name.toLowerCase(),
+  );
+  if (doublon) {
     return { ok: false, error: "Cette valeur existe déjà." };
   }
 
-  const payload: Record<string, unknown> = {
-    name,
-    image: input.image?.trim() || null,
-    icon: input.icon?.trim() || null,
-  };
+  const payload: Record<string, unknown> = { name };
+  // `image`, `icon` et `ordre` sont optionnels dans TaxonomyFormData : les
+  // écrire inconditionnellement remettait la colonne à null à chaque
+  // enregistrement d'un appelant qui ne les fournit pas. On ne touche une
+  // colonne que lorsque sa valeur est explicitement transmise — `null` reste
+  // une valeur, c'est ainsi que le formulaire retire une image.
+  if (input.image !== undefined) payload.image = input.image?.trim() || null;
+  if (input.icon !== undefined) payload.icon = input.icon?.trim() || null;
   if (input.ordre != null) payload.ordre = input.ordre;
 
   if (input.id) {
-    const { error } = await supabase.from(table).update(payload).eq("id", input.id);
+    // Sans `.select()`, PostgREST répond 204 sans corps : une mise à jour qui
+    // ne touche aucune ligne (id disparu, RLS) reviendrait avec error:null et
+    // l'admin verrait un succès pour une modification jamais écrite.
+    const { data: modifie, error } = await supabase
+      .from(table)
+      .update(payload)
+      .eq("id", input.id)
+      .select("id")
+      .maybeSingle();
     if (error) return { ok: false, error: error.message };
+    if (!modifie) {
+      return { ok: false, error: "Entrée introuvable ou droits insuffisants." };
+    }
     revalider();
     return { ok: true, data: { id: input.id } };
   }
@@ -139,7 +176,14 @@ export async function deleteTaxonomyEntry(
   const supabase = await createClient();
   // Note : si des biens référencent cet id, la FK lèvera l'erreur Postgres
   // (on laisse remonter à l'utilisateur, pas de cascade automatique).
-  const { error } = await supabase.from(table).delete().eq("id", id);
+  // `.select()` pour la même raison que l'update : une suppression sans effet
+  // doit se distinguer d'une suppression réussie.
+  const { data: supprime, error } = await supabase
+    .from(table)
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
   if (error) {
     // La clé étrangère protège les biens qui référencent l'entrée : on
     // traduit l'erreur Postgres brute en message actionnable.
@@ -150,6 +194,9 @@ export async function deleteTaxonomyEntry(
           ? "Impossible de supprimer : des biens utilisent encore cette valeur. Reclassez-les d'abord."
           : error.message,
     };
+  }
+  if (!supprime) {
+    return { ok: false, error: "Entrée introuvable ou droits insuffisants." };
   }
   revalider();
   return { ok: true, data: undefined };

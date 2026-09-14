@@ -1,8 +1,5 @@
 import { CheckIcon } from "lucide-react";
-import NumberTicker from "../magicui/number-ticker";
 import Image from "next/image";
-import Link from "next/link";
-import { buttonVariants } from "../ui/button";
 import Motion from "../motion";
 
 export default function AboutSection() {

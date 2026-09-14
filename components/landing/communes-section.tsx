@@ -2,38 +2,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
-import type { PublicCommune } from "@/src/actions/public";
-
-/**
- * Repli tant qu'aucune commune n'est mise en avant depuis l'admin.
- * Les liens pointent vers le filtre commune de /properties.
- */
-const FALLBACK = [
-  {
-    id: "cocody",
-    nom: "Cocody",
-    tagline: "Le prestige et la verdure",
-    image:
-      "https://images.unsplash.com/photo-1600607686527-6fb886090705?auto=format&fit=crop&q=80&w=800",
-    slug: "cocody",
-  },
-  {
-    id: "marcory",
-    nom: "Marcory",
-    tagline: "L'effervescence urbaine",
-    image:
-      "https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&q=80&w=800",
-    slug: "marcory",
-  },
-  {
-    id: "plateau",
-    nom: "Plateau",
-    tagline: "Le cœur des affaires",
-    image:
-      "https://images.unsplash.com/photo-1548574505-5e239809ee19?auto=format&fit=crop&q=80&w=800",
-    slug: "plateau",
-  },
-];
+import type { PublicCommune, CatalogueFacettes } from "@/src/actions/public";
 
 type Card = {
   id: string;
@@ -52,24 +21,37 @@ type Card = {
  */
 export default function CommunesSection({
   communes = [],
+  facettes,
 }: {
   communes?: PublicCommune[];
+  facettes?: CatalogueFacettes;
 }) {
-  const featured: Card[] = communes
-    .filter((c) => c.is_featured)
-    .slice(0, 3)
-    .map((c) => ({
-      id: c.id,
-      nom: c.nom,
-      tagline: c.tagline,
-      image: c.image,
-      slug: c.slug,
-    }));
+  // La liste reçue contient toutes les communes actives, y compris celles qui
+  // ne portent aucun bien : leur carte menait à un catalogue vide. On applique
+  // la même garde par facettes que le méga-menu. Comptage indisponible : on
+  // n'écarte rien, mieux vaut un lien vide qu'une section vide.
+  const avecBiens = facettes?.disponible
+    ? communes.filter((c) => (facettes.communes[c.id] ?? 0) > 0)
+    : communes;
 
-  // Repli si AUCUNE commune n'est cochée « à la une » — et pas seulement si la
-  // liste source est vide, sinon la section s'affichait avec son titre et une
-  // grille vide.
-  const cards: Card[] = featured.length > 0 ? featured : FALLBACK;
+  const versCard = (c: PublicCommune): Card => ({
+    id: c.id,
+    nom: c.nom,
+    tagline: c.tagline,
+    image: c.image,
+    slug: c.slug,
+  });
+
+  const featured = avecBiens.filter((c) => c.is_featured).map(versCard);
+
+  // Aucune commune cochée « à la une » parmi celles qui portent un bien : on
+  // complète avec des communes réelles plutôt qu'avec des cartes inventées,
+  // et on masque la section si la base n'a vraiment rien à montrer.
+  const cards: Card[] = (
+    featured.length > 0 ? featured : avecBiens.map(versCard)
+  ).slice(0, 3);
+
+  if (cards.length === 0) return null;
 
   return (
     <section className="py-16 md:py-20 bg-black">

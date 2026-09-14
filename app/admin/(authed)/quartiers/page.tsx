@@ -52,7 +52,7 @@ function EmptyState() {
       </h2>
       <p className="text-sm text-neutral-600 max-w-sm mx-auto mb-6">
         Ajoutez les zones où vous opérez pour les afficher en cards
-        cliquables sur la page d'accueil.
+        cliquables sur la page d&apos;accueil.
       </p>
       <Button asChild>
         <Link href="/admin/quartiers/nouveau">

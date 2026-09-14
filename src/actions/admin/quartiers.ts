@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/src/supabase/server";
 import { getAdminUser } from "@/src/supabase/admin-auth";
 
@@ -49,6 +48,8 @@ export type QuartierFormData = {
 const REVALIDATE = ["/", "/properties"];
 
 export async function listQuartiersAdmin(): Promise<QuartierRow[]> {
+  const admin = await getAdminUser();
+  if (!admin) return [];
   const supabase = await createClient();
   const { data } = await supabase
     .from("quartiers")
@@ -58,6 +59,8 @@ export async function listQuartiersAdmin(): Promise<QuartierRow[]> {
 }
 
 export async function getQuartierAdmin(id: string): Promise<QuartierRow | null> {
+  const admin = await getAdminUser();
+  if (!admin) return null;
   const supabase = await createClient();
   const { data } = await supabase
     .from("quartiers")
@@ -87,13 +90,17 @@ export async function upsertQuartier(
     description: input.description?.trim() || null,
     image: input.image.trim(),
     search_query: input.search_query?.trim() || null,
-    ordre: input.ordre ?? 0,
     is_active: input.is_active ?? true,
     is_featured: input.is_featured ?? false,
   };
 
   if (input.id) {
-    const { error } = await supabase.from("quartiers").update(data).eq("id", input.id);
+    // `ordre` n'est écrit que s'il est explicitement fourni, comme dans
+    // communes.ts : la valeur par défaut `?? 0` remettait le quartier en tête
+    // de liste dès qu'un appelant omettait le champ.
+    const payload =
+      input.ordre !== undefined ? { ...data, ordre: input.ordre } : data;
+    const { error } = await supabase.from("quartiers").update(payload).eq("id", input.id);
     if (error) return { ok: false, error: error.message };
     REVALIDATE.forEach((p) => revalidatePath(p));
     revalidatePath("/admin/quartiers");
@@ -107,7 +114,7 @@ export async function upsertQuartier(
   const nextOrdre = ((existing?.[0]?.ordre as number | undefined) ?? 0) + 1;
   const { data: created, error } = await supabase
     .from("quartiers")
-    .insert({ ...data, ordre: nextOrdre })
+    .insert({ ...data, ordre: input.ordre ?? nextOrdre })
     .select("id")
     .single();
   if (error || !created) return { ok: false, error: error?.message ?? "Erreur." };

@@ -3,13 +3,10 @@ import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   Calendar,
-  Calculator,
   ExternalLink,
   Home,
   Mail,
-  Megaphone,
   Phone,
-  Trash2,
 } from "lucide-react";
 import { getLeadAdmin } from "@/src/actions/admin/leads";
 import { LeadActions } from "./lead-actions";

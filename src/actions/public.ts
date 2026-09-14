@@ -2,6 +2,16 @@
 
 import { createClient } from "../supabase/server";
 
+/**
+ * POURQUOI un `.eq("is_active", true)` explicite sur chaque lecture publique.
+ *
+ * Le filtrage ne peut pas être laissé à la RLS : la policy admin est `FOR ALL`
+ * et se combine en OU avec la policy publique, si bien qu'un administrateur
+ * connecté voyait sur la vitrine le contenu qu'il venait de dépublier — et
+ * pouvait en conclure que le bouton de dépublication était cassé. Redondant
+ * pour le visiteur anonyme, décisif pour la session admin.
+ */
+
 // ============================================================================
 // Communes
 // ============================================================================
@@ -72,7 +82,7 @@ export async function listCommunesPublic(opts?: {
  * Nombre de biens actifs par entrée de taxonomie.
  *
  * Sert à n'offrir dans la navigation que des filtres qui donnent un résultat :
- * la taxonomie compte 7 services et 10 types, mais la plupart ne sont portés
+ * la taxonomie compte 4 services et 10 types, mais la plupart ne sont portés
  * par aucun bien — la moitié des liens du méga-menu menaient à « 0 bien ».
  */
 export type CatalogueFacettes = {
@@ -154,7 +164,8 @@ export async function getActiveQuartiers(opts?: {
     .select(
       "id, name, commune, commune_id, badge, tagline, description, image, search_query, ordre, is_featured",
     )
-    // RLS filtre déjà is_active=true
+    // Filtre explicite, jamais délégué à la RLS : voir la note en tête de fichier.
+    .eq("is_active", true)
     .order("ordre", { ascending: true });
 
   if (opts?.featured) q = q.eq("is_featured", true);
@@ -242,8 +253,8 @@ export async function getBienReferenceData(): Promise<BienReferenceData> {
 
 /**
  * Server Actions de lecture publique pour le site marketing.
- * Toutes ces actions vont à travers les RLS policies qui filtrent
- * automatiquement les rows inactives / hors plage de dates.
+ * Le statut et la fenêtre de dates sont filtrés ici, en clair : la RLS seule
+ * ne suffit pas pour une session admin (note en tête de fichier).
  */
 
 // ============================================================================
@@ -352,7 +363,8 @@ export async function getActiveAgents(): Promise<PublicAgent[]> {
     .select(
       "id, full_name, role, photo, bio, phone, email, whatsapp, specialites, ordre",
     )
-    // RLS filtre déjà is_active=true
+    // Filtre explicite, jamais délégué à la RLS : voir la note en tête de fichier.
+    .eq("is_active", true)
     .order("ordre", { ascending: true });
 
   if (error || !data) {
@@ -388,6 +400,8 @@ export async function getActiveTestimonials(opts?: {
   let q = supabase
     .from("testimonials")
     .select("id, quote, author_name, author_role, avatar_initials, rating, ordre")
+    // Filtre explicite, jamais délégué à la RLS : voir la note en tête de fichier.
+    .eq("is_active", true)
     .order("ordre", { ascending: true });
   if (opts?.limit) q = q.limit(opts.limit);
   const { data, error } = await q;
@@ -417,13 +431,20 @@ export type PublicArticle = {
 
 export async function getArticleBySlug(slug: string): Promise<PublicArticle | null> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("articles")
     .select(
       "id, slug, title, excerpt, content_md, image, category, read_time_minutes, published_at, ordre",
     )
     .eq("slug", slug)
+    // Filtre explicite, jamais délégué à la RLS : voir la note en tête de fichier.
+    .eq("is_active", true)
     .maybeSingle();
+  // Sans cette trace, une requête cassée (colonne renommée, migration non
+  // appliquée) est indiscernable d'un slug inconnu : la page d'article
+  // répondait 404 en silence. C'est la seule lecture du fichier qui
+  // ignorait `error`.
+  if (error) console.error("getArticleBySlug error:", error);
   return (data as PublicArticle) ?? null;
 }
 
@@ -436,6 +457,8 @@ export async function getActiveArticles(opts?: {
     .select(
       "id, slug, title, excerpt, content_md, image, category, read_time_minutes, published_at, ordre",
     )
+    // Filtre explicite, jamais délégué à la RLS : voir la note en tête de fichier.
+    .eq("is_active", true)
     .order("ordre", { ascending: true })
     .order("published_at", { ascending: false });
   if (opts?.limit) q = q.limit(opts.limit);
@@ -463,6 +486,8 @@ export async function getActiveFaqs(): Promise<PublicFaq[]> {
   const { data, error } = await supabase
     .from("faqs")
     .select("id, question, answer, ordre")
+    // Filtre explicite, jamais délégué à la RLS : voir la note en tête de fichier.
+    .eq("is_active", true)
     .order("ordre", { ascending: true });
   if (error || !data) {
     if (error) console.error("getActiveFaqs error:", error);
