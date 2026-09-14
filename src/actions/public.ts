@@ -172,10 +172,18 @@ export async function getActiveQuartiers(opts?: {
 // Données de référence pour filtres publics (types, services, catégories)
 // ============================================================================
 
+export type TaxonomieEntree = {
+  id: number;
+  name: string;
+  /** Visuel saisi depuis /admin/taxonomie, utilisé par le méga-menu. */
+  image: string | null;
+  ordre: number;
+};
+
 export type BienReferenceData = {
-  types: { id: number; name: string }[];
-  services: { id: number; name: string }[];
-  categories: { id: number; name: string }[];
+  types: TaxonomieEntree[];
+  services: TaxonomieEntree[];
+  categories: TaxonomieEntree[];
 };
 
 /**
@@ -186,34 +194,49 @@ export type BienReferenceData = {
 export async function getBienReferenceData(): Promise<BienReferenceData> {
   const supabase = await createClient();
 
-  const [typesRes, servicesRes, categoriesRes] = await Promise.all([
-    supabase
-      .from("types_bien")
+  /**
+   * `image` et `ordre` viennent de la migration 0018. Tant qu'elle n'est pas
+   * appliquée, PostgREST rejette la requête entière et renverrait [] sans
+   * erreur visible — ce qui viderait les filtres du catalogue et le menu.
+   */
+  const charger = async (table: string) => {
+    const complet = await supabase
+      .from(table)
+      .select("id, name, image, ordre")
+      .order("ordre", { ascending: true })
+      .order("name", { ascending: true });
+    if (!complet.error && complet.data) return complet.data as unknown as any[];
+
+    console.error(`getBienReferenceData(${table}) : repli sans image/ordre.`, complet.error);
+    const base = await supabase
+      .from(table)
       .select("id, name")
-      .order("name", { ascending: true }),
-    supabase
-      .from("services_bien")
-      .select("id, name")
-      .order("name", { ascending: true }),
-    supabase
-      .from("categories_bien")
-      .select("id, name")
-      .order("name", { ascending: true }),
+      .order("name", { ascending: true });
+    return ((base.data ?? []) as unknown as any[]).map((r) => ({
+      ...r,
+      image: null,
+      ordre: 0,
+    }));
+  };
+
+  const [types, services, categories] = await Promise.all([
+    charger("types_bien"),
+    charger("services_bien"),
+    charger("categories_bien"),
   ]);
 
+  const utilisables = (rows: any[]) =>
+    rows.filter((r) => r.name) as {
+      id: number;
+      name: string;
+      image: string | null;
+      ordre: number;
+    }[];
+
   return {
-    types: (typesRes.data ?? []).filter((t) => t.name) as {
-      id: number;
-      name: string;
-    }[],
-    services: (servicesRes.data ?? []).filter((s) => s.name) as {
-      id: number;
-      name: string;
-    }[],
-    categories: (categoriesRes.data ?? []).filter((c) => c.name) as {
-      id: number;
-      name: string;
-    }[],
+    types: utilisables(types),
+    services: utilisables(services),
+    categories: utilisables(categories),
   };
 }
 

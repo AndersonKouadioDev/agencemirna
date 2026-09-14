@@ -151,6 +151,7 @@ export type MenuCommune = {
 export type MenuReference = {
   id: number;
   name: string;
+  image?: string | null;
 };
 
 export type MenuData = {
@@ -403,6 +404,7 @@ export const getMenuList = (pathname: string, data?: MenuData): MenuItem[] => {
         href: typesReels
           ? `/properties?type=${encodeURIComponent(t.name)}`
           : "/properties",
+        image: t.image ?? null,
         icon: iconeType(t.name),
       })),
     ],
@@ -415,6 +417,7 @@ export const getMenuList = (pathname: string, data?: MenuData): MenuItem[] => {
       href: servicesReels
         ? `/properties?service=${encodeURIComponent(s.name)}`
         : "/properties",
+      image: s.image ?? null,
       icon: iconeService(s.name),
     })),
   };
