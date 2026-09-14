@@ -12,6 +12,14 @@ export type CommuneAdminRow = {
   is_active: boolean;
   ordre: number;
   updated_at: string;
+  // Champs de présentation (migration 0015) : alimentent la section
+  // « Communes phares » de l'accueil et les visuels du méga-menu.
+  badge: string | null;
+  tagline: string | null;
+  description: string | null;
+  image: string | null;
+  search_query: string | null;
+  is_featured: boolean;
 };
 
 export type CommuneFormData = {
@@ -20,6 +28,12 @@ export type CommuneFormData = {
   slug: string;
   is_active?: boolean;
   ordre?: number;
+  badge?: string | null;
+  tagline?: string | null;
+  description?: string | null;
+  image?: string | null;
+  search_query?: string | null;
+  is_featured?: boolean;
 };
 
 export type ActionResult<T = void> =
@@ -44,6 +58,17 @@ export async function getCommuneAdmin(id: string): Promise<CommuneAdminRow | nul
   return data as CommuneAdminRow;
 }
 
+/**
+ * Les communes alimentent la section « Communes phares » de l'accueil, le
+ * méga-menu et les filtres du catalogue : toute écriture doit les revalider,
+ * sans quoi une modification reste invisible sur le site.
+ */
+function revaliderVitrine() {
+  revalidatePath("/admin/communes");
+  revalidatePath("/", "layout");
+  revalidatePath("/properties");
+}
+
 export async function upsertCommune(input: CommuneFormData): Promise<ActionResult<{ id: string }>> {
   const admin = await getAdminUser();
   if (!admin) return { ok: false, error: "Non autorisé." };
@@ -57,6 +82,12 @@ export async function upsertCommune(input: CommuneFormData): Promise<ActionResul
     nom: input.nom.trim(),
     slug: input.slug.trim().toLowerCase(),
     is_active: input.is_active ?? true,
+    badge: input.badge?.trim() || null,
+    tagline: input.tagline?.trim() || null,
+    description: input.description?.trim() || null,
+    image: input.image?.trim() || null,
+    search_query: input.search_query?.trim() || null,
+    is_featured: input.is_featured ?? false,
   };
 
   if (input.id) {
@@ -74,7 +105,7 @@ export async function upsertCommune(input: CommuneFormData): Promise<ActionResul
             : error.message,
       };
     }
-    revalidatePath("/admin/communes");
+    revaliderVitrine();
     return { ok: true, data: { id: input.id } };
   } else {
     const { data: existing } = await supabase.from("communes").select("ordre").order("ordre", { ascending: false }).limit(1);
@@ -90,7 +121,7 @@ export async function upsertCommune(input: CommuneFormData): Promise<ActionResul
             : error?.message ?? "Erreur.",
       };
     }
-    revalidatePath("/admin/communes");
+    revaliderVitrine();
     return { ok: true, data: { id: created.id } };
   }
 }
@@ -101,7 +132,7 @@ export async function deleteCommune(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const { error } = await supabase.from("communes").delete().eq("id", id);
   if (error) return { ok: false, error: error.message };
-  revalidatePath("/admin/communes");
+  revaliderVitrine();
   return { ok: true, data: undefined };
 }
 
@@ -111,7 +142,7 @@ export async function toggleCommuneActive(id: string, isActive: boolean): Promis
   const supabase = await createClient();
   const { error } = await supabase.from("communes").update({ is_active: isActive }).eq("id", id);
   if (error) return { ok: false, error: error.message };
-  revalidatePath("/admin/communes");
+  revaliderVitrine();
   return { ok: true, data: undefined };
 }
 

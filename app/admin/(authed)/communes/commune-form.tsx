@@ -6,6 +6,8 @@ import { ArrowLeft, Save, Loader2, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { ImageUploader } from "@/app/admin/_components/image-uploader";
 import { CommuneFormData, CommuneAdminRow, upsertCommuneAndRedirect } from "@/src/actions/admin/communes";
 
 function slugify(text: string) {
@@ -26,6 +28,17 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
   const [nom, setNom] = useState(item?.nom || "");
   const [slug, setSlug] = useState(item?.slug || "");
   const [isActive, setIsActive] = useState(item?.is_active ?? true);
+  // Champs de présentation : ils alimentent la section « Communes phares »
+  // de l'accueil et le visuel du méga-menu.
+  const [badge, setBadge] = useState(item?.badge || "");
+  const [tagline, setTagline] = useState(item?.tagline || "");
+  const [description, setDescription] = useState(item?.description || "");
+  const [searchQuery, setSearchQuery] = useState(item?.search_query || "");
+  const [isFeatured, setIsFeatured] = useState(item?.is_featured ?? false);
+  const [imageUrls, setImageUrls] = useState<string[]>(
+    item?.image ? [item.image] : [],
+  );
+  const [imageAltUrl, setImageAltUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoSlug, setAutoSlug] = useState(!isEdit);
@@ -38,7 +51,19 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const data: CommuneFormData = { id: item?.id, nom, slug, is_active: isActive, ordre: item?.ordre };
+    const data: CommuneFormData = {
+      id: item?.id,
+      nom,
+      slug,
+      is_active: isActive,
+      ordre: item?.ordre,
+      badge: badge.trim() || null,
+      tagline: tagline.trim() || null,
+      description: description.trim() || null,
+      search_query: searchQuery.trim() || null,
+      image: imageUrls[0] || imageAltUrl.trim() || null,
+      is_featured: isFeatured,
+    };
     const result = await upsertCommuneAndRedirect(data);
     if (!result.ok) { setError(result.error); setSubmitting(false); }
   }
@@ -65,6 +90,85 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
         <label className="flex items-center gap-3 cursor-pointer mt-4">
           <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} className="h-4 w-4 rounded border-stone-300 text-primary" />
           <span className="text-sm font-medium">Commune active</span>
+        </label>
+      </div>
+
+      <div className="rounded-lg border border-stone-200 bg-white p-5 space-y-4 mt-6">
+        <div>
+          <h2 className="text-sm font-semibold text-neutral-900">Présentation</h2>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            Utilisée par la section « Communes phares » de l&apos;accueil et par
+            le menu du site.
+          </p>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Accroche</Label>
+          <Input
+            value={tagline}
+            onChange={(e) => setTagline(e.target.value)}
+            placeholder="Ex : Le prestige résidentiel"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Badge</Label>
+          <Input
+            value={badge}
+            onChange={(e) => setBadge(e.target.value)}
+            placeholder="Ex : Très demandé"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Description</Label>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+            placeholder="Quelques lignes sur la commune."
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Image</Label>
+          <ImageUploader
+            value={imageUrls}
+            onChange={setImageUrls}
+            pathPrefix={`communes/${item?.id ?? "nouveau"}`}
+            maxFiles={1}
+          />
+          <Input
+            value={imageAltUrl}
+            onChange={(e) => setImageAltUrl(e.target.value)}
+            placeholder="Ou une URL d'image existante"
+            className="text-sm mt-2"
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label>Terme de recherche</Label>
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Laissez vide pour utiliser le nom de la commune"
+          />
+        </div>
+
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={isFeatured}
+            onChange={(e) => setIsFeatured(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-stone-300 text-primary"
+          />
+          <span className="text-sm">
+            <span className="font-medium">Afficher sur l&apos;accueil</span>
+            <span className="block text-xs text-neutral-500">
+              La section « Communes phares » montre les trois premières communes
+              cochées, dans l&apos;ordre défini sur la liste.
+            </span>
+          </span>
         </label>
       </div>
       <div className="mt-6 flex justify-end gap-2">

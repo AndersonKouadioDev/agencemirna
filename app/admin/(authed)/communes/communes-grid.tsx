@@ -30,7 +30,16 @@ export function CommunesGrid({ items }: { items: CommuneAdminRow[] }) {
       {items.map((item) => (
         <div key={item.id} className={`relative bg-white rounded-xl border p-4 transition-all ${!item.is_active ? 'opacity-60 grayscale-[0.5]' : 'hover:shadow-md'}`}>
           <div className="flex justify-between items-start mb-2">
-            <h3 className="font-bold text-lg">{item.nom}</h3>
+            <h3 className="font-bold text-lg flex items-center gap-2">
+              {item.nom}
+              {/* Signale les communes qui alimentent la section d'accueil :
+                  sans marqueur, l'admin ne sait pas lesquelles sont visibles. */}
+              {item.is_featured && (
+                <span className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                  Accueil
+                </span>
+              )}
+            </h3>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 -mt-2">
@@ -51,6 +60,14 @@ export function CommunesGrid({ items }: { items: CommuneAdminRow[] }) {
             </DropdownMenu>
           </div>
           <p className="text-xs text-stone-500 font-mono">/{item.slug}</p>
+          {item.tagline && (
+            <p className="text-xs text-stone-500 mt-1 line-clamp-1">{item.tagline}</p>
+          )}
+          {item.is_featured && !item.image && (
+            <p className="text-xs text-amber-700 mt-1">
+              Sans image : la carte d&apos;accueil s&apos;affichera vide.
+            </p>
+          )}
           {loadingId === item.id && (
             <div className="absolute inset-0 bg-white/50 flex items-center justify-center rounded-xl backdrop-blur-sm z-10">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
