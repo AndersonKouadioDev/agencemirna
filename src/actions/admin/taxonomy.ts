@@ -107,25 +107,22 @@ export async function deleteTaxonomyEntry(
 export type SiteStats = {
   biens_actifs: number;
   agents_actifs: number;
-  services_actifs: number;
-  promotions_actives: number;
+  annonces_actives: number;
 };
 
 export async function getSiteStats(): Promise<SiteStats> {
   const supabase = await createClient();
 
   // Note : count avec head:true ne renvoie pas les rows, juste le count
-  const [biens, agents, services, promos] = await Promise.all([
+  const [biens, agents, annonces] = await Promise.all([
     supabase.from("biens").select("id", { count: "exact", head: true }).eq("is_active", true),
     supabase.from("agents").select("id", { count: "exact", head: true }).eq("is_active", true),
-    supabase.from("services").select("id", { count: "exact", head: true }).eq("is_active", true),
     supabase.from("annonces").select("id", { count: "exact", head: true }).eq("is_active", true),
   ]);
 
   return {
     biens_actifs: biens.count ?? 0,
     agents_actifs: agents.count ?? 0,
-    services_actifs: services.count ?? 0,
-    promotions_actives: promos.count ?? 0,
+    annonces_actives: annonces.count ?? 0,
   };
 }

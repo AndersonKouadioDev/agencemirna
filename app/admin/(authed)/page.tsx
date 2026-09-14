@@ -1,6 +1,5 @@
 import {
   Home,
-  Sparkles,
   Megaphone,
   Users,
   ArrowRight,
@@ -62,15 +61,13 @@ export default async function AdminDashboardPage() {
 
   const [
     biensCount,
-    servicesCount,
     promotionsCount,
     agentsCount,
     leadStats,
     recentLeads,
   ] = await Promise.all([
     safeCount("biens"),
-    safeCount("services"),
-    safeCount("promotions"),
+    safeCount("annonces"),
     safeCount("agents"),
     getLeadStats(),
     listLeadsAdmin().then((all) => all.slice(0, 5)),
@@ -198,13 +195,6 @@ export default async function AdminDashboardPage() {
             href="/admin/biens"
             icon={Home}
             color="bg-blue-500/10 text-blue-600"
-          />
-          <StatCardComponent
-            label="Services"
-            value={servicesCount}
-            href="/admin/services"
-            icon={Sparkles}
-            color="bg-purple-500/10 text-purple-600"
           />
           <StatCardComponent
             label="Annonces"

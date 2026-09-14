@@ -56,3 +56,4 @@ Thumbs.db
 
 .gstack/
 .claude/launch.json
+test_db.js
