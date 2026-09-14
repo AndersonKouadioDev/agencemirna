@@ -27,7 +27,7 @@ const BENTO_ITEMS = [
     title: "Appartements Meublés",
     desc: "Le confort absolu pour vos séjours.",
     icon: BedDouble,
-    href: "/properties?service=Location%20meubl%C3%A9e%20longue%20dur%C3%A9e",
+    href: "/properties?service=Location%20meubl%C3%A9e",
     image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800",
     className: "md:col-span-1 md:row-span-1",
   },
@@ -36,7 +36,9 @@ const BENTO_ITEMS = [
     title: "Gestion Locative",
     desc: "Rentabilisez votre patrimoine en toute sérénité.",
     icon: Building2,
-    href: "/properties?service=Gestion%20locative",
+    // La gestion locative est une prestation de l'agence, pas un
+    // classement de bien : aucun bien ne portera jamais ce service.
+    href: "/services/gestion-immobiliere",
     image: "https://images.unsplash.com/photo-1554469384-e58fac16e23a?auto=format&fit=crop&q=80&w=800",
     className: "md:col-span-1 md:row-span-1",
   }

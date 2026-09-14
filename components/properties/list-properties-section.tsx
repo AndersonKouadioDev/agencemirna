@@ -167,8 +167,8 @@ export default function ListPropertiesSection({
       // Égalité stricte sur le libellé normalisé : les deux côtés viennent de
       // types_bien / services_bien. La comparaison par sous-chaîne d'origine
       // acceptait tout bien dont le champ était vide (`"villa".includes("")`),
-      // et faisait remonter un bien « Location » sous le filtre « Location
-      // meublée longue durée ».
+      // et faisait remonter un bien « Location » sous le filtre
+      // « Location meublée ».
       if (filters.type) {
         const t = normalize(filters.type);
         const name = normalize(bien.types_bien?.name);

@@ -20,13 +20,15 @@ const features = [
     icon: BedDouble,
     title: "Appartements meublés",
     desc: "Confort et vue sur mer.",
-    href: "/properties?service=Location%20meubl%C3%A9e%20longue%20dur%C3%A9e",
+    href: "/properties?service=Location%20meubl%C3%A9e",
   },
   {
     icon: Building2,
     title: "Gestion locative",
     desc: "Rentabilité en toute sérénité.",
-    href: "/properties?service=Gestion%20locative",
+    // La gestion locative est une prestation de l'agence, pas un
+    // classement de bien : aucun bien ne portera jamais ce service.
+    href: "/services/gestion-immobiliere",
   },
 ];
 

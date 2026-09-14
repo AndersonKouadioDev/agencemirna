@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     "Loft Plateau",
     "Studio étudiant Abidjan",
     "Achat maison Bingerville",
-    "Location longue durée Abidjan",
+    "Location meublée Abidjan",
     "Immobilier professionnel Côte d'Ivoire",
     "AGENCE MIRNA",
     "Expert immobilier Abidjan",

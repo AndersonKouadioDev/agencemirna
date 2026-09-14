@@ -199,8 +199,7 @@ const REPLI_TYPES: MenuReference[] = [
 
 const REPLI_SERVICES: MenuReference[] = [
   { id: -1, name: "Vente" },
-  { id: -2, name: "Location nue" },
-  { id: -3, name: "Location meublée longue durée" },
+  { id: -2, name: "Location meublée" },
   { id: -4, name: "Bail commercial" },
   { id: -5, name: "Gestion locative" },
 ];

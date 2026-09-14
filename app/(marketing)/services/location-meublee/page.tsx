@@ -20,7 +20,7 @@ export default function LocationMeubleePage() {
         "Flexibilité de durée",
       ]}
       cta={{ label: "Nous contacter", href: "/contact_us" }}
-      bienService="Location meublée longue durée"
+      bienService="Location meublée"
     />
   );
 }

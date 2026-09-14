@@ -21,9 +21,9 @@ export type ServicePageLayoutProps = {
   /** Appel à l'action propre au service (estimation, contact…). */
   cta?: { label: string; href: string };
   /**
-   * Libellé EXACT d'une ligne de `services_bien` (Vente, Location meublée
-   * longue durée, Gestion locative). Les services métier sans équivalent en
-   * base (construction, décoration, promotion) n'en passent pas : le lien
+   * Libellé EXACT d'une ligne de `services_bien` : Vente, Location ou
+   * Location meublée. Les services métier sans équivalent en base
+   * (construction, décoration, promotion) n'en passent pas : le lien
    * « Voir les biens » mène alors à /properties sans filtre.
    */
   bienService?: string;

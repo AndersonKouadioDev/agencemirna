@@ -44,7 +44,7 @@ function buildFallbackAnnouncements(contact: SiteContact): AnnouncementItem[] {
   {
     icon: Sparkles,
     text: "Nouveau : appartements meublés disponibles dès 50 000 FCFA/nuit",
-    href: "/properties?service=Location%20meubl%C3%A9e%20longue%20dur%C3%A9e",
+    href: "/properties?service=Location%20meubl%C3%A9e",
   },
   ];
 }
