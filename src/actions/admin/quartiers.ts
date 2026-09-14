@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/src/supabase/server";
 import { getAdminUser } from "@/src/supabase/admin-auth";
+import { normaliserUrlImage } from "@/src/lib/image-url";
 
 /**
  * Server Actions admin pour la table `quartiers`.
@@ -96,12 +97,25 @@ export async function upsertQuartier(
   if (!input.image?.trim()) return { ok: false, error: "L'image est obligatoire." };
 
   const supabase = await createClient();
+  // Le formulaire valide déjà l'adresse saisie, mais l'action est une route
+  // publique : sans ce contrôle, une URL que next/image refuse pourrait être
+  // écrite directement et casserait la page qui l'affiche.
+  const imageValidee = normaliserUrlImage(input.image);
+  if (imageValidee === undefined) {
+    return {
+      ok: false,
+      error:
+        "Adresse d'image refusée : indiquez un chemin interne ou une URL " +
+        "https servie par un hébergeur déclaré dans next.config.",
+    };
+  }
+
   const data = {
     commune_id: input.commune_id || null,
     name: input.name.trim(),
     commune: input.commune.trim(),
     tagline: input.tagline?.trim() || null,
-    image: input.image.trim(),
+    image: imageValidee,
     search_query: input.search_query?.trim() || null,
     is_active: input.is_active ?? true,
   };

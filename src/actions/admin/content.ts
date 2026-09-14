@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/src/supabase/server";
 import { getAdminUser } from "@/src/supabase/admin-auth";
+import { normaliserUrlImage } from "@/src/lib/image-url";
 
 /**
  * Server Actions admin pour les 4 tables de contenu éditable :
@@ -351,13 +352,26 @@ export async function upsertArticle(
   const slug = input.slug?.trim() || slugify(input.title);
   if (!slug) return { ok: false, error: "Le slug est obligatoire." };
 
+  // Le formulaire valide déjà l'adresse saisie, mais l'action est une route
+  // publique : sans ce contrôle, une URL que next/image refuse pourrait être
+  // écrite directement et casserait la page qui l'affiche.
+  const imageValidee = normaliserUrlImage(input.image);
+  if (imageValidee === undefined) {
+    return {
+      ok: false,
+      error:
+        "Adresse d'image refusée : indiquez un chemin interne ou une URL " +
+        "https servie par un hébergeur déclaré dans next.config.",
+    };
+  }
+
   const supabase = await createClient();
   const data = {
     slug,
     title: input.title.trim(),
     excerpt: input.excerpt?.trim() || null,
     content_md: input.content_md?.trim() || null,
-    image: input.image.trim(),
+    image: imageValidee,
     category: input.category?.trim() || null,
     read_time_minutes: input.read_time_minutes ?? null,
     published_at: input.published_at || new Date().toISOString(),

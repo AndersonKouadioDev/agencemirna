@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ImageUploader } from "@/app/admin/_components/image-uploader";
 import { CommuneFormData, CommuneAdminRow, upsertCommuneAndRedirect } from "@/src/actions/admin/communes";
+import {
+  MESSAGE_URL_IMAGE_INVALIDE,
+  normaliserUrlImage,
+} from "@/src/lib/image-url";
 
 function slugify(text: string) {
   // NB : l'ancienne classe [^w\-] signifiait « tout sauf la lettre w »,
@@ -71,6 +75,16 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
 
     setError(null);
     setSubmitting(true);
+    // Une adresse saisie à la main n'est pas contrainte : stockée telle quelle,
+    // next/image la refuse ensuite et l'aperçu d'administration casse. Même
+    // garde que le formulaire d'annonce, seul à l'appliquer jusqu'ici.
+    const urlManuelle = imageUrls[0] ? null : normaliserUrlImage(imageAltUrl);
+    if (urlManuelle === undefined) {
+      setError(MESSAGE_URL_IMAGE_INVALIDE);
+      setSubmitting(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     const data: CommuneFormData = {
       id: item?.id,
       nom,
@@ -78,7 +92,7 @@ export function CommuneForm({ item }: { item?: CommuneAdminRow }) {
       is_active: isActive,
       ordre: ordre ?? undefined,
       tagline: tagline.trim() || null,
-      image: imageUrls[0] || imageAltUrl.trim() || null,
+      image: imageUrls[0] || urlManuelle,
       is_featured: isFeatured,
     };
     const result = await upsertCommuneAndRedirect(data);

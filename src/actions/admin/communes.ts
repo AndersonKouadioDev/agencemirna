@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/src/supabase/server";
 import { getAdminUser } from "@/src/supabase/admin-auth";
+import { normaliserUrlImage } from "@/src/lib/image-url";
 
 /**
  * Lectures comprises, chaque export vérifie `getAdminUser()` : un identifiant
@@ -154,12 +155,25 @@ export async function upsertCommune(input: CommuneFormData): Promise<ActionResul
   const supabase = await createClient();
 
   const nom = input.nom.trim();
+  // Le formulaire valide déjà l'adresse saisie, mais l'action est une route
+  // publique : sans ce contrôle, une URL que next/image refuse pourrait être
+  // écrite directement et casserait la page qui l'affiche.
+  const imageValidee = normaliserUrlImage(input.image ?? "");
+  if (imageValidee === undefined) {
+    return {
+      ok: false,
+      error:
+        "Adresse d'image refusée : indiquez un chemin interne ou une URL "
+        + "https servie par un hébergeur déclaré dans next.config.",
+    };
+  }
+
   const data = {
     nom,
     slug: input.slug.trim().toLowerCase(),
     is_active: input.is_active ?? true,
     tagline: input.tagline?.trim() || null,
-    image: input.image?.trim() || null,
+    image: imageValidee,
     is_featured: input.is_featured ?? false,
   };
 

@@ -13,6 +13,10 @@ import {
   upsertQuartier,
   type QuartierRow,
 } from "@/src/actions/admin/quartiers";
+import {
+  MESSAGE_URL_IMAGE_INVALIDE,
+  normaliserUrlImage,
+} from "@/src/lib/image-url";
 
 /**
  * Formulaire de quartier.
@@ -116,7 +120,17 @@ export function QuartierForm({
     setError(null);
     setSubmitting(true);
 
-    const finalImage = imageUrls[0] || imageAlt.trim();
+    // Une adresse saisie à la main n'est pas contrainte : stockée telle quelle,
+    // next/image la refuse ensuite et l'aperçu d'administration casse. Même
+    // garde que le formulaire d'annonce, seul à l'appliquer jusqu'ici.
+    const urlManuelle = imageUrls[0] ? null : normaliserUrlImage(imageAlt);
+    if (urlManuelle === undefined) {
+      setError(MESSAGE_URL_IMAGE_INVALIDE);
+      setSubmitting(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
+    const finalImage = imageUrls[0] || urlManuelle || "";
     if (!finalImage) {
       setError("Une image est obligatoire (upload ou URL existante).");
       setSubmitting(false);
