@@ -175,17 +175,20 @@ export async function getBienReferenceData(): Promise<BienReferenceData> {
 // Services
 // ============================================================================
 
+/**
+ * Index des 6 services métier : il n'alimente plus que la navigation (cartes du
+ * hub /services, bloc « Nos autres services », sitemap). Le contenu éditorial
+ * et les CTA vivent désormais dans les pages statiques app/(marketing)/services/<slug>/ :
+ * les dupliquer ici laissait deux sources de vérité qui divergeaient déjà
+ * (le CTA « Voir nos meublés » ne correspondait plus à celui de la page).
+ */
 export type PublicService = {
   id: string;
   slug: string;
   name: string;
   short_description: string | null;
-  long_description: string | null;
   icon: string | null;
   image: string | null;
-  highlights: string[];
-  cta_label: string | null;
-  cta_url: string | null;
   ordre: number;
 };
 
@@ -195,12 +198,8 @@ const STATIC_SERVICES: PublicService[] = [
     slug: "vente",
     name: "Vente de biens immobiliers",
     short_description: "Achat et vente de villas, terrains et appartements haut de gamme.",
-    long_description: "Nous vous accompagnons à chaque étape de votre transaction immobilière, de l'estimation de votre bien jusqu'à la signature chez le notaire, en vous garantissant une transaction sécurisée et au meilleur prix.",
     icon: "Key",
     image: null,
-    highlights: ["Estimation précise", "Visibilité maximale", "Accompagnement juridique"],
-    cta_label: "Estimer mon bien",
-    cta_url: "/estimation",
     ordre: 1,
   },
   {
@@ -208,12 +207,8 @@ const STATIC_SERVICES: PublicService[] = [
     slug: "location-meublee",
     name: "Location meublée",
     short_description: "Des appartements et villas meublés prêts à vivre pour de courtes ou longues durées.",
-    long_description: "Profitez de notre sélection de biens meublés de haut standing, idéals pour vos séjours professionnels ou vos vacances. Nos logements sont soigneusement équipés pour vous offrir un confort optimal.",
     icon: "Sofa",
     image: null,
-    highlights: ["Biens équipés", "Service de conciergerie", "Flexibilité de durée"],
-    cta_label: "Voir nos meublés",
-    cta_url: "/properties?service=Meublé",
     ordre: 2,
   },
   {
@@ -221,12 +216,8 @@ const STATIC_SERVICES: PublicService[] = [
     slug: "gestion-immobiliere",
     name: "Gestion locative",
     short_description: "Confiez-nous la gestion de votre patrimoine immobilier en toute sérénité.",
-    long_description: "Nous prenons en charge la gestion complète de vos biens immobiliers : recherche de locataires, rédaction des baux, encaissement des loyers, gestion des travaux et de l'entretien.",
     icon: "Building",
     image: null,
-    highlights: ["Sélection rigoureuse des locataires", "Suivi comptable et administratif", "Garantie des loyers impayés"],
-    cta_label: "Nous confier votre bien",
-    cta_url: "/contact_us",
     ordre: 3,
   },
   {
@@ -234,12 +225,8 @@ const STATIC_SERVICES: PublicService[] = [
     slug: "construction",
     name: "Construction",
     short_description: "Réalisation de vos projets de construction de la conception à la remise des clés.",
-    long_description: "Notre équipe d'experts vous accompagne dans la réalisation de votre projet de construction, en veillant au respect des normes de qualité, des délais et de votre budget.",
     icon: "HardHat",
     image: null,
-    highlights: ["Expertise technique", "Suivi de chantier", "Respect des délais"],
-    cta_label: "Discuter de votre projet",
-    cta_url: "/contact_us",
     ordre: 4,
   },
   {
@@ -247,12 +234,8 @@ const STATIC_SERVICES: PublicService[] = [
     slug: "decoration-amenagement",
     name: "Décoration d'intérieur",
     short_description: "Aménagement et décoration sur-mesure pour sublimer vos espaces.",
-    long_description: "Nos architectes d'intérieur conçoivent des espaces uniques et fonctionnels qui reflètent votre style de vie. Du choix des matériaux à la sélection du mobilier, nous sublimons votre intérieur.",
     icon: "Paintbrush",
     image: null,
-    highlights: ["Design sur-mesure", "Sélection de mobilier de créateurs", "Optimisation de l'espace"],
-    cta_label: "Découvrir nos réalisations",
-    cta_url: "/contact_us",
     ordre: 5,
   },
   {
@@ -260,12 +243,8 @@ const STATIC_SERVICES: PublicService[] = [
     slug: "promotion-immobiliere",
     name: "Promotion immobilière",
     short_description: "Développement de projets immobiliers résidentiels et commerciaux.",
-    long_description: "Nous développons des programmes immobiliers neufs de qualité, répondant aux attentes du marché et offrant d'excellentes opportunités d'investissement ou d'habitation.",
     icon: "Briefcase",
     image: null,
-    highlights: ["Emplacements de choix", "Architecture moderne", "Normes environnementales"],
-    cta_label: "Nos programmes neufs",
-    cta_url: "/contact_us",
     ordre: 6,
   }
 ];
@@ -273,13 +252,6 @@ const STATIC_SERVICES: PublicService[] = [
 export async function getActiveServices(): Promise<PublicService[]> {
   return STATIC_SERVICES;
 }
-
-export async function getServiceBySlug(
-  slug: string,
-): Promise<PublicService | null> {
-  return STATIC_SERVICES.find((s) => s.slug === slug) || null;
-}
-
 
 // ============================================================================
 // Agents

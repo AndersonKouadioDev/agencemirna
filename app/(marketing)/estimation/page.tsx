@@ -54,7 +54,7 @@ export default async function EstimationPage() {
           <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-10 lg:gap-16 items-start">
             {/* Formulaire */}
             <div className="rounded-3xl bg-white border border-stone-200 p-6 sm:p-10 shadow-sm">
-              <EstimationForm whatsappUrl={contact.whatsappUrl} />
+              <EstimationForm whatsappUrl={contact.whatsappMessageUrl} />
             </div>
 
             {/* Bénéfices + témoignage */}

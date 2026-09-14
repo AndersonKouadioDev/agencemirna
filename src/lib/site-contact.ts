@@ -29,6 +29,8 @@ export type SiteContact = {
   /** Chiffres uniquement, format wa.me. */
   whatsapp: string;
   whatsappUrl: string;
+  /** Comme whatsappUrl, en conservant le message d'accroche s'il est configuré. */
+  whatsappMessageUrl: string;
   telHref: string;
   email: string;
   facebook: string | null;
@@ -62,11 +64,27 @@ export const getSiteContact = cache(async (): Promise<SiteContact> => {
   const whatsapp = (clean(data?.whatsapp) ?? DEFAULT_SITE_CONTACT.whatsapp).replace(/\D/g, "");
   const resolvedPhone = phone ?? DEFAULT_SITE_CONTACT.phone;
 
+  // NEXT_PUBLIC_WHATSAPP_MESSAGE porte une URL complète avec un ?text=…
+  // On en extrait le message pour garder l'accroche tout en utilisant le
+  // numéro saisi dans l'admin, au lieu de choisir entre les deux.
+  let texte: string | null = null;
+  try {
+    const brut = process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE;
+    if (brut) texte = new URL(brut).searchParams.get("text");
+  } catch {
+    texte = null;
+  }
+
+  const whatsappUrl = `https://wa.me/${whatsapp}`;
+
   return {
     phone: resolvedPhone,
     phones: phone ? [phone] : DEFAULT_SITE_CONTACT.phones,
     whatsapp,
-    whatsappUrl: `https://wa.me/${whatsapp}`,
+    whatsappUrl,
+    whatsappMessageUrl: texte
+      ? `${whatsappUrl}?text=${encodeURIComponent(texte)}`
+      : whatsappUrl,
     telHref: `tel:${resolvedPhone.replace(/[^\d+]/g, "")}`,
     email: clean(data?.email) ?? DEFAULT_SITE_CONTACT.email,
     facebook: clean(data?.facebook) ?? DEFAULT_SITE_CONTACT.facebook,

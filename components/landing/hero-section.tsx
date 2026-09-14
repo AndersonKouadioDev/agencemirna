@@ -267,7 +267,7 @@ const HERO_SLIDES = [
   }
 ];
 
-export default function HeroSection({ communes = [], quartiers = [], types = [], services = [] }: { communes?: any[], quartiers?: any[], types?: any[], services?: any[] }) {
+export default function HeroSection({ communes = [], quartiers = [], types = [], services = [], whatsappUrl = "" }: { communes?: any[], quartiers?: any[], types?: any[], services?: any[], whatsappUrl?: string }) {
   const [currentSlide, setCurrentSlide] = React.useState(0);
   const [isSearchModalOpen, setIsSearchModalOpen] = React.useState(false);
   const [biens, setBiens] = React.useState<any[]>([]);
@@ -755,7 +755,7 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="transition-transform group-hover:translate-x-1"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                               </Link>
                               <a 
-                                href={process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "#"}
+                                href={whatsappUrl || process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "#"}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="w-full sm:w-auto bg-[#25D366] text-white py-4 px-8 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#20bd5a] transition-all shadow-lg shadow-[#25D366]/20 hover:shadow-[#25D366]/40"

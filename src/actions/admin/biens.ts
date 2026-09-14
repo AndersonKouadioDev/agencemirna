@@ -21,6 +21,18 @@ import { migrateBienImagesFromFolder } from "@/src/actions/bien.actions";
 // Types
 // ============================================================================
 
+const BIEN_SELECT = `
+      id, name, short_description, description, image, prix, prix_month,
+      chambre, salon, salle_bains, capacity, address, ville_commune, pays,
+      localisation, latitude, longitude, adresse_complete, lien_video, area,
+      folder, type_bien_id, service_bien_id, categorie_bien_id,
+      commune_id, quartier_id,
+      is_active, created_at,
+      types_bien:type_bien_id (id, name),
+      services_bien:service_bien_id (id, name),
+      categories_bien:categorie_bien_id (id, name)
+    `;
+
 export type BienAdminRow = {
   id: string;
   name: string | null;
@@ -45,6 +57,9 @@ export type BienAdminRow = {
   type_bien_id: number | null;
   service_bien_id: number | null;
   categorie_bien_id: number | null;
+  commune_id: string | null;
+  quartier_id: string | null;
+  area: number | null;
   is_active: boolean;
   created_at: string;
   // Joints
@@ -85,16 +100,7 @@ export async function listBiensAdmin(): Promise<BienAdminRow[]> {
   //    "column biens.latitude does not exist", applique la migration.)
   const { data: biens, error } = await supabase
     .from("biens")
-    .select(`
-      id, name, short_description, description, image, prix, prix_month,
-      chambre, salon, salle_bains, capacity, address, ville_commune, pays,
-      localisation, latitude, longitude,
-      folder, type_bien_id, service_bien_id, categorie_bien_id,
-      is_active, created_at,
-      types_bien:type_bien_id (id, name),
-      services_bien:service_bien_id (id, name),
-      categories_bien:categorie_bien_id (id, name)
-    `)
+    .select(BIEN_SELECT)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -141,16 +147,7 @@ export async function getBienAdmin(
 
   const { data: bien, error } = await supabase
     .from("biens")
-    .select(`
-      id, name, short_description, description, image, prix, prix_month,
-      chambre, salon, salle_bains, capacity, address, ville_commune, pays,
-      localisation, latitude, longitude,
-      folder, type_bien_id, service_bien_id, categorie_bien_id,
-      is_active, created_at,
-      types_bien:type_bien_id (id, name),
-      services_bien:service_bien_id (id, name),
-      categories_bien:categorie_bien_id (id, name)
-    `)
+    .select(BIEN_SELECT)
     .eq("id", id)
     .maybeSingle();
 
@@ -185,12 +182,21 @@ export type ReferenceData = {
   types: { id: number; name: string }[];
   services: { id: number; name: string }[];
   categories: { id: number; name: string }[];
+  communes: { id: string; nom: string; is_active: boolean }[];
+  quartiers: {
+    id: string;
+    name: string;
+    commune: string | null;
+    commune_id: string | null;
+    is_active: boolean;
+  }[];
 };
 
 export async function getReferenceData(): Promise<ReferenceData> {
   const supabase = await createClient();
 
-  const [typesRes, servicesRes, categoriesRes] = await Promise.all([
+  const [typesRes, servicesRes, categoriesRes, communesRes, quartiersRes] =
+    await Promise.all([
     supabase
       .from("types_bien")
       .select("id, name")
@@ -203,6 +209,14 @@ export async function getReferenceData(): Promise<ReferenceData> {
       .from("categories_bien")
       .select("id, name")
       .order("name", { ascending: true }),
+    supabase
+      .from("communes")
+      .select("id, nom, is_active, ordre")
+      .order("ordre", { ascending: true }),
+    supabase
+      .from("quartiers")
+      .select("id, name, commune, commune_id, is_active, ordre")
+      .order("ordre", { ascending: true }),
   ]);
 
   return {
@@ -218,6 +232,8 @@ export async function getReferenceData(): Promise<ReferenceData> {
       id: number;
       name: string;
     }[],
+    communes: (communesRes.data ?? []) as ReferenceData["communes"],
+    quartiers: (quartiersRes.data ?? []) as ReferenceData["quartiers"],
   };
 }
 
@@ -245,6 +261,13 @@ export type BienFormData = {
   type_bien_id?: number | null;
   service_bien_id?: number | null;
   categorie_bien_id?: number | null;
+  /** UUID : surtout pas de parseInt, qui les transformerait en null. */
+  commune_id?: string | null;
+  quartier_id?: string | null;
+  adresse_complete?: string | null;
+  lien_video?: string | null;
+  /** Surface habitable en m². */
+  area?: number | null;
   /** Si false, le bien est masqué du site public (toujours visible en admin). */
   is_active?: boolean;
   /** URLs des images dans l'ordre voulu. La 1ère = cover. */
@@ -287,6 +310,11 @@ export async function upsertBien(
     type_bien_id: input.type_bien_id ?? null,
     service_bien_id: input.service_bien_id ?? null,
     categorie_bien_id: input.categorie_bien_id ?? null,
+    commune_id: input.commune_id || null,
+    quartier_id: input.quartier_id || null,
+    adresse_complete: input.adresse_complete?.trim() || null,
+    lien_video: input.lien_video?.trim() || null,
+    area: input.area ?? null,
     image: input.image_urls[0] ?? null, // legacy field : cover pour compat site public
     is_active: input.is_active ?? true,
   };
@@ -430,17 +458,29 @@ export async function deleteBien(id: string): Promise<ActionResult> {
  */
 function formatBienError(rawMessage: string): string {
   const msg = rawMessage.toLowerCase();
-  if (
-    msg.includes("latitude") ||
-    msg.includes("longitude") ||
-    (msg.includes("column") && msg.includes("does not exist"))
-  ) {
-    return (
-      "Impossible d'enregistrer les coordonnées GPS : la migration " +
-      "Supabase 0012_biens_geocoords.sql n'a pas été appliquée. " +
-      "Ouvre Supabase → SQL Editor → exécute le contenu du fichier " +
-      "supabase/migrations/0012_biens_geocoords.sql, puis réessaie."
-    );
+  if (msg.includes("column") && msg.includes("does not exist")) {
+    // Le message d'origine parlait de GPS quelle que soit la colonne
+    // manquante, ce qui envoyait l'admin sur une fausse piste. On nomme
+    // la migration correspondant à la colonne réellement absente.
+    const migration =
+      msg.includes("commune_id") ||
+      msg.includes("quartier_id") ||
+      msg.includes("area")
+        ? "0015_communes_quartiers_annonces.sql"
+        : msg.includes("adresse_complete") || msg.includes("lien_video")
+          ? "0014_refonte_luxe.sql"
+          : msg.includes("latitude") || msg.includes("longitude")
+            ? "0012_biens_geocoords.sql"
+            : null;
+
+    if (migration) {
+      return (
+        `Une colonne attendue n'existe pas en base : la migration ${migration} ` +
+        "n'a pas été appliquée. Ouvre Supabase → SQL Editor, exécute le " +
+        `contenu de supabase/migrations/${migration}, puis réessaie. ` +
+        `(détail : ${rawMessage})`
+      );
+    }
   }
   return rawMessage;
 }

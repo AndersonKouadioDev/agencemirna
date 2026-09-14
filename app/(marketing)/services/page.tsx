@@ -4,6 +4,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { Card } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { getActiveServices } from "@/src/actions/public";
+import { getSiteContact } from "@/src/lib/site-contact";
 import { ServiceIcon } from "./service-icon";
 
 export const metadata = {
@@ -14,6 +15,12 @@ export const metadata = {
 
 export default async function ServicesHubPage() {
   const services = await getActiveServices();
+  // Le numéro saisi dans l'admin (site_settings) prime sur la variable
+  // d'environnement, que le back-office ne pouvait pas supplanter : le bouton
+  // WhatsApp de ce hub pointait donc vers un numéro figé au déploiement.
+  const contact = await getSiteContact();
+  const whatsappHref =
+    contact.whatsappMessageUrl || process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "#";
 
   return (
     <main className="bg-[#FAF5EE]">
@@ -100,7 +107,7 @@ export default async function ServicesHubPage() {
               className="rounded-full px-8 bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white"
             >
               <Link
-                href={process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "#"}
+                href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
               >

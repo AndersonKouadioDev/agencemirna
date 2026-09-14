@@ -52,6 +52,9 @@ type FormState = {
   type_bien_id: string;
   service_bien_id: string;
   categorie_bien_id: string;
+  commune_id: string;
+  quartier_id: string;
+  area: string;
 };
 
 export function BienForm({ bien, images = [], reference }: BienFormProps) {
@@ -73,12 +76,16 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
     latitude: bien?.latitude?.toString() ?? "",
     longitude: bien?.longitude?.toString() ?? "",
     lien_video: bien?.lien_video ?? "",
-    ville_commune: bien?.ville_commune ?? "Marcory-Abidjan",
+    ville_commune: bien?.ville_commune ?? "",
     pays: bien?.pays ?? "Côte d'Ivoire",
     localisation: bien?.localisation ?? "",
     type_bien_id: bien?.type_bien_id?.toString() ?? "",
     service_bien_id: bien?.service_bien_id?.toString() ?? "",
     categorie_bien_id: bien?.categorie_bien_id?.toString() ?? "",
+    // UUID : pas de .toString(), ce sont déjà des chaînes.
+    commune_id: bien?.commune_id ?? "",
+    quartier_id: bien?.quartier_id ?? "",
+    area: bien?.area?.toString() ?? "",
   });
 
   const [imageUrls, setImageUrls] = React.useState<string[]>(
@@ -108,6 +115,39 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
+  /**
+   * Quartiers de la commune choisie.
+   * Double critère : le rattachement par `commune_id` est la référence, mais
+   * les quartiers saisis avant la migration n'ont que le libellé texte.
+   */
+  const quartiersDeLaCommune = React.useMemo(() => {
+    if (!form.commune_id) return [];
+    const commune = reference.communes.find((c) => c.id === form.commune_id);
+    return reference.quartiers.filter(
+      (q) =>
+        q.commune_id === form.commune_id ||
+        (!q.commune_id &&
+          !!commune &&
+          (q.commune ?? "").trim().toLowerCase() ===
+            commune.nom.trim().toLowerCase()),
+    );
+  }, [form.commune_id, reference.communes, reference.quartiers]);
+
+  /**
+   * Changer de commune vide le quartier — sinon un quartier d'une autre
+   * commune resterait sélectionné — et synchronise le libellé `ville_commune`,
+   * sur lequel la recherche plein texte de la vitrine s'appuie encore.
+   */
+  function handleCommuneChange(id: string) {
+    const commune = reference.communes.find((c) => c.id === id);
+    setForm((prev) => ({
+      ...prev,
+      commune_id: id,
+      quartier_id: "",
+      ville_commune: commune ? commune.nom : prev.ville_commune,
+    }));
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -133,6 +173,11 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
       type_bien_id: parseInt(form.type_bien_id, 10) || null,
       service_bien_id: parseInt(form.service_bien_id, 10) || null,
       categorie_bien_id: parseInt(form.categorie_bien_id, 10) || null,
+      commune_id: form.commune_id || null,
+      quartier_id: form.quartier_id || null,
+      adresse_complete: form.adresse_complete || null,
+      lien_video: form.lien_video || null,
+      area: parseNumber(form.area),
       is_active: isActive,
       image_urls: imageUrls,
     });
@@ -274,13 +319,76 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
                       }
                     }
                     
-                    if (city) update("ville_commune", city);
+                    // Google renvoie une ville en texte libre. On tente de la
+                    // rapprocher d'une commune connue pour pré-sélectionner le
+                    // select ; sans cela on pouvait enregistrer commune_id =
+                    // Cocody avec ville_commune = « Abidjan », ce qui contredit
+                    // le filtrage de la vitrine.
+                    if (city) {
+                      const n = (v: string) =>
+                        v.normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+                      const match = reference.communes.find(
+                        (c) => n(c.nom) === n(city),
+                      );
+                      if (match) handleCommuneChange(match.id);
+                      else update("ville_commune", city);
+                    }
                     if (country) update("pays", country);
                   }
                 }}
               />
               <p className="text-xs text-stone-500 mt-1">L'auto-complétion remplit automatiquement la ville, le pays, le lien et les coordonnées GPS.</p>
             </Field>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Field label="Commune">
+                {reference.communes.length > 0 ? (
+                  <select
+                    value={form.commune_id}
+                    onChange={(e) => handleCommuneChange(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <option value="">— Aucune —</option>
+                    {reference.communes.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nom}
+                        {c.is_active ? "" : " (inactive)"}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-xs text-stone-500 border border-dashed border-stone-300 rounded-md px-3 py-2">
+                    Aucune commune enregistrée.{" "}
+                    <Link href="/admin/communes/nouveau" className="underline">
+                      Créez-en une
+                    </Link>{" "}
+                    pour pouvoir rattacher ce bien.
+                  </p>
+                )}
+              </Field>
+              <Field label="Quartier">
+                <select
+                  value={form.quartier_id}
+                  onChange={(e) => update("quartier_id", e.target.value)}
+                  disabled={!form.commune_id || quartiersDeLaCommune.length === 0}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <option value="">— Aucun —</option>
+                  {quartiersDeLaCommune.map((q) => (
+                    <option key={q.id} value={q.id}>
+                      {q.name}
+                      {q.is_active ? "" : " (inactif)"}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-stone-500 mt-1">
+                  {!form.commune_id
+                    ? "Choisissez d'abord une commune."
+                    : quartiersDeLaCommune.length === 0
+                      ? "Aucun quartier rattaché à cette commune."
+                      : "Le quartier affine le filtrage sur la vitrine."}
+                </p>
+              </Field>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Ville / Commune">
                 <Input
@@ -295,6 +403,24 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
                 />
               </Field>
             </div>
+            <Field label="Adresse complète (affichée sur la fiche)">
+              <Input
+                value={form.adresse_complete}
+                onChange={(e) => update("adresse_complete", e.target.value)}
+                placeholder="Laissez vide pour utiliser l'adresse ci-dessus"
+              />
+            </Field>
+            <Field label="Lien de la visite vidéo">
+              <Input
+                type="url"
+                value={form.lien_video}
+                onChange={(e) => update("lien_video", e.target.value)}
+                placeholder="https://www.youtube.com/watch?v=..."
+              />
+              <p className="text-xs text-stone-500 mt-1">
+                Affiche la section « Visite en vidéo » sur la fiche du bien.
+              </p>
+            </Field>
             <Field label="Lien Google Maps">
               <Input
                 type="url"
@@ -481,6 +607,16 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
                   onChange={(e) => update("capacity", e.target.value)}
                   placeholder="personnes"
                   min="1"
+                />
+              </Field>
+              <Field label="Surface (m²)">
+                <Input
+                  type="number"
+                  value={form.area}
+                  onChange={(e) => update("area", e.target.value)}
+                  placeholder="Ex : 120"
+                  min="0"
+                  step="0.01"
                 />
               </Field>
             </div>

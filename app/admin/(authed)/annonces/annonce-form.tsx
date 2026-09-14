@@ -12,10 +12,20 @@ import { ImageUploader } from "@/app/admin/_components/image-uploader";
 import {
   AnnonceFormData,
   AnnonceAdminRow,
+  BienOption,
+  TypeAnnonce,
   upsertAnnonceAndRedirect,
 } from "@/src/actions/admin/annonces";
 
-export function AnnonceForm({ promo }: { promo?: AnnonceAdminRow }) {
+export function AnnonceForm({
+  promo,
+  types = [],
+  biens = [],
+}: {
+  promo?: AnnonceAdminRow;
+  types?: TypeAnnonce[];
+  biens?: BienOption[];
+}) {
   const isEdit = !!promo;
 
   const [title, setTitle] = useState(promo?.title || "");
@@ -38,32 +48,35 @@ export function AnnonceForm({ promo }: { promo?: AnnonceAdminRow }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Parsing du JSON depuis la description pour récupérer les champs avancés
-  let defaultType = "PROMOTION";
-  let defaultPrice = "";
-  let defaultOldPrice = "";
-  let defaultSubtitle = "";
+  // L'annonce ne porte plus que ce qui lui est propre : le prix et les
+  // caractéristiques sont lus sur le bien mis en avant, au lieu d'être
+  // ressaisis (ils étaient jusqu'ici empaquetés en JSON dans `description`).
+  const [typeId, setTypeId] = useState<string>(
+    promo?.type_annonce_id?.toString() ?? "",
+  );
+  const [bienId, setBienId] = useState<string>(promo?.bien_id ?? "");
+  const [subtitle, setSubtitle] = useState(promo?.sous_titre ?? "");
+  const [description, setDescription] = useState(promo?.description ?? "");
+  const [bienQuery, setBienQuery] = useState("");
 
-  try {
-    if (promo?.description) {
-      if (promo.description.startsWith("{")) {
-        const parsed = JSON.parse(promo.description);
-        defaultType = parsed.type || "PROMOTION";
-        defaultPrice = parsed.price || "";
-        defaultOldPrice = parsed.oldPrice || "";
-        defaultSubtitle = parsed.subtitle || "";
-      } else {
-        defaultSubtitle = promo.description;
-      }
-    }
-  } catch (e) {
-    defaultSubtitle = promo?.description || "";
-  }
+  const bienSelectionne = React.useMemo(
+    () => biens.find((b) => b.id === bienId) ?? null,
+    [biens, bienId],
+  );
 
-  const [annonceType, setAnnonceType] = useState(defaultType);
-  const [price, setPrice] = useState(defaultPrice);
-  const [oldPrice, setOldPrice] = useState(defaultOldPrice);
-  const [subtitle, setSubtitle] = useState(defaultSubtitle);
+  const biensFiltres = React.useMemo(() => {
+    const q = bienQuery.trim().toLowerCase();
+    if (!q) return biens.slice(0, 40);
+    return biens
+      .filter((b) =>
+        [b.name, b.ville_commune]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .includes(q),
+      )
+      .slice(0, 40);
+  }, [biens, bienQuery]);
 
   const pathPrefix = "annonces"; // storage folder
 
@@ -71,28 +84,27 @@ export function AnnonceForm({ promo }: { promo?: AnnonceAdminRow }) {
     e.preventDefault();
     setError(null);
 
-    const finalImage = imageUrls[0] || imageAltUrl.trim();
-    if (!finalImage) {
-      setError("Vous devez uploader une image ou fournir une URL existante.");
+    if (!bienId) {
+      setError("Choisissez le bien mis en avant par cette annonce.");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
 
     setSubmitting(true);
 
-    const descriptionPayload = JSON.stringify({
-      type: annonceType,
-      price,
-      oldPrice,
-      subtitle
-    });
+    // L'image est facultative : à défaut, la carte reprend la photo du bien.
+    const finalImage = imageUrls[0] || imageAltUrl.trim() || null;
 
     const data: AnnonceFormData = {
       id: promo?.id,
       title: title.trim(),
-      description: descriptionPayload,
+      description: description.trim() || null,
+      sous_titre: subtitle.trim() || null,
+      type_annonce_id: typeId ? parseInt(typeId, 10) : null,
+      bien_id: bienId,
       image: finalImage,
       cta_label: ctaLabel.trim() || null,
+      // Laissé vide, le lien est dérivé du bien : /properties/<bien_id>.
       cta_url: ctaUrl.trim() || null,
       starts_at: startsAt || null,
       ends_at: endsAt || null,
@@ -144,18 +156,102 @@ export function AnnonceForm({ promo }: { promo?: AnnonceAdminRow }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          <Section title="Informations de l'annonce">
-            <Field label="Type d'annonce" required>
+          <Section
+            title="Le bien mis en avant"
+            subtitle="L'annonce pointe vers ce bien. Son prix, ses pièces et sa localisation sont lus dessus : inutile de les ressaisir."
+          >
+            <Field label="Rechercher un bien">
+              <Input
+                value={bienQuery}
+                onChange={(e) => setBienQuery(e.target.value)}
+                placeholder="Nom du bien ou commune…"
+              />
+            </Field>
+
+            <Field label="Bien" required>
               <select
-                value={annonceType}
-                onChange={(e) => setAnnonceType(e.target.value)}
-                className="flex h-9 w-full rounded-md border border-stone-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:cursor-not-allowed disabled:opacity-50"
+                value={bienId}
+                onChange={(e) => setBienId(e.target.value)}
+                required
+                className="flex h-9 w-full rounded-md border border-stone-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
               >
-                <option value="PROMOTION">PROMOTION</option>
-                <option value="NOUVEAU">NOUVEAU</option>
-                <option value="EXCLUSIVITÉ">EXCLUSIVITÉ</option>
-                <option value="OPPORTUNITÉ">OPPORTUNITÉ</option>
+                <option value="">— Choisir un bien —</option>
+                {biensFiltres.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name ?? "Sans nom"}
+                    {b.ville_commune ? ` · ${b.ville_commune}` : ""}
+                    {b.is_active ? "" : " (dépublié)"}
+                  </option>
+                ))}
               </select>
+              {biens.length === 0 && (
+                <p className="text-xs text-red-600 mt-1">
+                  Aucun bien enregistré.{" "}
+                  <Link href="/admin/biens/nouveau" className="underline">
+                    Créez-en un
+                  </Link>{" "}
+                  avant de publier une annonce.
+                </p>
+              )}
+            </Field>
+
+            {bienSelectionne && (
+              <div className="mt-2 flex items-center gap-3 rounded-md border border-stone-200 bg-stone-50 p-3">
+                {bienSelectionne.image && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={bienSelectionne.image}
+                    alt=""
+                    className="h-14 w-14 rounded object-cover flex-none"
+                  />
+                )}
+                <div className="min-w-0 text-sm">
+                  <p className="font-semibold text-stone-800 truncate">
+                    {bienSelectionne.name ?? "Sans nom"}
+                  </p>
+                  <p className="text-stone-500 text-xs">
+                    {bienSelectionne.ville_commune ?? "Localisation non renseignée"}
+                    {" · "}
+                    {bienSelectionne.prix_month != null
+                      ? `${bienSelectionne.prix_month.toLocaleString("fr-FR")} FCFA /mois`
+                      : bienSelectionne.prix != null
+                        ? `${bienSelectionne.prix.toLocaleString("fr-FR")} FCFA`
+                        : "Prix non renseigné"}
+                  </p>
+                  {bienSelectionne.is_active ? (
+                    <Link
+                      href={`/admin/biens/${bienSelectionne.id}`}
+                      className="text-xs underline text-stone-500"
+                    >
+                      Modifier ce bien
+                    </Link>
+                  ) : (
+                    <p className="text-xs text-amber-700">
+                      Ce bien est dépublié : l'annonce ne mènera nulle part.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+          </Section>
+
+          <Section title="Informations de l'annonce">
+            <Field label="Type d'annonce">
+              <select
+                value={typeId}
+                onChange={(e) => setTypeId(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-stone-200 bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary"
+              >
+                <option value="">— Aucun —</option>
+                {types.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-stone-500 mt-1">
+                Affiché en pastille sur la carte de l'annonce.
+              </p>
             </Field>
 
             <Field label="Titre" required>
@@ -163,39 +259,31 @@ export function AnnonceForm({ promo }: { promo?: AnnonceAdminRow }) {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 required
-                placeholder="Ex: Villa Duplex avec Piscine - Riviera 4"
+                placeholder="Ex : Villa Duplex avec Piscine - Riviera 4"
               />
             </Field>
 
-            <Field label="Sous-titre / Court message">
+            <Field label="Accroche">
               <Input
                 value={subtitle}
                 onChange={(e) => setSubtitle(e.target.value)}
-                placeholder="Ex: Dernier lot disponible ou Réduit de 15%"
+                placeholder="Ex : Dernier lot disponible"
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Prix / Nouveau Prix">
-                <Input
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  placeholder="Ex: 297.500.000 FCFA"
-                />
-              </Field>
-              <Field label="Ancien Prix (Optionnel)">
-                <Input
-                  value={oldPrice}
-                  onChange={(e) => setOldPrice(e.target.value)}
-                  placeholder="Ex: 350.000.000 FCFA"
-                />
-              </Field>
-            </div>
+            <Field label="Texte de l'annonce">
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={3}
+                placeholder="Quelques lignes propres à l'annonce. Les caractéristiques du bien sont affichées automatiquement."
+              />
+            </Field>
           </Section>
 
           <Section
             title="Image"
-            subtitle="Visuel principal affiché sur la carte. Format conseillé : 4/3 ou 16/9."
+            subtitle="Facultatif : sans visuel, la carte reprend la photo du bien. Format conseillé : 4/3 ou 16/9."
           >
             <ImageUploader
               value={imageUrls}
@@ -219,7 +307,7 @@ export function AnnonceForm({ promo }: { promo?: AnnonceAdminRow }) {
 
           <Section
             title="Lien (Call to action)"
-            subtitle="Le bouton qui s'affiche sur la carte pour rediriger vers le bien concerné."
+            subtitle="Par défaut, l'annonce renvoie vers la fiche du bien sélectionné."
           >
             <Field label="Libellé du bouton (Optionnel)">
               <Input
@@ -228,11 +316,11 @@ export function AnnonceForm({ promo }: { promo?: AnnonceAdminRow }) {
                 placeholder="Découvrir l'offre"
               />
             </Field>
-            <Field label="Lien (URL)">
+            <Field label="Lien personnalisé (optionnel)">
               <Input
                 value={ctaUrl}
                 onChange={(e) => setCtaUrl(e.target.value)}
-                placeholder="/properties/id-du-bien"
+                placeholder="Laissez vide : l'annonce mène au bien choisi"
               />
             </Field>
           </Section>

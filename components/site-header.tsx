@@ -1,20 +1,20 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { getMenuList, type MenuItem } from "@/config/site";
-import { cn } from "@/lib/utils";
 import {
-  AnimatePresence,
-  motion,
-  useScroll,
-  useMotionValueEvent,
-} from "framer-motion";
+  applyActiveState,
+  getMenuList,
+  MENU_ICONS,
+  type MenuItem,
+} from "@/config/site";
+import { cn } from "@/lib/utils";
+import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, KeyRound, X } from "lucide-react";
 
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { MegaMenu } from "./mega-menu";
 
 interface MobileMenuButtonProps {
@@ -28,9 +28,22 @@ interface MobileMenuProps {
   menuItems: MenuItem[];
   closeMenu: () => void;
 }
-export const Header = () => {
+
+interface HeaderProps {
+  /** Menu construit côté serveur par le layout marketing (données Supabase).
+   *  Absent, on retombe sur le menu de repli : ce composant est client et ne
+   *  peut pas interroger la base lui-même. */
+  menu?: MenuItem[];
+}
+
+export const Header = ({ menu }: HeaderProps = {}) => {
   const pathname = usePathname();
-  const menuItems = getMenuList(pathname);
+  // Le menu arrive du serveur, qui ignore le pathname : l'état actif ne peut
+  // être calculé qu'ici.
+  const menuItems = React.useMemo(
+    () => applyActiveState(menu ?? getMenuList(pathname), pathname),
+    [menu, pathname],
+  );
   const [isOpen, setIsOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -304,7 +317,7 @@ const MobileMenuEntry: React.FC<{
                   </div>
                   <ul className="grid grid-cols-2 gap-2 mt-2">
                     {col.items.map((sub) => {
-                      const Icon = sub.icon;
+                      const Icon = sub.icon ? MENU_ICONS[sub.icon] : undefined;
                       return (
                         <li key={sub.href}>
                           <Link
@@ -326,7 +339,7 @@ const MobileMenuEntry: React.FC<{
               {item.simpleItems && (
                 <ul className="mt-2 space-y-1">
                   {item.simpleItems.map((sub) => {
-                    const Icon = sub.icon;
+                    const Icon = sub.icon ? MENU_ICONS[sub.icon] : undefined;
                     return (
                       <li key={sub.href}>
                         <Link

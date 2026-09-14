@@ -197,13 +197,17 @@ function PromotionCard({
 
       {/* Image */}
       <div className="relative aspect-[16/9] bg-stone-100">
-        <Image
-          src={promo.image}
-          alt={promo.title}
-          fill
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-          className="object-cover"
-        />
+        {/* L'image de l'annonce est facultative : on retombe sur celle du
+            bien mis en avant. */}
+        {(promo.image || promo.biens?.image) && (
+          <Image
+            src={(promo.image || promo.biens?.image) as string}
+            alt={promo.title}
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover"
+          />
+        )}
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
           {promo.show_on_home && (
@@ -245,9 +249,25 @@ function PromotionCard({
         >
           {promo.title}
         </h3>
-        {promo.description && (
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          {promo.types_annonce?.name && (
+            <span className="inline-flex rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-stone-600">
+              {promo.types_annonce.name}
+            </span>
+          )}
+          {promo.biens ? (
+            <span className="text-[11px] text-neutral-500 truncate">
+              → {promo.biens.name ?? "bien sans nom"}
+            </span>
+          ) : (
+            <span className="text-[11px] text-amber-700">
+              Aucun bien rattaché
+            </span>
+          )}
+        </div>
+        {promo.sous_titre && (
           <p className="text-xs text-neutral-500 mt-1 line-clamp-2">
-            {promo.description}
+            {promo.sous_titre}
           </p>
         )}
         {(promo.starts_at || promo.ends_at) && (

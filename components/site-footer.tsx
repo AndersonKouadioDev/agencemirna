@@ -20,8 +20,23 @@ const STATS = [
   { icon: Clock, value: "24/7", label: "Support" },
 ];
 
-export async function SiteFooter() {
+/** Commune telle que reçue du layout marketing (sous-ensemble de PublicCommune). */
+type FooterCommune = {
+  id: string;
+  nom: string;
+  slug: string;
+};
+
+export async function SiteFooter({
+  communes = [],
+}: {
+  communes?: FooterCommune[];
+} = {}) {
   const settings = await getSiteContact();
+  // « Top Lieux » émettait `?loc=`, un paramètre que /properties ne lit plus :
+  // ces liens renvoyaient la liste complète, sans filtre. On repart des
+  // communes en base et du paramètre du contrat d'URL, `?commune=<slug>`.
+  const topLieux = communes.slice(0, 4);
   return (
     <section className="bg-white pt-20 pb-10 border-t border-stone-100">
       <div className="mx-auto max-w-[1400px] px-6 lg:px-8">
@@ -89,16 +104,23 @@ export async function SiteFooter() {
             </div>
           </div>
 
-          {/* Top Destinations */}
-          <div className="flex flex-col">
-            <h4 className="font-bold text-secondary mb-6">Top Lieux</h4>
-            <div className="flex flex-col gap-4 text-sm text-stone-500">
-              <Link href="/properties?loc=Cocody" className="hover:text-primary transition-colors">Cocody, Abidjan</Link>
-              <Link href="/properties?loc=Marcory" className="hover:text-primary transition-colors">Marcory, Abidjan</Link>
-              <Link href="/properties?loc=Plateau" className="hover:text-primary transition-colors">Plateau, Abidjan</Link>
-              <Link href="/properties?loc=Assinie" className="hover:text-primary transition-colors">Assinie</Link>
+          {/* Top Destinations — masqué tant qu'aucune commune n'est disponible */}
+          {topLieux.length > 0 && (
+            <div className="flex flex-col">
+              <h4 className="font-bold text-secondary mb-6">Top Lieux</h4>
+              <div className="flex flex-col gap-4 text-sm text-stone-500">
+                {topLieux.map((commune) => (
+                  <Link
+                    key={commune.id}
+                    href={`/properties?commune=${encodeURIComponent(commune.slug)}`}
+                    className="hover:text-primary transition-colors"
+                  >
+                    {commune.nom}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Newsletter */}
           <div className="lg:col-span-1 flex flex-col">

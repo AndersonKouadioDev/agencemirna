@@ -164,18 +164,21 @@ export default function ListPropertiesSection({
       // NB : la comparaison bidirectionnelle d'origine acceptait tout bien
       // dont le champ était vide — `"villa".includes("")` vaut true, si bien
       // qu'un bien sans type franchissait chaque filtre de type.
+      // Égalité stricte sur le libellé normalisé : les deux côtés viennent de
+      // types_bien / services_bien. La comparaison par sous-chaîne d'origine
+      // acceptait tout bien dont le champ était vide (`"villa".includes("")`),
+      // et faisait remonter un bien « Location » sous le filtre « Location
+      // meublée longue durée ».
       if (filters.type) {
         const t = normalize(filters.type);
         const name = normalize(bien.types_bien?.name);
-        if (!name) return false;
-        if (!name.includes(t) && !t.includes(name)) return false;
+        if (!name || name !== t) return false;
       }
 
       if (filters.service) {
-        const svc = normalize(filters.service).replace("_", " ");
+        const svc = normalize(filters.service).replace(/_/g, " ");
         const name = normalize(bien.services_bien?.name);
-        if (!name) return false;
-        if (!name.includes(svc) && !svc.includes(name)) return false;
+        if (!name || name !== svc) return false;
       }
       const priceMin = filters.priceMin ? parseInt(filters.priceMin, 10) : null;
       const priceMax = filters.priceMax ? parseInt(filters.priceMax, 10) : null;

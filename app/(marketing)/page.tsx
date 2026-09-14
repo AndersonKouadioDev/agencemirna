@@ -7,6 +7,7 @@ import ServicesBento from "@/components/landing/services-bento";
 import NewsGuidesSection from "@/components/landing/news-guides-section";
 import CtaBannerSection from "@/components/landing/cta-banner-section";
 import CommunesSection from "@/components/landing/communes-section";
+import { getSiteContact } from "@/src/lib/site-contact";
 import TestimonialsSection from "@/components/landing/testimonials-section";
 import AnnouncementsSection from "@/components/landing/announcements-section";
 import { getActiveQuartiers, getBienReferenceData, listCommunesPublic, getActiveTestimonials } from "@/src/actions/public";
@@ -16,11 +17,12 @@ import {
 } from "@/components/seo/structured-data";
 
 export default async function Page() {
-  const [communes, quartiers, refData, testimonials] = await Promise.all([
+  const [communes, quartiers, refData, testimonials, contact] = await Promise.all([
     listCommunesPublic(),
     getActiveQuartiers(),
     getBienReferenceData(),
-    getActiveTestimonials()
+    getActiveTestimonials(),
+    getSiteContact(),
   ]);
   return (
     <>
@@ -29,7 +31,7 @@ export default async function Page() {
 
       <div className="bg-white pb-12">
         {/* 1. Hero & Search */}
-        <HeroSection communes={communes} quartiers={quartiers} types={refData.types} services={refData.services} />
+        <HeroSection communes={communes} quartiers={quartiers} types={refData.types} services={refData.services} whatsappUrl={contact.whatsappMessageUrl} />
         {/* 2. Bandeau Services Rapides */}
         <ServicesShowcase />
       </div>
@@ -41,7 +43,7 @@ export default async function Page() {
       <FeaturedPropertiesServer />
 
       {/* 5. Catégories de biens */}
-      <CategoriesSection />
+      <CategoriesSection types={refData.types} />
 
       {/* 6. Quartiers Phares */}
       <CommunesSection communes={communes} />

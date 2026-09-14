@@ -15,11 +15,32 @@ import { getAdminUser } from "@/src/supabase/admin-auth";
 // Types
 // ============================================================================
 
+const ANNONCE_SELECT =
+  "id, title, description, sous_titre, image, cta_label, cta_url, starts_at, ends_at, " +
+  "show_on_home, is_active, ordre, updated_at, type_annonce_id, bien_id, " +
+  "types_annonce:type_annonce_id (id, name), " +
+  "biens:bien_id (id, name, image, prix, prix_month, ville_commune)";
+
+export type AnnonceBienLie = {
+  id: string;
+  name: string | null;
+  image: string | null;
+  prix: number | null;
+  prix_month: number | null;
+  ville_commune: string | null;
+};
+
 export type AnnonceAdminRow = {
   id: string;
   title: string;
   description: string | null;
-  image: string;
+  sous_titre: string | null;
+  type_annonce_id: number | null;
+  bien_id: string | null;
+  types_annonce: { id: number; name: string } | null;
+  biens: AnnonceBienLie | null;
+  /** Optionnelle : la photo du bien lié sert de repli. */
+  image: string | null;
   cta_label: string | null;
   cta_url: string | null;
   starts_at: string | null;
@@ -34,7 +55,11 @@ export type AnnonceFormData = {
   id?: string;
   title: string;
   description?: string | null;
-  image: string;
+  sous_titre?: string | null;
+  type_annonce_id?: number | null;
+  /** Bien mis en avant. Obligatoire : c'est lui qui porte les informations. */
+  bien_id?: string | null;
+  image?: string | null;
   cta_label?: string | null;
   cta_url?: string | null;
   starts_at?: string | null;
@@ -49,6 +74,53 @@ export type ActionResult<T = void> =
   | { ok: false; error: string };
 
 // ============================================================================
+// Données de référence du formulaire
+// ============================================================================
+
+export type TypeAnnonce = { id: number; name: string };
+
+export async function listTypesAnnonce(): Promise<TypeAnnonce[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("types_annonce")
+    .select("id, name")
+    .order("ordre", { ascending: true });
+  if (error || !data) {
+    if (error) console.error("listTypesAnnonce error:", error);
+    return [];
+  }
+  return data as TypeAnnonce[];
+}
+
+export type BienOption = {
+  id: string;
+  name: string | null;
+  image: string | null;
+  prix: number | null;
+  prix_month: number | null;
+  ville_commune: string | null;
+  is_active: boolean;
+};
+
+/**
+ * Biens proposés au rattachement d'une annonce.
+ * Volontairement allégé : le formulaire n'a besoin que de quoi identifier le
+ * bien et en montrer un aperçu, pas de toute sa fiche.
+ */
+export async function listBiensPourAnnonce(): Promise<BienOption[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("biens")
+    .select("id, name, image, prix, prix_month, ville_commune, is_active")
+    .order("created_at", { ascending: false });
+  if (error || !data) {
+    if (error) console.error("listBiensPourAnnonce error:", error);
+    return [];
+  }
+  return data as BienOption[];
+}
+
+// ============================================================================
 // LIST
 // ============================================================================
 
@@ -56,16 +128,14 @@ export async function listAnnoncesAdmin(): Promise<AnnonceAdminRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("annonces")
-    .select(
-      "id, title, description, image, cta_label, cta_url, starts_at, ends_at, show_on_home, is_active, ordre, updated_at",
-    )
+    .select(ANNONCE_SELECT)
     .order("ordre", { ascending: true });
 
   if (error || !data) {
     if (error) console.error("listAnnoncesAdmin error:", error);
     return [];
   }
-  return data as AnnonceAdminRow[];
+  return data as unknown as AnnonceAdminRow[];
 }
 
 // ============================================================================
@@ -78,9 +148,7 @@ export async function getAnnonceAdmin(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("annonces")
-    .select(
-      "id, title, description, image, cta_label, cta_url, starts_at, ends_at, show_on_home, is_active, ordre, updated_at",
-    )
+    .select(ANNONCE_SELECT)
     .eq("id", id)
     .maybeSingle();
 
@@ -88,7 +156,7 @@ export async function getAnnonceAdmin(
     if (error) console.error("getAnnonceAdmin error:", error);
     return null;
   }
-  return data as AnnonceAdminRow;
+  return data as unknown as AnnonceAdminRow;
 }
 
 // ============================================================================
@@ -104,8 +172,13 @@ export async function upsertPromotion(
   if (!input.title?.trim()) {
     return { ok: false, error: "Le titre est obligatoire." };
   }
-  if (!input.image?.trim()) {
-    return { ok: false, error: "Une image est obligatoire." };
+  if (!input.bien_id) {
+    return {
+      ok: false,
+      error:
+        "Choisissez le bien mis en avant : c'est lui qui porte le prix et les " +
+        "caractéristiques affichés sur l'annonce.",
+    };
   }
   if (
     input.starts_at &&
@@ -123,7 +196,11 @@ export async function upsertPromotion(
   const data = {
     title: input.title.trim(),
     description: input.description?.trim() || null,
-    image: input.image.trim(),
+    sous_titre: input.sous_titre?.trim() || null,
+    type_annonce_id: input.type_annonce_id ?? null,
+    bien_id: input.bien_id ?? null,
+    // Facultative : la photo du bien lié sert de repli à l'affichage.
+    image: input.image?.trim() || null,
     cta_label: input.cta_label?.trim() || null,
     cta_url: input.cta_url?.trim() || null,
     starts_at: input.starts_at || null,
@@ -142,6 +219,7 @@ export async function upsertPromotion(
     revalidatePath("/admin/annonces");
     revalidatePath("/annonces");
     revalidatePath("/");
+    if (input.bien_id) revalidatePath(`/properties/${input.bien_id}`);
     return { ok: true, data: { id: input.id } };
   } else {
     const { data: existing } = await supabase

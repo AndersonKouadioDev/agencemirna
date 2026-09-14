@@ -1,36 +1,57 @@
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Check, MessageCircle } from "lucide-react";
-import { Breadcrumbs, Card, Chip } from "@heroui/react";
+import { ArrowRight, Building2, Check, MessageCircle } from "lucide-react";
+import { Breadcrumbs, Card } from "@heroui/react";
 import { Button } from "@/components/ui/button";
-import { getServiceBySlug, getActiveServices } from "@/src/actions/public";
-import { ServiceIcon } from "../service-icon";
+import { getActiveServices } from "@/src/actions/public";
+import { getSiteContact } from "@/src/lib/site-contact";
 import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
+import { ServiceIcon } from "../service-icon";
 
-export async function generateMetadata(props: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await props.params;
-  const service = await getServiceBySlug(slug);
-  if (!service) return { title: "Service introuvable" };
-  return {
-    title: `${service.name} : Agence Mirna`,
-    description: service.short_description ?? undefined,
-  };
-}
+export type ServicePageLayoutProps = {
+  /** Slug de la page courante, utilisé pour le fil d'Ariane et l'exclusion des « autres services ». */
+  slug: string;
+  name: string;
+  shortDescription: string;
+  longDescription: string;
+  /** Nom d'une icône Lucide (ex. « Key », « Sofa »). */
+  icon: string;
+  image?: string;
+  highlights: string[];
+  /** Appel à l'action propre au service (estimation, contact…). */
+  cta?: { label: string; href: string };
+  /**
+   * Libellé EXACT d'une ligne de `services_bien` (Vente, Location meublée
+   * longue durée, Gestion locative). Les services métier sans équivalent en
+   * base (construction, décoration, promotion) n'en passent pas : le lien
+   * « Voir les biens » mène alors à /properties sans filtre.
+   */
+  bienService?: string;
+};
 
-export default async function ServiceDetailPage(props: {
-  params: Promise<{ slug: string }>;
-}) {
-  const { slug } = await props.params;
-  const service = await getServiceBySlug(slug);
-  if (!service) notFound();
+export async function ServicePageLayout({
+  slug,
+  name,
+  shortDescription,
+  longDescription,
+  icon,
+  image,
+  highlights,
+  cta,
+  bienService,
+}: ServicePageLayoutProps) {
+  const contact = await getSiteContact();
+  // Le réglage admin (site_settings) prime sur la variable d'environnement,
+  // qui n'était jusqu'ici jamais supplantée et ignorait donc le back-office.
+  const whatsappHref =
+    contact.whatsappMessageUrl || process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "#";
+
+  const biensHref = bienService
+    ? `/properties?service=${encodeURIComponent(bienService)}`
+    : "/properties";
 
   const allServices = await getActiveServices();
-  const otherServices = allServices
-    .filter((s) => s.slug !== service.slug)
-    .slice(0, 3);
+  const otherServices = allServices.filter((s) => s.slug !== slug).slice(0, 3);
 
   return (
     <main className="bg-[#FAF5EE]">
@@ -38,16 +59,17 @@ export default async function ServiceDetailPage(props: {
         items={[
           { name: "Accueil", url: "/" },
           { name: "Services", url: "/services" },
-          { name: service.name, url: `/services/${service.slug}` },
+          { name, url: `/services/${slug}` },
         ]}
       />
+
       {/* HERO IMMERSIF (image full-bleed si dispo, sinon dégradé) */}
       <section className="relative isolate overflow-hidden">
-        {service.image ? (
+        {image ? (
           <>
             <div className="absolute inset-0 -z-10">
               <Image
-                src={service.image}
+                src={image}
                 alt=""
                 fill
                 sizes="100vw"
@@ -62,51 +84,47 @@ export default async function ServiceDetailPage(props: {
                 }}
               />
             </div>
-            <div className="mx-auto max-w-6xl px-6 lg:px-8 pt-44 sm:pt-52 pb-24 sm:pt-52 sm:pb-32 text-white">
+            <div className="mx-auto max-w-6xl px-6 lg:px-8 pt-44 sm:pt-52 pb-24 sm:pb-32 text-white">
               <Breadcrumbs className="mb-8 text-white/80 [&_a]:text-white/80 [&_a:hover]:text-white">
                 <Breadcrumbs.Item href="/">Accueil</Breadcrumbs.Item>
                 <Breadcrumbs.Item href="/services">Services</Breadcrumbs.Item>
-                <Breadcrumbs.Item>{service.name}</Breadcrumbs.Item>
+                <Breadcrumbs.Item>{name}</Breadcrumbs.Item>
               </Breadcrumbs>
 
               <div className="max-w-3xl">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-3 py-1.5 text-xs font-semibold uppercase tracking-widest mb-6">
-                  <ServiceIcon name={service.icon} className="h-3.5 w-3.5" />
+                  <ServiceIcon name={icon} className="h-3.5 w-3.5" />
                   Notre service
                 </div>
                 <h1 className="font-agate text-5xl sm:text-6xl md:text-7xl font-bold leading-[1.05] tracking-tight">
-                  {service.name}
+                  {name}
                 </h1>
-                {service.short_description && (
-                  <p className="mt-6 text-lg sm:text-xl text-white/90 leading-relaxed max-w-2xl">
-                    {service.short_description}
-                  </p>
-                )}
+                <p className="mt-6 text-lg sm:text-xl text-white/90 leading-relaxed max-w-2xl">
+                  {shortDescription}
+                </p>
               </div>
             </div>
           </>
         ) : (
-          // Fallback sans image : dégradé brand
-          <div className="bg-gradient-to-br from-secondary via-secondary/90 to-primary text-white pt-44 sm:pt-52 pb-24 sm:pt-52 sm:pb-32">
+          // Repli sans image : dégradé brand
+          <div className="bg-gradient-to-br from-secondary via-secondary/90 to-primary text-white pt-44 sm:pt-52 pb-24 sm:pb-32">
             <div className="mx-auto max-w-6xl px-6 lg:px-8">
               <Breadcrumbs className="mb-8 text-white/80 [&_a]:text-white/80 [&_a:hover]:text-white">
                 <Breadcrumbs.Item href="/">Accueil</Breadcrumbs.Item>
                 <Breadcrumbs.Item href="/services">Services</Breadcrumbs.Item>
-                <Breadcrumbs.Item>{service.name}</Breadcrumbs.Item>
+                <Breadcrumbs.Item>{name}</Breadcrumbs.Item>
               </Breadcrumbs>
               <div className="flex items-start gap-6">
                 <div className="hidden sm:flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
-                  <ServiceIcon name={service.icon} className="h-10 w-10" />
+                  <ServiceIcon name={icon} className="h-10 w-10" />
                 </div>
                 <div className="max-w-3xl">
                   <h1 className="font-agate text-5xl sm:text-6xl md:text-7xl font-bold leading-[1.05] tracking-tight">
-                    {service.name}
+                    {name}
                   </h1>
-                  {service.short_description && (
-                    <p className="mt-6 text-lg sm:text-xl text-white/90 leading-relaxed max-w-2xl">
-                      {service.short_description}
-                    </p>
-                  )}
+                  <p className="mt-6 text-lg sm:text-xl text-white/90 leading-relaxed max-w-2xl">
+                    {shortDescription}
+                  </p>
                 </div>
               </div>
             </div>
@@ -120,23 +138,21 @@ export default async function ServiceDetailPage(props: {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16">
             {/* Description longue */}
             <article className="lg:col-span-2">
-              {service.long_description && (
-                <div className="prose prose-lg prose-neutral max-w-none">
-                  <p className="text-lg text-neutral-700 leading-relaxed whitespace-pre-wrap first-letter:font-agate first-letter:text-5xl first-letter:font-bold first-letter:text-primary first-letter:mr-1 first-letter:float-left first-letter:leading-none">
-                    {service.long_description}
-                  </p>
-                </div>
-              )}
+              <div className="prose prose-lg prose-neutral max-w-none">
+                <p className="text-lg text-neutral-700 leading-relaxed whitespace-pre-wrap first-letter:font-agate first-letter:text-5xl first-letter:font-bold first-letter:text-primary first-letter:mr-1 first-letter:float-left first-letter:leading-none">
+                  {longDescription}
+                </p>
+              </div>
 
-              {service.highlights.length > 0 && (
+              {highlights.length > 0 && (
                 <div className="mt-12">
                   <h2 className="font-agate text-3xl sm:text-4xl font-bold text-secondary mb-6">
                     Ce qui est inclus
                   </h2>
                   <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {service.highlights.map((h, i) => (
+                    {highlights.map((h) => (
                       <li
-                        key={i}
+                        key={h}
                         className="flex items-start gap-3 rounded-xl bg-white border border-stone-200 p-4"
                       >
                         <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-white mt-0.5">
@@ -168,10 +184,10 @@ export default async function ServiceDetailPage(props: {
                   </Card.Description>
                 </Card.Header>
                 <Card.Content className="space-y-3 pb-6">
-                  {service.cta_url && (
+                  {cta && (
                     <Button asChild className="w-full rounded-full">
-                      <Link href={service.cta_url}>
-                        {service.cta_label ?? "Nous contacter"}
+                      <Link href={cta.href}>
+                        {cta.label}
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
@@ -181,10 +197,18 @@ export default async function ServiceDetailPage(props: {
                     variant="outline"
                     className="w-full rounded-full bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white"
                   >
+                    <Link href={biensHref}>
+                      <Building2 className="mr-2 h-4 w-4" />
+                      Voir les biens
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="w-full rounded-full bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white"
+                  >
                     <Link
-                      href={
-                        process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "#"
-                      }
+                      href={whatsappHref}
                       target="_blank"
                       rel="noopener noreferrer"
                     >

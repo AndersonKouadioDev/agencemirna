@@ -5,9 +5,15 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, ChevronDown, Sparkles } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { MenuItem } from "@/config/site";
+import {
+  MENU_FALLBACK_IMAGE,
+  MENU_IMAGES_PAR_ICONE,
+  MENU_ICONS,
+  type MenuItem,
+  type MenuSubItem,
+} from "@/config/site";
 
 /**
  * MegaMenu desktop façon Descript :
@@ -169,59 +175,61 @@ function MegaContent({
   item: MenuItem;
   onItemClick: () => void;
 }) {
-  const [hoveredLabel, setHoveredLabel] = useState<string | null>(null);
+  const [hovered, setHovered] = useState<MenuSubItem | null>(null);
 
-  // Mapping d'images spécifiques pour les sous-items de "Biens"
-  const getImageForLabel = (label: string) => {
-    const map: Record<string, string> = {
-      "Tous les biens": "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800",
-      "Villas": "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800",
-      "Duplex": "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=800",
-      "Maisons": "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800",
-      "Terrains": "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=800",
-      "Locaux commerciaux": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=800",
-      "Bureaux": "https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&q=80&w=800",
-      "Entrepôts": "https://images.unsplash.com/photo-1553413077-190dd305871c?auto=format&fit=crop&q=80&w=800",
-      "Vente": "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800",
-      "Location nue": "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&q=80&w=800",
-      "Location meublée": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800",
-      "Bail commercial": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=800",
-      "Gestion locative": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800",
-      "Cocody": "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&q=80&w=800",
-      "Plateau": "https://images.unsplash.com/photo-1449844908441-8829872d2607?auto=format&fit=crop&q=80&w=800",
-      "Marcory": "https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&q=80&w=800",
-      "Riviera": "https://images.unsplash.com/photo-1600607686527-6fb886090705?auto=format&fit=crop&q=80&w=800",
-    };
-    return map[label] || "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800";
-  };
+  // Le visuel vient de la donnée elle-même (commune.image, quartier.image) :
+  // plus aucune correspondance libellé → image en dur, qui laissait les
+  // nouvelles communes sans photo.
+  const currentImage =
+    hovered?.image ||
+    (hovered?.icon ? MENU_IMAGES_PAR_ICONE[hovered.icon] : undefined) ||
+    MENU_FALLBACK_IMAGE;
+  const currentTitle = hovered?.label || item.featured?.title || "Découvrir";
+  const currentDesc = hovered
+    ? `Découvrez nos offres pour : ${hovered.label}`
+    : item.featured?.description;
 
-  const defaultImage = "/images/photos/immeuble1.jpg";
-  const currentImage = hoveredLabel ? getImageForLabel(hoveredLabel) : defaultImage;
-  const currentTitle = hoveredLabel || item.featured?.title || "Découvrir";
-  const currentDesc = hoveredLabel ? `Découvrez nos offres pour : ${hoveredLabel}` : item.featured?.description;
+  const colonnes = item.columns ?? [];
 
   return (
     <div className="flex flex-col md:flex-row p-6 gap-6">
       {/* Left side: Columns */}
       <div className="flex-1 p-4">
-        <div className="grid grid-cols-3 gap-8">
-          {item.columns!.map((col) => (
+        <div
+          className="grid gap-8"
+          // Le nombre de colonnes dépend des données (la colonne quartiers
+          // disparaît si la base n'en renvoie aucun).
+          style={{
+            gridTemplateColumns: `repeat(${Math.max(colonnes.length, 1)}, minmax(0, 1fr))`,
+          }}
+        >
+          {colonnes.map((col) => (
             <div key={col.title}>
-              <h4 className="text-base font-bold uppercase tracking-wider text-secondary mb-6 border-l-4 border-primary pl-4 whitespace-nowrap">
+              <h4
+                className={cn(
+                  "font-bold uppercase tracking-wider text-secondary mb-6 border-l-4 border-primary pl-4",
+                  // Au-delà de 3 colonnes chaque colonne tombe sous ~150 px :
+                  // un titre `whitespace-nowrap` déborderait sur sa voisine.
+                  colonnes.length > 3
+                    ? "text-sm"
+                    : "text-base whitespace-nowrap",
+                )}
+              >
                 {col.title}
               </h4>
               <ul className="space-y-4">
                 {col.items.map((sub) => {
-                  const isHovered = hoveredLabel === sub.label;
+                  const isHovered = hovered?.href === sub.href;
                   return (
                     <li key={sub.href}>
                       <Link
                         href={sub.href}
                         onClick={onItemClick}
-                        onMouseEnter={() => setHoveredLabel(sub.label)}
-                        onMouseLeave={() => setHoveredLabel(null)}
+                        onMouseEnter={() => setHovered(sub)}
+                        onMouseLeave={() => setHovered(null)}
                         className={cn(
-                          "group flex items-center text-lg transition-colors font-medium relative w-fit",
+                          "group flex items-center transition-colors font-medium relative w-fit",
+                          colonnes.length > 3 ? "text-base" : "text-lg",
                           isHovered ? "text-primary" : "text-neutral-600 hover:text-primary"
                         )}
                       >
@@ -244,7 +252,9 @@ function MegaContent({
       <div className="w-[360px] shrink-0 rounded-[24px] overflow-hidden relative shadow-xl">
         <AnimatePresence mode="wait">
           <motion.div
-            key={currentImage} // Force re-render on image change
+            // Rejoue l'animation même quand deux entrées partagent l'image de
+            // repli : l'image seule ne suffit pas comme clé.
+            key={`${currentTitle}|${currentImage}`}
             initial={{ opacity: 0, scale: 1.05 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
@@ -265,7 +275,7 @@ function MegaContent({
             {/* Contenu textuel superposé */}
             <div className="absolute inset-0 p-8 flex flex-col justify-end text-white">
               <div className="inline-flex items-center justify-center px-3 py-1 mb-4 rounded-full bg-white/20 backdrop-blur-md text-white text-[11px] font-bold uppercase tracking-widest border border-white/20 w-fit">
-                {hoveredLabel ? "Catégorie" : "Premium"}
+                {hovered ? "Catégorie" : "Premium"}
               </div>
               
               <h4 className="text-2xl font-bold mb-2 drop-shadow-md">
@@ -297,26 +307,19 @@ function SimpleContent({
   items,
   onItemClick,
 }: {
-  items: import("@/config/site").MenuSubItem[];
+  items: MenuSubItem[];
   onItemClick: () => void;
 }) {
   const [hoveredIndex, setHoveredIndex] = useState(0);
   const activeItem = items[hoveredIndex] || items[0];
 
-  const getImageForLabel = (label: string) => {
-    const map: Record<string, string> = {
-      "Vente de biens": "https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800",
-      "Location meublée": "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&q=80&w=800",
-      "Gestion immobilière": "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800",
-      "Décoration & aménagement": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80&w=800",
-      "Construction": "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=800",
-      "Promotion immobilière": "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800",
-      "À propos": "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=800",
-      "Notre équipe": "/images/photos/team.jpg",
-      "Blog": "https://images.unsplash.com/photo-1512428559087-560fa5ceab42?auto=format&fit=crop&q=80&w=800",
-    };
-    return map[label] || "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800";
-  };
+  if (!activeItem) return null;
+
+  // Comme pour le méga-menu : le visuel est porté par l'entrée elle-même.
+  const currentImage =
+    activeItem.image ||
+    (activeItem.icon ? MENU_IMAGES_PAR_ICONE[activeItem.icon] : undefined) ||
+    MENU_FALLBACK_IMAGE;
 
   return (
     <div className="flex flex-col md:flex-row p-6 gap-6">
@@ -324,7 +327,7 @@ function SimpleContent({
       <div className="flex-1 p-4">
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
           {items.map((sub, idx) => {
-            const Icon = sub.icon;
+            const Icon = sub.icon ? MENU_ICONS[sub.icon] : undefined;
             const isHovered = hoveredIndex === idx;
             
             return (
@@ -384,7 +387,7 @@ function SimpleContent({
           >
             {/* Image de fond */}
             <Image
-              src={getImageForLabel(activeItem.label)}
+              src={currentImage}
               alt={activeItem.label}
               fill
               className="object-cover"

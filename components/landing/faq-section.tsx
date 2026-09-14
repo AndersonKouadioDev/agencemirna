@@ -57,5 +57,5 @@ export default async function FAQSection() {
           answer: f.answer,
         }))
       : FALLBACK_FAQS;
-  return <FaqAccordionClient faqs={faqs} whatsappUrl={(await getSiteContact()).whatsappUrl} />;
+  return <FaqAccordionClient faqs={faqs} whatsappUrl={(await getSiteContact()).whatsappMessageUrl} />;
 }
