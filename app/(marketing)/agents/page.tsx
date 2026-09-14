@@ -218,8 +218,9 @@ async function EmptyAgents() {
           <Button asChild className="rounded-full h-12 px-6">
             <Link
               href={
+                contact.whatsappUrl ||
                 process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE ||
-                contact.whatsappUrl
+                "#"
               }
               target="_blank"
               rel="noopener noreferrer"

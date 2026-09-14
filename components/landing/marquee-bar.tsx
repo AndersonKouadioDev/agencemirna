@@ -8,6 +8,7 @@ import {
   Newspaper,
 } from "lucide-react";
 import { getActiveAnnonces } from "@/src/actions/public";
+import { annonceHref } from "@/src/lib/annonce";
 
 /**
  * Bandeau défilant en haut de la home : annonces et liens rapides.
@@ -59,7 +60,7 @@ export default async function MarqueeBar() {
   const promoItems: AnnouncementItem[] = promos.slice(0, 3).map((p) => ({
     icon: Sparkles,
     text: p.title,
-    href: p.cta_url || "/annonces",
+    href: annonceHref(p),
   }));
 
   const announcements: AnnouncementItem[] =

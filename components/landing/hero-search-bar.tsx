@@ -38,38 +38,62 @@ export default function HeroSearchBar({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [location, setLocation] = React.useState<string | null>(searchParams.get("location") || searchParams.get("loc") || null);
+  // Valeur encodée « commune:<slug> » ou « quartier:<id> ».
+  const readLocation = React.useCallback(() => {
+    const q = searchParams.get("quartier");
+    if (q) return `quartier:${q}`;
+    const c = searchParams.get("commune");
+    if (c) return `commune:${c}`;
+    return null;
+  }, [searchParams]);
+
+  const [location, setLocation] = React.useState<string | null>(readLocation);
   const [type, setType] = React.useState<string | null>(searchParams.get("type") || null);
   const [service, setService] = React.useState<string | null>(searchParams.get("service") || null);
 
   const [activeTab, setActiveTab] = React.useState<"location" | "type" | "service" | null>(null);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
+  // Synchronisation inconditionnelle : les gardes `if (x)` d'origine
+  // empêchaient la remise à zéro, si bien que « Réinitialiser » vidait l'URL
+  // mais laissait la barre afficher — et réappliquer — les anciens critères.
   React.useEffect(() => {
-    const loc = searchParams.get("location") || searchParams.get("loc");
-    if (loc) setLocation(loc);
-    const t = searchParams.get("type");
-    if (t) setType(t);
-    const s = searchParams.get("service");
-    if (s) setService(s);
-  }, [searchParams]);
+    setLocation(readLocation());
+    setType(searchParams.get("type"));
+    setService(searchParams.get("service"));
+  }, [searchParams, readLocation]);
 
 
   const dynamicLOCATIONS_BY_COMMUNE = React.useMemo<Record<string, any[]>>(() => {
     if (communes.length > 0) {
       const grouped: Record<string, any[]> = {};
-      communes.forEach(c => {
-        grouped[c.nom] = [{ value: c.nom, label: `${c.nom} (toute la commune)`, group: c.nom }];
-        const relatedQuartiers = quartiers.filter(q => q.commune_id === c.id || (q.commune && q.commune.toLowerCase() === c.nom.toLowerCase()));
-        relatedQuartiers.forEach(q => {
-          grouped[c.nom].push({ value: q.search_query || q.name, label: q.name, group: c.nom });
-        });
+      communes.forEach((c) => {
+        grouped[c.nom] = [
+          {
+            value: `commune:${c.slug}`,
+            label: `${c.nom} (toute la commune)`,
+            group: c.nom,
+          },
+        ];
+        quartiers
+          .filter(
+            (q) =>
+              q.commune_id === c.id ||
+              (q.commune && q.commune.toLowerCase() === String(c.nom).toLowerCase()),
+          )
+          .forEach((q) => {
+            grouped[c.nom].push({
+              value: `quartier:${q.id}`,
+              label: q.name,
+              group: c.nom,
+            });
+          });
       });
       return grouped;
     }
     return FALLBACK_LOCATIONS_BY_COMMUNE as Record<string, any[]>;
   }, [communes, quartiers]);
-  
+
   const dynamicTYPES: {value: string, label: string}[] = types && types.length > 0 ? types.map(t => ({ value: t.name, label: t.name })) : BIEN_TYPES;
   const dynamicSERVICES: {value: string, label: string}[] = services && services.length > 0 ? services.map(s => ({ value: s.name, label: s.name })) : BIEN_SERVICES;
 
@@ -83,21 +107,31 @@ export default function HeroSearchBar({
   function onSubmit(e?: React.FormEvent) {
     e?.preventDefault();
     setActiveTab(null);
-    const params = new URLSearchParams();
-    
-    // Correct URL parameter mapping for ListPropertiesSection compatibility
-    if (location) params.set("location", location); // use location instead of q
+
+    // On repart des paramètres existants : reconstruire à vide effaçait
+    // silencieusement prix min/max, chambres et tri à chaque recherche.
+    const params = new URLSearchParams(searchParams.toString());
+    ["location", "loc", "commune", "quartier"].forEach((k) => params.delete(k));
+
+    if (location) {
+      const [kind, id] = location.split(":");
+      if (kind === "quartier" || kind === "commune") params.set(kind, id);
+      else params.set("commune", location);
+    }
+
     if (type) {
-      const tLabel = dynamicTYPES.find(t => t.value === type)?.label;
+      const tLabel = dynamicTYPES.find((t) => t.value === type)?.label;
       if (tLabel) params.set("type", tLabel);
-    }
+      else params.delete("type");
+    } else params.delete("type");
+
     if (service) {
-      const sLabel = dynamicSERVICES.find(s => s.value === service)?.label;
+      const sLabel = dynamicSERVICES.find((s) => s.value === service)?.label;
       if (sLabel) params.set("service", sLabel);
-    }
-    
+      else params.delete("service");
+    } else params.delete("service");
+
     if (onSearch) {
-      // In modal search context, we can just pass the params
       onSearch(params);
       return;
     }
@@ -108,8 +142,11 @@ export default function HeroSearchBar({
 
   const getLocationLabel = () => {
     if (!location) return "Où ?";
-    const loc = ABIDJAN_LOCATIONS.find((l) => l.value === location);
-    return loc ? loc.label : "Où ?";
+    // Cherché dans les options réellement affichées : l'ancienne version
+    // interrogeait la liste statique, si bien que le libellé restait bloqué
+    // sur « Où ? » dès que les communes venaient de la base.
+    const all = Object.values(dynamicLOCATIONS_BY_COMMUNE).flat();
+    return all.find((l) => l.value === location)?.label ?? "Où ?";
   };
 
   const getTypeLabel = () => {

@@ -47,8 +47,9 @@ export default function FaqAccordionClient({
 
             <Link
               href={
+                whatsappUrl ||
                 process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE ||
-                whatsappUrl
+                "#"
               }
               target="_blank"
               rel="noopener noreferrer"

@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { createClient } from "../supabase/server";
 import { notifyNewLead } from "../lib/notify";
 
@@ -71,9 +72,16 @@ export async function createLead(
   }
 
   const supabase = await createClient();
-  const { data: insertedLead, error } = await supabase
+  // NB : la policy publique de `leads` autorise INSERT mais pas SELECT — et
+  // c'est volontaire, une policy SELECT publique exposerait les coordonnées de
+  // tous les prospects. Un `.select()` après l'insert déclencherait un RETURNING
+  // que la RLS refuse, faisant échouer l'enregistrement. On insère donc sans
+  // relire, et on génère l'identifiant côté serveur.
+  const leadId = randomUUID();
+  const { error } = await supabase
     .from("leads")
     .insert({
+      id: leadId,
       source: input.source,
       full_name: input.full_name?.trim() || null,
       email,
@@ -82,14 +90,13 @@ export async function createLead(
       bien_id: input.bien_id || null,
       source_url: input.source_url || null,
       metadata: input.metadata ?? null,
-    })
-    .select("id")
-    .single();
+    });
 
-  if (error || !insertedLead) {
+  if (error) {
     console.error("createLead error:", error);
     return { ok: false, error: "Impossible d'enregistrer votre demande." };
   }
+  const insertedLead = { id: leadId };
 
   // Best-effort : notification email à l'agence. Skip silencieux si
   // RESEND_API_KEY non configuré, échec silencieux sinon (le lead est

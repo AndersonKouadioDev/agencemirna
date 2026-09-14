@@ -12,7 +12,9 @@ export const DEFAULT_SITE_CONTACT = {
     "(+225) 01 43 483 131",
     "(+225) 07 03 06 42 06",
   ],
-  whatsapp: "22501434831131",
+  // 225 + les 10 chiffres du numéro affiché. L'ancienne valeur en comptait
+  // 11, ce qui rendait tous les liens wa.me du site inopérants.
+  whatsapp: "2250143483131",
   email: "info@agencemirna.com",
   facebook: "https://facebook.com/agencemirna",
   instagram: "https://instagram.com/agencemirna",

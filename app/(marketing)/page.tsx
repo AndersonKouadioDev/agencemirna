@@ -6,7 +6,7 @@ import CategoriesSection from "@/components/landing/categories-section";
 import ServicesBento from "@/components/landing/services-bento";
 import NewsGuidesSection from "@/components/landing/news-guides-section";
 import CtaBannerSection from "@/components/landing/cta-banner-section";
-import NeighborhoodsSection from "@/components/landing/neighborhoods-section";
+import CommunesSection from "@/components/landing/communes-section";
 import TestimonialsSection from "@/components/landing/testimonials-section";
 import AnnouncementsSection from "@/components/landing/announcements-section";
 import { getActiveQuartiers, getBienReferenceData, listCommunesPublic, getActiveTestimonials } from "@/src/actions/public";
@@ -44,7 +44,7 @@ export default async function Page() {
       <CategoriesSection />
 
       {/* 6. Quartiers Phares */}
-      <NeighborhoodsSection quartiers={quartiers} />
+      <CommunesSection communes={communes} />
 
       {/* 7. Expertise & Services Détaillés (Construction, Gestion...) */}
       <ServicesBento />

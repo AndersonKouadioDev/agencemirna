@@ -436,7 +436,7 @@ const PriceCard = ({ bien, contact, isMeuble, theme, displayPrice, isVente }: { 
               <SubmitButton />
               
               <Link
-                href={process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "#"}
+                href={contact.whatsappUrl || process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE || "#"}
                 target="_blank"
                 className="flex h-12 w-full items-center justify-center rounded-full bg-[#25D366] text-base font-bold text-white transition ease-out hover:bg-[#20b958] shadow-sm"
               >

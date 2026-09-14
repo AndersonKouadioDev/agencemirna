@@ -144,8 +144,9 @@ export default async function ArticlePage({
                 <Button asChild className="rounded-full">
                   <Link
                     href={
+                      contact.whatsappUrl ||
                       process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE ||
-                      contact.whatsappUrl
+                      "#"
                     }
                     target="_blank"
                     rel="noopener noreferrer"

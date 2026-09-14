@@ -38,7 +38,10 @@ type Filters = {
   q: string;
   type: string;
   service: string;
-  location: string;
+  /** slug de commune */
+  commune: string;
+  /** identifiant de quartier */
+  quartier: string;
   priceMin: string;
   priceMax: string;
   chambres: string;
@@ -49,7 +52,8 @@ const EMPTY_FILTERS: Filters = {
   q: "",
   type: "",
   service: "",
-  location: "",
+  commune: "",
+  quartier: "",
   priceMin: "",
   priceMax: "",
   chambres: "",
@@ -106,21 +110,6 @@ export default function ListPropertiesSection({
 }) {
 
 
-  const dynamicLOCATIONS_BY_COMMUNE = React.useMemo<Record<string, any[]>>(() => {
-    if (communes && communes.length > 0) {
-      const grouped: Record<string, any[]> = {};
-      communes.forEach(c => {
-        grouped[c.nom] = [{ value: c.nom, label: `${c.nom} (toute la commune)`, group: c.nom }];
-        const relatedQuartiers = (quartiers || []).filter(q => q.commune_id === c.id || (q.commune && q.commune.toLowerCase() === c.nom.toLowerCase()));
-        relatedQuartiers.forEach(q => {
-          grouped[c.nom].push({ value: q.search_query || q.name, label: q.name, group: c.nom });
-        });
-      });
-      return grouped;
-    }
-    return LOCATIONS_BY_COMMUNE;
-  }, [communes, quartiers]);
-
   const [filters, setFilters] = React.useState<Filters>({
     ...EMPTY_FILTERS,
     ...initialFilters,
@@ -144,25 +133,48 @@ export default function ListPropertiesSection({
         if (!haystack.includes(q)) return false;
       }
       
-      if (filters.location && filters.location !== "toute la ville") {
-        // Retrieve the human readable label for the location to match against DB
-        const allLocs = Object.values(dynamicLOCATIONS_BY_COMMUNE).flat();
-        const locObj = allLocs.find(l => l.value === filters.location);
-        const locLabel = locObj ? locObj.label.replace(" (toute la commune)", "") : filters.location;
-        const loc = normalize(locLabel);
-        const hay = normalize([bien.address, bien.ville_commune, bien.pays].filter(Boolean).join(" "));
-        if (!hay.includes(loc) && !loc.includes(hay)) return false;
+      // Localisation : on s'appuie sur les clés étrangères du bien. Un bien
+      // enregistré avant la migration 0015 ne les a pas encore : on retombe
+      // alors sur son adresse texte, sinon il disparaîtrait du catalogue.
+      if (filters.quartier) {
+        const q = (quartiers || []).find((x: any) => x.id === filters.quartier);
+        if (bien.quartier_id) {
+          if (bien.quartier_id !== filters.quartier) return false;
+        } else {
+          const label = normalize(q?.name);
+          const hay = normalize(
+            [bien.address, bien.ville_commune].filter(Boolean).join(" "),
+          );
+          if (!label || !hay.includes(label)) return false;
+        }
+      } else if (filters.commune) {
+        const c = (communes || []).find((x: any) => x.slug === filters.commune);
+        if (!c) return false;
+        if (bien.commune_id) {
+          if (bien.commune_id !== c.id) return false;
+        } else {
+          const label = normalize(c.nom);
+          const hay = normalize(
+            [bien.address, bien.ville_commune].filter(Boolean).join(" "),
+          );
+          if (!hay.includes(label)) return false;
+        }
       }
       
+      // NB : la comparaison bidirectionnelle d'origine acceptait tout bien
+      // dont le champ était vide — `"villa".includes("")` vaut true, si bien
+      // qu'un bien sans type franchissait chaque filtre de type.
       if (filters.type) {
         const t = normalize(filters.type);
         const name = normalize(bien.types_bien?.name);
+        if (!name) return false;
         if (!name.includes(t) && !t.includes(name)) return false;
       }
-      
+
       if (filters.service) {
         const svc = normalize(filters.service).replace("_", " ");
         const name = normalize(bien.services_bien?.name);
+        if (!name) return false;
         if (!name.includes(svc) && !svc.includes(name)) return false;
       }
       const priceMin = filters.priceMin ? parseInt(filters.priceMin, 10) : null;
@@ -364,7 +376,8 @@ export const PropertySearchBar = ({
       q: searchParams.get("q") ?? "",
       type: searchParams.get("type") ?? "",
       service: searchParams.get("service") ?? "",
-      location: searchParams.get("location") ?? "",
+      commune: searchParams.get("commune") ?? "",
+      quartier: searchParams.get("quartier") ?? "",
       priceMin: searchParams.get("priceMin") ?? "",
       priceMax: searchParams.get("priceMax") ?? "",
       chambres: searchParams.get("chambres") ?? "",
@@ -413,7 +426,8 @@ export const PropertySearchBar = ({
 
   const hasActive = !!(
     filters.q ||
-    filters.location ||
+    filters.commune ||
+    filters.quartier ||
     filters.type ||
     filters.service ||
     advancedActive ||

@@ -3,13 +3,26 @@ import ListPropertiesSection from "@/components/properties/list-properties-secti
 import { getAllBiens } from "@/src/actions/bien.actions";
 import { getBienReferenceData, listCommunesPublic, getActiveQuartiers } from "@/src/actions/public";
 
+const norm = (v: unknown) =>
+  String(v ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase();
+
 /**
  * Page publique /properties.
- * Server Component qui :
- *  - charge les biens + données de référence (types, services) côté serveur
- *  - passe les query params initiaux au client pour pré-remplir les filtres
  *
- * Filtres supportés via URL : ?q=&type=&service=&location=
+ * Contrat d'URL :
+ *   ?q=        recherche plein texte
+ *   ?type=     libellé exact d'un type_bien
+ *   ?service=  libellé exact d'un service_bien
+ *   ?commune=  slug d'une commune
+ *   ?quartier= identifiant ou nom d'un quartier
+ *
+ * `?location=` et `?loc=` restent acceptés : ils étaient émis par le footer,
+ * les cartes de communes et le méga-menu, mais `loc` n'était lu nulle part —
+ * ces liens renvoyaient donc la liste complète, sans filtre ni explication.
  */
 export default async function Page({
   searchParams,
@@ -17,12 +30,7 @@ export default async function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
-  const initial = {
-    q: typeof sp.q === "string" ? sp.q : "",
-    type: typeof sp.type === "string" ? sp.type : "",
-    service: typeof sp.service === "string" ? sp.service : "",
-    location: typeof sp.location === "string" ? sp.location : "",
-  };
+  const str = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
 
   const [biens, refData, communes, quartiers] = await Promise.all([
     getAllBiens(),
@@ -30,6 +38,33 @@ export default async function Page({
     listCommunesPublic(),
     getActiveQuartiers(),
   ]);
+
+  let commune = str("commune");
+  let quartier = str("quartier");
+
+  // Résolution des alias historiques : on tente d'abord un quartier, puis une
+  // commune, en comparant sans accent ni casse.
+  const legacy = str("location") || str("loc");
+  if (legacy && !commune && !quartier) {
+    const l = norm(legacy);
+    const q = quartiers.find(
+      (x) => norm(x.name) === l || norm(x.search_query) === l,
+    );
+    if (q) {
+      quartier = q.id;
+    } else {
+      const c = communes.find((x) => norm(x.nom) === l || norm(x.slug) === l);
+      if (c) commune = c.slug;
+    }
+  }
+
+  const initial = {
+    q: str("q"),
+    type: str("type"),
+    service: str("service"),
+    commune,
+    quartier,
+  };
 
   return (
     <>

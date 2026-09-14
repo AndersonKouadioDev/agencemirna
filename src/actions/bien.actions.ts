@@ -135,23 +135,50 @@ export async function getBienWithImages(bienId: string) {
 export async function getAllBiens() {
   const supabase = await createClient();
 
-  const { data: biens, error } = await supabase
-    .from("biens")
-    .select(
-      `*,
+  const query = (columns: string) =>
+    supabase
+      .from("biens")
+      .select(columns)
+      // Le filtrage ne peut pas être laissé à la RLS : la policy admin est
+      // `FOR ALL` et se combine en OU avec la policy publique, si bien qu'un
+      // administrateur connecté voyait sur la vitrine les biens qu'il venait
+      // de dépublier.
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+  // Les jointures commune/quartier viennent de la migration 0015. Tant
+  // qu'elle n'est pas appliquée, PostgREST rejette la requête entière et
+  // renverrait [] sans erreur visible — ce qui viderait tout le catalogue.
+  const withGeo = await query(
+    `*,
+      types_bien:type_bien_id (*),
+      services_bien:service_bien_id (*),
+      categories_bien:categorie_bien_id (*),
+      communes:commune_id (id, nom, slug),
+      quartiers:quartier_id (id, name)
+      `,
+  );
+  if (!withGeo.error && withGeo.data) return withGeo.data as any[];
+
+  console.error(
+    "getAllBiens : jointure commune/quartier indisponible, repli sans géographie.",
+    withGeo.error,
+  );
+
+  const { data: biens, error } = await query(
+    `*,
       types_bien:type_bien_id (*),
       services_bien:service_bien_id (*),
       categories_bien:categorie_bien_id (*)
       `,
-    )
-    .order("created_at", { ascending: false });
+  );
 
   if (error) {
     console.error("Erreur lors de la récupération des biens:", error);
     return [];
   }
 
-  return biens ?? [];
+  return (biens ?? []) as any[];
 }
 
 // ============================================================================
