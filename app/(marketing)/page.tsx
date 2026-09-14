@@ -33,7 +33,7 @@ export default async function Page() {
 
       <div className="bg-white pb-12">
         {/* 1. Hero & Search */}
-        <HeroSection communes={communes} quartiers={quartiers} types={refData.types} services={refData.services} whatsappUrl={contact.whatsappMessageUrl} />
+        <HeroSection communes={communes} quartiers={quartiers} types={refData.types} services={refData.services} whatsappUrl={contact.whatsappMessageUrl} facettes={facettes} />
         {/* 2. Bandeau Services Rapides */}
         <ServicesShowcase />
       </div>

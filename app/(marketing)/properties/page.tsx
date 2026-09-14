@@ -1,7 +1,7 @@
 import HeroSection from "@/components/properties/hero-section";
 import ListPropertiesSection from "@/components/properties/list-properties-section";
 import { getAllBiens } from "@/src/actions/bien.actions";
-import { getBienReferenceData, listCommunesPublic, getActiveQuartiers } from "@/src/actions/public";
+import { getBienReferenceData, listCommunesPublic, getActiveQuartiers, getCatalogueFacettes } from "@/src/actions/public";
 
 const norm = (v: unknown) =>
   String(v ?? "")
@@ -32,11 +32,12 @@ export default async function Page({
   const sp = await searchParams;
   const str = (k: string) => (typeof sp[k] === "string" ? (sp[k] as string) : "");
 
-  const [biens, refData, communes, quartiers] = await Promise.all([
+  const [biens, refData, communes, quartiers, facettes] = await Promise.all([
     getAllBiens(),
     getBienReferenceData(),
     listCommunesPublic(),
     getActiveQuartiers(),
+    getCatalogueFacettes(),
   ]);
 
   let commune = str("commune");
@@ -76,6 +77,7 @@ export default async function Page({
         initialFilters={initial}
         communes={communes}
         quartiers={quartiers}
+        facettes={facettes}
       />
     </>
   );

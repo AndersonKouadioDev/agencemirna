@@ -100,6 +100,7 @@ export default function ListPropertiesSection({
   types,
   services,
   initialFilters,
+  facettes,
 }: {
   initialBiens: any[];
   types: any[];
@@ -107,6 +108,7 @@ export default function ListPropertiesSection({
   initialFilters: Partial<Filters>;
   communes?: any[];
   quartiers?: any[];
+  facettes?: any;
 }) {
 
 
@@ -221,6 +223,7 @@ export default function ListPropertiesSection({
         services={services}
         communes={communes}
         quartiers={quartiers}
+        facettes={facettes}
       />
       {filteredBiens.length > 0 ? (
         <>
@@ -361,6 +364,7 @@ export const PropertySearchBar = ({
   services,
   communes,
   quartiers,
+  facettes,
 }: {
   filters: Filters;
   setFilters: (f: Filters) => void;
@@ -368,6 +372,7 @@ export const PropertySearchBar = ({
   services: any[];
   communes: any[];
   quartiers: any[];
+  facettes?: any;
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -447,6 +452,7 @@ export const PropertySearchBar = ({
             quartiers={quartiers} 
             types={types} 
             services={services} 
+            facettes={facettes}
           >
             <div className="hidden md:flex items-center gap-2 border-l border-stone-200/60 pl-2 ml-2">
               <Button

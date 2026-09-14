@@ -267,7 +267,7 @@ const HERO_SLIDES = [
   }
 ];
 
-export default function HeroSection({ communes = [], quartiers = [], types = [], services = [], whatsappUrl = "" }: { communes?: any[], quartiers?: any[], types?: any[], services?: any[], whatsappUrl?: string }) {
+export default function HeroSection({ communes = [], quartiers = [], types = [], services = [], whatsappUrl = "", facettes }: { communes?: any[], quartiers?: any[], types?: any[], services?: any[], whatsappUrl?: string, facettes?: any }) {
   const [currentSlide, setCurrentSlide] = React.useState(0);
   const [isSearchModalOpen, setIsSearchModalOpen] = React.useState(false);
   const [biens, setBiens] = React.useState<any[]>([]);
@@ -560,7 +560,7 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                         </button>
                       </div>
                     ) : (
-                      <HeroSearchBar communes={communes} quartiers={quartiers} types={types} services={services} onSearch={(params) => {
+                      <HeroSearchBar communes={communes} quartiers={quartiers} types={types} services={services} facettes={facettes} onSearch={(params) => {
                          const locVal = params.get("location");
                          const typeVal = params.get("type");
                          const serviceVal = params.get("service");

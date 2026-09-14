@@ -27,6 +27,7 @@ export default function HeroSearchBar({
   quartiers = [], 
   types = [], 
   services = [],
+  facettes,
   children
 }: { 
   onSearch?: (params: URLSearchParams) => void;
@@ -34,6 +35,15 @@ export default function HeroSearchBar({
   quartiers?: any[];
   types?: any[];
   services?: any[];
+  /** Nombre de biens actifs par entrée, pour n'offrir que des filtres qui
+   *  donnent un résultat. Absent : tout est proposé. */
+  facettes?: {
+    types: Record<string, number>;
+    services: Record<string, number>;
+    communes: Record<string, number>;
+    quartiers: Record<string, number>;
+    disponible: boolean;
+  };
   children?: React.ReactNode;
 }) {
   const router = useRouter();
@@ -64,38 +74,76 @@ export default function HeroSearchBar({
   }, [searchParams, readLocation]);
 
 
-  const dynamicLOCATIONS_BY_COMMUNE = React.useMemo<Record<string, any[]>>(() => {
-    if (communes.length > 0) {
-      const grouped: Record<string, any[]> = {};
-      communes.forEach((c) => {
-        grouped[c.nom] = [
-          {
-            value: `commune:${c.slug}`,
-            label: `${c.nom} (toute la commune)`,
-            group: c.nom,
-          },
-        ];
-        quartiers
+  /**
+   * Localisations proposées, groupées par commune.
+   *
+   * Ne sont offertes que les communes portant au moins un bien : la table en
+   * compte 13, cinq seulement sont utilisées — les huit autres menaient à un
+   * résultat vide sans que le visiteur puisse comprendre pourquoi.
+   */
+  const groupesLocalisation = React.useMemo(() => {
+    if (communes.length === 0) {
+      return Object.entries(FALLBACK_LOCATIONS_BY_COMMUNE).map(([nom, items]) => ({
+        nom,
+        value: null as string | null,
+        total: 0,
+        quartiers: (items as any[]).map((i) => ({
+          value: i.value,
+          label: i.label,
+          total: 0,
+        })),
+      }));
+    }
+
+    const compte = (bucket: Record<string, number> | undefined, k: string) =>
+      facettes?.disponible ? (bucket?.[k] ?? 0) : -1; // -1 : comptage indisponible
+
+    return communes
+      .map((c) => ({
+        nom: c.nom as string,
+        value: `commune:${c.slug}` as string | null,
+        total: compte(facettes?.communes, c.id),
+        quartiers: quartiers
           .filter(
             (q) =>
               q.commune_id === c.id ||
               (q.commune && q.commune.toLowerCase() === String(c.nom).toLowerCase()),
           )
-          .forEach((q) => {
-            grouped[c.nom].push({
-              value: `quartier:${q.id}`,
-              label: q.name,
-              group: c.nom,
-            });
-          });
-      });
-      return grouped;
-    }
-    return FALLBACK_LOCATIONS_BY_COMMUNE as Record<string, any[]>;
-  }, [communes, quartiers]);
+          .map((q) => ({
+            value: `quartier:${q.id}`,
+            label: q.name as string,
+            total: compte(facettes?.quartiers, q.id),
+          }))
+          .filter((q) => q.total !== 0),
+      }))
+      .filter((g) => g.total !== 0 || g.quartiers.length > 0);
+  }, [communes, quartiers, facettes]);
 
-  const dynamicTYPES: {value: string, label: string}[] = types && types.length > 0 ? types.map(t => ({ value: t.name, label: t.name })) : BIEN_TYPES;
-  const dynamicSERVICES: {value: string, label: string}[] = services && services.length > 0 ? services.map(s => ({ value: s.name, label: s.name })) : BIEN_SERVICES;
+  /** Toutes les options à plat, pour retrouver un libellé depuis une valeur. */
+  const optionsLocalisation = React.useMemo(
+    () =>
+      groupesLocalisation.flatMap((g) => [
+        ...(g.value ? [{ value: g.value, label: g.nom }] : []),
+        ...g.quartiers.map((q) => ({ value: q.value, label: q.label })),
+      ]),
+    [groupesLocalisation],
+  );
+
+  // Même règle pour le type et le service : on n'affiche pas une option qui
+  // ne renverrait aucun bien.
+  const utiles = (liste: any[], bucket?: Record<string, number>) =>
+    facettes?.disponible && bucket
+      ? liste.filter((x) => (bucket[String(x.id)] ?? 0) > 0)
+      : liste;
+
+  const dynamicTYPES: { value: string; label: string }[] =
+    types && types.length > 0
+      ? utiles(types, facettes?.types).map((t) => ({ value: t.name, label: t.name }))
+      : BIEN_TYPES;
+  const dynamicSERVICES: { value: string; label: string }[] =
+    services && services.length > 0
+      ? utiles(services, facettes?.services).map((s) => ({ value: s.name, label: s.name }))
+      : BIEN_SERVICES;
 
 
   // Don't auto open by default unless you want it, but the user is complaining it stays open.
@@ -145,8 +193,7 @@ export default function HeroSearchBar({
     // Cherché dans les options réellement affichées : l'ancienne version
     // interrogeait la liste statique, si bien que le libellé restait bloqué
     // sur « Où ? » dès que les communes venaient de la base.
-    const all = Object.values(dynamicLOCATIONS_BY_COMMUNE).flat();
-    return all.find((l) => l.value === location)?.label ?? "Où ?";
+    return optionsLocalisation.find((l) => l.value === location)?.label ?? "Où ?";
   };
 
   const getTypeLabel = () => {
@@ -306,36 +353,86 @@ export default function HeroSearchBar({
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-8 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
-                      {Object.entries(dynamicLOCATIONS_BY_COMMUNE).map(([commune, items]) => (
-                        <div key={commune}>
-                          <h4 className="text-xs font-bold uppercase tracking-widest text-stone-400 mb-4">{commune}</h4>
-                          <div className="flex flex-col gap-2">
-                            {items.map((opt) => {
-                              const isSelected = location === opt.value;
-                              return (
-                                <button
-                                  key={opt.value}
-                                  onClick={() => {
-                                    setLocation(opt.value);
-                                    setActiveTab("type");
-                                  }}
-                                  className={cn(
-                                    "text-left px-4 py-3 rounded-2xl text-sm transition-all duration-200 border-2 flex items-center justify-between",
-                                    isSelected
-                                      ? "border-primary bg-primary text-white font-bold shadow-md"
-                                      : "border-transparent hover:border-stone-200 hover:bg-stone-50 text-stone-600"
-                                  )}
-                                >
-                                  {opt.label}
-                                  {isSelected && <Check className="h-4 w-4 text-white" />}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                    {groupesLocalisation.length === 0 ? (
+                      <p className="text-sm text-stone-500">
+                        Aucune localisation ne correspond à des biens disponibles
+                        pour le moment.
+                      </p>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-6 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                        {groupesLocalisation.map((groupe) => {
+                          const choisirCommune = () => {
+                            if (!groupe.value) return;
+                            setLocation(groupe.value);
+                            setActiveTab("type");
+                          };
+                          const communeSelectionnee = location === groupe.value;
+
+                          return (
+                            <div key={groupe.nom} className="flex flex-col gap-1.5">
+                              {/* La commune est elle-même le choix « toute la
+                                  commune » : un en-tête de groupe suivi d'une
+                                  seule entrée redisait deux fois la même chose. */}
+                              <button
+                                onClick={choisirCommune}
+                                disabled={!groupe.value}
+                                className={cn(
+                                  "text-left px-4 py-3 rounded-2xl text-sm transition-all duration-200 border-2 flex items-center justify-between gap-2",
+                                  communeSelectionnee
+                                    ? "border-primary bg-primary text-white font-bold shadow-md"
+                                    : "border-transparent hover:border-stone-200 hover:bg-stone-50 text-stone-700 font-semibold",
+                                )}
+                              >
+                                <span className="truncate">{groupe.nom}</span>
+                                {communeSelectionnee ? (
+                                  <Check className="h-4 w-4 text-white shrink-0" />
+                                ) : (
+                                  groupe.total > 0 && (
+                                    <span className="text-xs font-medium text-stone-400 shrink-0">
+                                      {groupe.total}
+                                    </span>
+                                  )
+                                )}
+                              </button>
+
+                              {groupe.quartiers.length > 0 && (
+                                <div className="flex flex-col gap-1 pl-3 border-l-2 border-stone-100 ml-4">
+                                  {groupe.quartiers.map((q) => {
+                                    const selectionne = location === q.value;
+                                    return (
+                                      <button
+                                        key={q.value}
+                                        onClick={() => {
+                                          setLocation(q.value);
+                                          setActiveTab("type");
+                                        }}
+                                        className={cn(
+                                          "text-left px-3 py-2 rounded-xl text-sm transition-all duration-200 flex items-center justify-between gap-2",
+                                          selectionne
+                                            ? "bg-primary text-white font-semibold"
+                                            : "hover:bg-stone-50 text-stone-500",
+                                        )}
+                                      >
+                                        <span className="truncate">{q.label}</span>
+                                        {selectionne ? (
+                                          <Check className="h-3.5 w-3.5 text-white shrink-0" />
+                                        ) : (
+                                          q.total > 0 && (
+                                            <span className="text-xs text-stone-400 shrink-0">
+                                              {q.total}
+                                            </span>
+                                          )
+                                        )}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </motion.div>
                 )}
 
