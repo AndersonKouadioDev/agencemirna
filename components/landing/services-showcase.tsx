@@ -8,7 +8,7 @@ const features = [
     icon: HardHat,
     title: "Construction",
     desc: "Projets bâtis de A à Z.",
-    href: "/services/construction",
+    href: "/properties?service=Construction",
   },
   {
     icon: Home,
@@ -26,9 +26,7 @@ const features = [
     icon: Building2,
     title: "Gestion locative",
     desc: "Rentabilité en toute sérénité.",
-    // La gestion locative est une prestation de l'agence, pas un
-    // classement de bien : aucun bien ne portera jamais ce service.
-    href: "/services/gestion-immobiliere",
+    href: "/properties?service=Gestion%20locative",
   },
 ];
 

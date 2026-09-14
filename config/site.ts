@@ -200,9 +200,10 @@ const REPLI_TYPES: MenuReference[] = [
 const REPLI_SERVICES: MenuReference[] = [
   { id: -1, name: "Vente" },
   { id: -2, name: "Location meublée" },
-  { id: -4, name: "Bail commercial" },
-  { id: -5, name: "Gestion locative" },
+  { id: -3, name: "Gestion locative" },
+  { id: -4, name: "Construction" },
 ];
+
 
 const REPLI_COMMUNES: MenuCommune[] = [
   { id: "cocody", nom: "Cocody", slug: "cocody" },

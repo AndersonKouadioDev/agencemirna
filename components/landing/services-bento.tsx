@@ -18,7 +18,7 @@ const BENTO_ITEMS = [
     title: "Construction & Rénovation",
     desc: "Des projets bâtis de A à Z par nos experts en architecture et ingénierie.",
     icon: HardHat,
-    href: "/services/construction",
+    href: "/properties?service=Construction",
     image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=800",
     className: "md:col-span-1 md:row-span-2",
   },
@@ -36,9 +36,7 @@ const BENTO_ITEMS = [
     title: "Gestion Locative",
     desc: "Rentabilisez votre patrimoine en toute sérénité.",
     icon: Building2,
-    // La gestion locative est une prestation de l'agence, pas un
-    // classement de bien : aucun bien ne portera jamais ce service.
-    href: "/services/gestion-immobiliere",
+    href: "/properties?service=Gestion%20locative",
     image: "https://images.unsplash.com/photo-1554469384-e58fac16e23a?auto=format&fit=crop&q=80&w=800",
     className: "md:col-span-1 md:row-span-1",
   }

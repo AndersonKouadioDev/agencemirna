@@ -11,6 +11,7 @@ export default function ConstructionPage() {
     <ServicePageLayout
       slug="construction"
       name="Construction"
+      bienService="Construction"
       icon="HardHat"
       shortDescription="Réalisation de vos projets de construction de la conception à la remise des clés."
       longDescription="Notre équipe d'experts vous accompagne dans la réalisation de votre projet de construction, en veillant au respect des normes de qualité, des délais et de votre budget."
