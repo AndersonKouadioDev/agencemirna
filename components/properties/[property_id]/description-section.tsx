@@ -54,9 +54,20 @@ export default function DescriptionSection({
   contact: SiteContact;
 }) {
   const serviceName = (bien?.services_bien?.name || "").toLowerCase();
-  
+  const categorieName = (bien?.categories_bien?.name || "").toLowerCase();
+
   const isVente = serviceName.includes("vente");
-  const isMeuble = serviceName.includes("meublé") || serviceName.includes("courte") || serviceName.includes("vacance");
+  // L'ameublement est porté par `categories_bien` (Meublé / Semi-meublé /
+  // Non meublé) : s'y fier plutôt qu'au libellé du service, qui peut ne pas
+  // contenir le mot « meublé » — c'était le cas du service générique
+  // « Location », sous lequel le sélecteur de dates et le tarif à la nuitée
+  // ne s'affichaient jamais.
+  const isMeuble =
+    categorieName.includes("meubl") && !categorieName.includes("non meubl")
+      ? true
+      : serviceName.includes("meublé") ||
+        serviceName.includes("courte") ||
+        serviceName.includes("vacance");
   
   let theme = {
     badge: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",

@@ -9,6 +9,9 @@ export default function PropertySection({ biens }: { biens: any }) {
         // éviter les crashs (ex. bien sans prix → null.toString()).
         const typeName = bien.types_bien?.name ?? "";
         const serviceName = bien.services_bien?.name ?? "";
+        const categorie = (bien.categories_bien?.name ?? "").toLowerCase();
+        const furnished =
+          categorie.includes("meubl") && !categorie.includes("non meubl");
         const pieces =
           (bien.types_bien?.id ?? 0) > 1
             ? `${(bien.chambre ?? 0) + (bien.salon ?? 0)} pièces`
@@ -30,6 +33,7 @@ export default function PropertySection({ biens }: { biens: any }) {
             bathrooms={bien.salle_bains}
             capacity={bien.capacity}
             status={serviceName}
+            furnished={furnished}
             parkingSpaces={1}
             price={bien.prix != null ? formatNumber(bien.prix) + " FCFA" : ""}
             pricePerMonth={

@@ -28,6 +28,7 @@ export default function PropertyCard({
   status,
   price,
   pricePerMonth,
+  furnished,
 }: {
   id: string;
   imageUrl: string;
@@ -44,6 +45,9 @@ export default function PropertyCard({
   status: string;
   price: string;
   pricePerMonth?: string;
+  /** Vient de `categories_bien`. Le libellé du service ne dit pas toujours
+   *  « meublé » — le service générique « Location » ne le disait pas. */
+  furnished?: boolean;
 }) {
   const s = (status || "").toLowerCase();
   
@@ -56,7 +60,7 @@ export default function PropertyCard({
   if (s.includes("vente")) {
     theme.dotColor = "bg-[#F5B324]";
     priceBlock = <div className="text-xl font-bold text-secondary">{price}</div>;
-  } else if (s.includes("meublé") || s.includes("courte") || s.includes("vacance")) {
+  } else if (furnished || s.includes("meublé") || s.includes("courte") || s.includes("vacance")) {
     theme.dotColor = "bg-indigo-500";
     priceBlock = (
       <div className="flex flex-col">
