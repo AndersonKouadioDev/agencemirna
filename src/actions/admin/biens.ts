@@ -306,7 +306,11 @@ export async function getReferenceData(): Promise<ReferenceData> {
   ]);
 
   return {
-    types: ((typesRes.data ?? []) as ReferenceData["types"]).filter((t) => t.name),
+    // Le select est une chaîne variable : le client Supabase, créé sans
+    // générique `Database`, ne peut plus en déduire la forme des lignes et
+    // infère son type d'erreur. L'assertion passe par `unknown`, comme
+    // `lireBiens` plus haut.
+    types: ((typesRes.data ?? []) as unknown as ReferenceData["types"]).filter((t) => t.name),
     services: (servicesRes.data ?? []).filter((s) => s.name) as {
       id: number;
       name: string;
