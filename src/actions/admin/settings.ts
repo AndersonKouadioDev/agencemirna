@@ -12,6 +12,14 @@ export type SiteSettingsRow = {
   facebook: string | null;
   instagram: string | null;
   linkedin: string | null;
+  /** Migration 0026. Optionnelles : absentes tant que le SQL n'est pas passé. */
+  phone_secondaire?: string | null;
+  adresse?: string | null;
+  horaires?: string | null;
+  whatsapp_message?: string | null;
+  tiktok?: string | null;
+  youtube?: string | null;
+  twitter?: string | null;
   updated_at: string;
 };
 
@@ -22,6 +30,13 @@ export type SiteSettingsFormData = {
   facebook?: string;
   instagram?: string;
   linkedin?: string;
+  phone_secondaire?: string;
+  adresse?: string;
+  horaires?: string;
+  whatsapp_message?: string;
+  tiktok?: string;
+  youtube?: string;
+  twitter?: string;
 };
 
 export type ActionResult<T = void> =
@@ -109,6 +124,9 @@ export async function upsertSiteSettings(input: SiteSettingsFormData): Promise<A
     [input.facebook, "Facebook"],
     [input.instagram, "Instagram"],
     [input.linkedin, "LinkedIn"],
+    [input.tiktok, "TikTok"],
+    [input.youtube, "YouTube"],
+    [input.twitter, "X (Twitter)"],
   ] as const) {
     const erreur = verifierLien(valeur, reseau);
     if (erreur) return { ok: false, error: erreur };
@@ -133,16 +151,47 @@ export async function upsertSiteSettings(input: SiteSettingsFormData): Promise<A
     facebook: input.facebook?.trim() || null,
     instagram: input.instagram?.trim() || null,
     linkedin: input.linkedin?.trim() || null,
+    phone_secondaire: input.phone_secondaire?.trim() || null,
+    adresse: input.adresse?.trim() || null,
+    horaires: input.horaires?.trim() || null,
+    whatsapp_message: input.whatsapp_message?.trim() || null,
+    tiktok: input.tiktok?.trim() || null,
+    youtube: input.youtube?.trim() || null,
+    twitter: input.twitter?.trim() || null,
   };
 
   if (lecture.row) {
     const { error } = await supabase.from("site_settings").update(data).eq("id", lecture.row.id);
-    if (error) return { ok: false, error: error.message };
+    if (error) return { ok: false, error: formatErreurParametres(error.message) };
   } else {
     const { error } = await supabase.from("site_settings").insert(data);
-    if (error) return { ok: false, error: error.message };
+    if (error) return { ok: false, error: formatErreurParametres(error.message) };
   }
 
   revalidatePath("/", "layout");
   return { ok: true, data: undefined };
+}
+
+/**
+ * PostgREST dit « Could not find the 'x' column … in the schema cache » sur une
+ * écriture vers une colonne absente. Sans traduction, l'admin lit ce message
+ * brut au moment précis où il aurait fallu lui nommer le SQL à appliquer.
+ */
+function formatErreurParametres(brut: string): string {
+  const m = brut.toLowerCase();
+  const colonnes0026 = [
+    "phone_secondaire", "adresse", "horaires", "whatsapp_message",
+    "tiktok", "youtube", "twitter",
+  ];
+  if (
+    colonnes0026.some((c) => m.includes(c)) &&
+    (m.includes("schema cache") || m.includes("could not find") || m.includes("does not exist"))
+  ) {
+    return (
+      "Ces champs demandent la migration 0026_bandeau_et_parametres.sql, qui " +
+      "n'a pas encore été appliquée. Ouvre Supabase → SQL Editor, exécute-la, " +
+      `puis réessaie. (détail : ${brut})`
+    );
+  }
+  return brut;
 }

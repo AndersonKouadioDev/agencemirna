@@ -30,6 +30,12 @@ export type SiteContact = {
   facebook: string | null;
   instagram: string | null;
   linkedin: string | null;
+  tiktok: string | null;
+  youtube: string | null;
+  twitter: string | null;
+  /** Adresse postale, telle que saisie. `null` tant qu'elle ne l'est pas. */
+  adresse: string | null;
+  horaires: string | null;
 };
 
 /**
@@ -56,9 +62,13 @@ export const getSiteContact = cache(async (): Promise<SiteContact> => {
   // `.order()` explicite : rien n'interdit une seconde ligne dans
   // `site_settings`, et sans tri la vitrine pourrait lire une autre ligne que
   // celle que l'admin vient d'éditer.
+  // `*` plutôt qu'une liste : la migration 0026 ajoute sept colonnes, et un
+  // select nominatif rejeté par PostgREST pour UNE colonne absente aurait
+  // renvoyé `null` — donc le numéro de démonstration sur tout le site, sans
+  // message. Avec `*`, une colonne absente est simplement `undefined`.
   const { data, error } = await supabase
     .from("site_settings")
-    .select("phone, whatsapp, email, facebook, instagram, linkedin")
+    .select("*")
     .order("created_at", { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -69,22 +79,30 @@ export const getSiteContact = cache(async (): Promise<SiteContact> => {
   const whatsapp = (numero(data?.whatsapp) ?? DEFAULT_SITE_CONTACT.whatsapp).replace(/\D/g, "");
   const resolvedPhone = phone ?? DEFAULT_SITE_CONTACT.phone;
 
-  // NEXT_PUBLIC_WHATSAPP_MESSAGE porte une URL complète avec un ?text=…
-  // On en extrait le message pour garder l'accroche tout en utilisant le
-  // numéro saisi dans l'admin, au lieu de choisir entre les deux.
-  let texte: string | null = null;
-  try {
-    const brut = process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE;
-    if (brut) texte = new URL(brut).searchParams.get("text");
-  } catch {
-    texte = null;
+  // Le message d'accroche WhatsApp vient d'abord de l'admin (migration 0026).
+  // À défaut, NEXT_PUBLIC_WHATSAPP_MESSAGE, qui porte une URL complète avec un
+  // ?text=… dont on extrait le message — le numéro, lui, reste celui saisi.
+  let texte: string | null = valeurTexte(data?.whatsapp_message);
+  if (!texte) {
+    try {
+      const brut = process.env.NEXT_PUBLIC_WHATSAPP_MESSAGE;
+      if (brut) texte = new URL(brut).searchParams.get("text");
+    } catch {
+      texte = null;
+    }
   }
+
+  const secondaire = numero(data?.phone_secondaire);
 
   const whatsappUrl = `https://wa.me/${whatsapp}`;
 
   return {
     phone: resolvedPhone,
-    phones: phone ? [phone] : DEFAULT_SITE_CONTACT.phones,
+    phones: phone
+      ? secondaire
+        ? [phone, secondaire]
+        : [phone]
+      : DEFAULT_SITE_CONTACT.phones,
     whatsapp,
     whatsappUrl,
     whatsappMessageUrl: texte
@@ -99,5 +117,10 @@ export const getSiteContact = cache(async (): Promise<SiteContact> => {
     facebook: valeurTexte(data?.facebook),
     instagram: valeurTexte(data?.instagram),
     linkedin: valeurTexte(data?.linkedin),
+    tiktok: valeurTexte(data?.tiktok),
+    youtube: valeurTexte(data?.youtube),
+    twitter: valeurTexte(data?.twitter),
+    adresse: valeurTexte(data?.adresse),
+    horaires: valeurTexte(data?.horaires),
   };
 });

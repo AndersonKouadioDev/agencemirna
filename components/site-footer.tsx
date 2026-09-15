@@ -1,10 +1,16 @@
 import {
   FacebookIcon,
   InstagramIcon,
+  Linkedin,
+  Music2,
+  Twitter,
+  Youtube,
   Home,
   Users,
   Star,
-  Clock
+  Clock,
+  MapPin,
+  Phone,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -57,13 +63,32 @@ export async function SiteFooter({
     ? communes.filter((c) => (comptage.communes[c.id] ?? 0) > 0)
     : communes;
   const topLieux = communesAvecBiens.slice(0, 4);
+
+  const reseaux = (
+    [
+      { nom: "Facebook", href: settings.facebook, Icone: FacebookIcon },
+      { nom: "Instagram", href: settings.instagram, Icone: InstagramIcon },
+      { nom: "TikTok", href: settings.tiktok, Icone: Music2 },
+      { nom: "YouTube", href: settings.youtube, Icone: Youtube },
+      { nom: "LinkedIn", href: settings.linkedin, Icone: Linkedin },
+      { nom: "X", href: settings.twitter, Icone: Twitter },
+    ] as const
+  ).filter((r): r is typeof r & { href: string } => !!r.href);
+
+  // « 24/7 » était écrit en dur : une agence qui saisit ses horaires les voit
+  // remplacer la promesse d'un support permanent qu'elle n'a jamais faite.
+  const stats = STATS.map((stat) =>
+    stat.label === "Support" && settings.horaires
+      ? { ...stat, value: settings.horaires, label: "Horaires" }
+      : stat,
+  );
   return (
     <section className="bg-white pt-20 pb-10 border-t border-stone-100">
       <div className="mx-auto max-w-[1400px] px-6 lg:px-8">
         
         {/* Stats Row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 pb-16 border-b border-stone-100 mb-16">
-          {STATS.map((stat, idx) => {
+          {stats.map((stat, idx) => {
             const Icon = stat.icon;
             return (
               <div key={idx} className="flex items-center gap-4">
@@ -80,10 +105,23 @@ export async function SiteFooter({
              <div className="hidden lg:flex items-center gap-4">
                <span className="text-sm font-semibold text-stone-600">Suivez-nous</span>
                <div className="flex gap-2">
-                 {settings?.facebook && <a href={settings.facebook} target="_blank" rel="noopener noreferrer" className="h-8 w-8 rounded-full bg-[#FAF5EE] flex items-center justify-center text-[#F5B324] hover:bg-[#F5B324] hover:text-white transition-all shadow-sm"><FacebookIcon className="h-4 w-4" /></a>}
-                 {settings?.instagram && <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="h-8 w-8 rounded-full bg-[#FAF5EE] flex items-center justify-center text-[#F5B324] hover:bg-[#F5B324] hover:text-white transition-all shadow-sm"><InstagramIcon className="h-4 w-4" /></a>}
-                 {settings?.linkedin && <a href={settings.linkedin} target="_blank" rel="noopener noreferrer" className="h-8 w-8 rounded-full bg-[#FAF5EE] flex items-center justify-center text-[#F5B324] hover:bg-[#F5B324] hover:text-white transition-all shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg></a>}
-                 {settings.whatsapp && <a href={settings.whatsappUrl} target="_blank" rel="noopener noreferrer" className="h-8 w-8 rounded-full bg-[#FAF5EE] flex items-center justify-center text-[#F5B324] hover:bg-[#F5B324] hover:text-white transition-all shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"></path><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"></path></svg></a>}
+                 {/* Les six réseaux suivent /admin/parametres : un champ vidé
+                     retire l'icône, sans repli. Le SVG WhatsApp reste inline —
+                     lucide n'en propose pas. */}
+                 {reseaux.map(({ nom, href, Icone }) => (
+                   <a
+                     key={nom}
+                     href={href}
+                     target="_blank"
+                     rel="noopener noreferrer"
+                     aria-label={nom}
+                     title={nom}
+                     className="h-8 w-8 rounded-full bg-[#FAF5EE] flex items-center justify-center text-[#F5B324] hover:bg-[#F5B324] hover:text-white transition-all shadow-sm"
+                   >
+                     <Icone className="h-4 w-4" />
+                   </a>
+                 ))}
+                 {settings.whatsapp && <a href={settings.whatsappUrl} target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" title="WhatsApp" className="h-8 w-8 rounded-full bg-[#FAF5EE] flex items-center justify-center text-[#F5B324] hover:bg-[#F5B324] hover:text-white transition-all shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21"></path><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"></path></svg></a>}
                </div>
              </div>
           </div>
@@ -100,6 +138,26 @@ export async function SiteFooter({
             <p className="text-sm text-stone-500 leading-relaxed">
               Nous vous rapprochons des plus belles propriétés avec des expériences inoubliables.
             </p>
+            {/* Le pied de page n'affichait ni adresse ni numéro : les deux
+                viennent de /admin/parametres, et n'apparaissent que saisis. */}
+            <address className="mt-6 flex flex-col gap-2.5 text-sm not-italic text-stone-500">
+              {settings.adresse && (
+                <span className="flex items-start gap-2">
+                  <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-[#F5B324]" />
+                  <span className="whitespace-pre-line">{settings.adresse}</span>
+                </span>
+              )}
+              {settings.phones.map((tel) => (
+                <a
+                  key={tel}
+                  href={`tel:${tel.replace(/[^\d+]/g, "")}`}
+                  className="flex items-center gap-2 hover:text-primary transition-colors"
+                >
+                  <Phone className="h-4 w-4 shrink-0 text-[#F5B324]" />
+                  {tel}
+                </a>
+              ))}
+            </address>
           </div>
 
           {/* Company */}

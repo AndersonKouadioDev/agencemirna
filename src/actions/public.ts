@@ -686,3 +686,59 @@ export async function getAnnonceVideoDuBien(
   );
 }
 
+
+
+// ============================================================================
+// Bandeau d'informations
+// ============================================================================
+
+export type PublicInfoBandeau = {
+  id: string;
+  texte: string;
+  lien: string | null;
+  icone: string;
+  ordre: number;
+};
+
+/**
+ * Messages du bandeau défilant, dans l'ordre voulu par l'agence.
+ *
+ * Renvoie un tableau vide — jamais `null` — dans TOUS les cas de figure :
+ * table absente parce que la migration 0026 n'a pas encore été appliquée,
+ * panne de lecture, ou bandeau volontairement vidé. L'appelant retombe alors
+ * sur ses messages de repli. Ce composant est monté dans le layout marketing :
+ * il s'affiche sur chaque page du site, et n'a pas le droit de tomber.
+ */
+export async function getInfosBandeau(): Promise<PublicInfoBandeau[]> {
+  const supabase = await createClient();
+  const nowIso = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("infos_bandeau")
+    .select("id, texte, lien, icone, ordre")
+    // Le filtrage ne peut pas être laissé à la RLS : la policy admin est
+    // `FOR ALL` et se combine en OU avec la policy publique, si bien qu'un
+    // administrateur connecté verrait sur la vitrine ce qu'il vient de
+    // dépublier — et en conclurait que le bouton est cassé.
+    .eq("is_active", true)
+    .or(`starts_at.is.null,starts_at.lte.${nowIso}`)
+    .or(`ends_at.is.null,ends_at.gte.${nowIso}`)
+    .order("ordre", { ascending: true });
+
+  if (error || !data) {
+    // Table absente = migration 0026 pas encore appliquée : état prévu, qui
+    // salissait le journal de chaque build en cinq lignes d'erreur — une par
+    // page statique sous /services. Une vraie panne reste une erreur.
+    if (error) {
+      const absente = /does not exist|schema cache/i.test(error.message ?? "");
+      (absente ? console.warn : console.error)(
+        absente
+          ? "infos_bandeau : table absente, migration 0026 non appliquée. Messages de repli."
+          : "getInfosBandeau error:",
+        absente ? "" : error,
+      );
+    }
+    return [];
+  }
+  return data as PublicInfoBandeau[];
+}

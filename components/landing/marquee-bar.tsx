@@ -1,82 +1,89 @@
 import Link from "next/link";
-import { getSiteContact, type SiteContact } from "@/src/lib/site-contact";
+import { getSiteContact } from "@/src/lib/site-contact";
+import { ArrowRight } from "lucide-react";
+import { getInfosBandeau } from "@/src/actions/public";
+import { iconeBandeau } from "@/src/lib/bandeau-icones";
 import {
-  Megaphone,
-  Phone,
-  Sparkles,
-  ArrowRight,
-  Newspaper,
-  PlayCircle,
-} from "lucide-react";
-import { getActiveAnnonces } from "@/src/actions/public";
-import { annonceHref } from "@/src/lib/annonce";
+  JETON_TELEPHONE,
+  lienAvecJetons,
+  texteAvecJetons,
+  type CoordonneesJetons,
+} from "@/src/lib/bandeau";
 
 /**
- * Bandeau défilant en haut de la home : annonces et liens rapides.
- * Server Component qui charge les promotions actives depuis Supabase.
- * - Si des promos actives existent, elles sont injectées au début
- * - Sinon, fallback sur les messages génériques utiles (estimation, tel, services)
- * - Animation CSS pure (marquee keyframe), pause au hover, respect reduced-motion
+ * Bandeau défilant en haut du site.
+ *
+ * Son contenu se pilote depuis /admin/bandeau : texte, pictogramme, lien,
+ * ordre, fenêtre d'affichage. Il était jusqu'ici écrit en dur ici même —
+ * y compris un tarif « dès 50 000 FCFA/nuit » qui serait devenu faux au
+ * premier changement de grille, et une liste de services qui ne suivait pas
+ * /admin/taxonomie.
+ *
+ * Ce que l'admin contient fait foi, dans l'ordre qu'il donne. Les annonces
+ * actives ne s'y insèrent plus d'elles-mêmes : on ne peut pas à la fois
+ * promettre la maîtrise de l'ordre et glisser des éléments au milieu. Une
+ * annonce se met en avant ici comme le reste, par une ligne qui pointe vers
+ * elle.
+ *
+ * Animation CSS pure, pause au survol, `motion-reduce` respecté.
  */
 
-type AnnouncementItem = {
-  icon: typeof Sparkles;
-  text: string;
-  href: string;
-};
-
-function buildFallbackAnnouncements(contact: SiteContact): AnnouncementItem[] {
+/** Affiché tant que l'agence n'a rien saisi — ou avant la migration 0026. */
+function messagesDeRepli(): Array<{
+  id: string;
+  texte: string;
+  lien: string | null;
+  icone: string;
+}> {
   return [
-  {
-    icon: Megaphone,
-    text: "Estimation gratuite de votre bien : réponse sous 24h",
-    href: "/contact_us",
-  },
-  {
-    icon: Phone,
-    text: `Une question ? Appelez-nous au ${contact.phone}`,
-    href: contact.telHref,
-  },
-  {
-    icon: Newspaper,
-    text: "Découvrez nos services : Gestion, Vente, Location meublée, Décoration",
-    href: "/services",
-  },
-  {
-    icon: Sparkles,
-    text: "Nouveau : appartements meublés disponibles dès 50 000 FCFA/nuit",
-    href: "/properties?service=Location%20meubl%C3%A9e",
-  },
+    {
+      id: "repli-estimation",
+      texte: "Estimation gratuite de votre bien : réponse sous 24h",
+      lien: "/contact_us",
+      icone: "megaphone",
+    },
+    {
+      id: "repli-telephone",
+      texte: `Une question ? Appelez-nous au ${JETON_TELEPHONE}`,
+      lien: JETON_TELEPHONE,
+      icone: "telephone",
+    },
+    {
+      id: "repli-services",
+      texte: "Découvrez nos services : gestion, vente, location meublée, construction",
+      lien: "/services",
+      icone: "journal",
+    },
   ];
 }
 
 export default async function MarqueeBar() {
-  const [promos, contact] = await Promise.all([
-    getActiveAnnonces(),
+  const [infos, contact] = await Promise.all([
+    getInfosBandeau(),
     getSiteContact(),
   ]);
-  const FALLBACK_ANNOUNCEMENTS = buildFallbackAnnouncements(contact);
 
-  // Construit la liste : promos actives (max 3) puis fallback pour remplir
-  const promoItems: AnnouncementItem[] = promos.slice(0, 3).map((p) => ({
-    // Une annonce vidéo se signale par son pictogramme : le bandeau la rendait
-    // exactement comme une autre, et le visiteur découvrait la vidéo seulement
-    // après avoir cliqué.
-    icon: p.media_type === "video" ? PlayCircle : Sparkles,
-    text: p.title,
-    // Une annonce sans destination renvoie vers la liste : dans un bandeau
-    // défilant, un élément non cliquable passerait pour un bug d'affichage.
-    href: annonceHref(p) ?? "/annonces",
+  const source = infos.length > 0 ? infos : messagesDeRepli();
+  const jetons: CoordonneesJetons = {
+    phone: contact.phone,
+    telHref: contact.telHref,
+  };
+
+  const elements = source.map((info) => ({
+    id: info.id,
+    texte: texteAvecJetons(info.texte, jetons),
+    lien: lienAvecJetons(info.lien, jetons),
+    Icone: iconeBandeau(info.icone),
   }));
 
-  const announcements: AnnouncementItem[] =
-    promoItems.length > 0
-      ? [...promoItems, ...FALLBACK_ANNOUNCEMENTS.slice(0, 2)]
-      : FALLBACK_ANNOUNCEMENTS;
+  // Un bandeau vidé depuis l'admin ne doit pas laisser une barre sombre de
+  // quarante pixels en haut de chaque page — `messagesDeRepli` le rend
+  // improbable, mais un repli n'est pas une garantie.
+  if (elements.length === 0) return null;
 
-  // On duplique le contenu pour un défilement infini sans coupure
-  const items = [...announcements, ...announcements];
-
+  // Le contenu est dupliqué pour un défilement sans coupure. La copie est
+  // masquée aux lecteurs d'écran : sans cela, chaque message était annoncé
+  // deux fois de suite.
   return (
     <div className="relative bg-secondary text-white overflow-hidden border-b border-[#F5B324]/20">
       <div
@@ -84,22 +91,46 @@ export default async function MarqueeBar() {
         role="region"
         aria-label="Annonces et informations"
       >
-        <div className="flex shrink-0 animate-marquee-x group-hover:[animation-play-state:paused] motion-reduce:animate-none">
-          {items.map((a, i) => {
-            const Icon = a.icon;
-            return (
-              <Link
-                key={i}
-                href={a.href}
-                className="inline-flex items-center gap-2.5 py-3 px-8 text-sm font-medium hover:text-[#F5B324] transition-colors whitespace-nowrap border-r border-white/10"
-              >
-                <Icon className="h-4 w-4 text-[#F5B324] shrink-0" />
-                <span>{a.text}</span>
-                <ArrowRight className="h-3.5 w-3.5 text-[#F5B324] opacity-70" />
-              </Link>
-            );
-          })}
-        </div>
+        {[0, 1].map((copie) => (
+          <div
+            key={copie}
+            aria-hidden={copie === 1}
+            className="flex shrink-0 animate-marquee-x group-hover:[animation-play-state:paused] motion-reduce:animate-none"
+          >
+            {elements.map(({ id, texte, lien, Icone }) => {
+              const contenu = (
+                <>
+                  <Icone className="h-4 w-4 text-[#F5B324] shrink-0" />
+                  <span>{texte}</span>
+                  {lien && (
+                    <ArrowRight className="h-3.5 w-3.5 text-[#F5B324] opacity-70" />
+                  )}
+                </>
+              );
+              const classes =
+                "inline-flex items-center gap-2.5 py-3 px-8 text-sm font-medium whitespace-nowrap border-r border-white/10";
+
+              // Une information sans destination reste du texte : un `href`
+              // vide rouvrait la page courante dans le même onglet.
+              return lien ? (
+                <Link
+                  key={`${copie}-${id}`}
+                  href={lien}
+                  // `tabIndex={-1}` sur la copie : elle est décorative, et la
+                  // tabulation la traversait comme un second jeu de liens.
+                  tabIndex={copie === 1 ? -1 : undefined}
+                  className={`${classes} hover:text-[#F5B324] transition-colors`}
+                >
+                  {contenu}
+                </Link>
+              ) : (
+                <span key={`${copie}-${id}`} className={classes}>
+                  {contenu}
+                </span>
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );

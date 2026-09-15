@@ -15,6 +15,7 @@ import {
   MapPin,
   Inbox,
   Tags,
+  ScrollText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +44,7 @@ const NAV_ITEMS: NavItem[] = [
     matches: ["/admin/communes", "/admin/quartiers"],
   },
   { label: "Annonces", href: "/admin/annonces", icon: Megaphone },
+  { label: "Bandeau d'infos", href: "/admin/bandeau", icon: ScrollText },
   
   { label: "Agents", href: "/admin/agents", icon: Users },
   { label: "Témoignages", href: "/admin/testimonials", icon: MessageSquareQuote },
