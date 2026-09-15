@@ -28,7 +28,7 @@ export default function LocationMeubleePage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
             <div className="order-2 lg:order-1 relative aspect-square lg:aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl">
               <Image 
-                src="https://images.unsplash.com/photo-1502672260266-1c1c24226133?auto=format&fit=crop&q=80&w=800" 
+                src="/images/biens/bien11.jpg" 
                 alt="Salon élégant meublé" 
                 fill 
                 className="object-cover"

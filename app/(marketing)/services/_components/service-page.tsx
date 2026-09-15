@@ -64,7 +64,7 @@ export function ServicePageLayout({
               />
             </div>
             <div className="mx-auto max-w-6xl px-6 lg:px-8 pt-44 sm:pt-52 pb-24 sm:pb-32 text-white">
-              <div className="flex items-center space-x-2 text-sm text-white/80 mb-8"><Link href="/">Accueil</Link><span>/</span><Link href="/services">Services</Link><span>/</span><span className="text-white">{name}</span></div>
+              <div className="flex flex-wrap items-center gap-y-1 space-x-2 text-sm text-white/80 mb-8"><Link href="/">Accueil</Link><span>/</span><Link href="/services">Services</Link><span>/</span><span className="text-white">{name}</span></div>
 
               <div className="max-w-3xl">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur px-3 py-1.5 text-xs font-semibold uppercase tracking-widest mb-6">
@@ -108,7 +108,7 @@ export function ServicePageLayout({
         ) : (
           <div className="bg-gradient-to-br from-secondary via-secondary/90 to-primary text-white pt-44 sm:pt-52 pb-24 sm:pb-32">
             <div className="mx-auto max-w-6xl px-6 lg:px-8">
-              <div className="flex items-center space-x-2 text-sm text-white/80 mb-8"><Link href="/">Accueil</Link><span>/</span><Link href="/services">Services</Link><span>/</span><span className="text-white">{name}</span></div>
+              <div className="flex flex-wrap items-center gap-y-1 space-x-2 text-sm text-white/80 mb-8"><Link href="/">Accueil</Link><span>/</span><Link href="/services">Services</Link><span>/</span><span className="text-white">{name}</span></div>
 
               <div className="flex items-start gap-6">
                 <div className="hidden sm:flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur">
