@@ -24,7 +24,8 @@ import type {
   PublicQuartier,
   TaxonomieEntree,
 } from "@/src/actions/public";
-import { formatNumber } from "@/utils/formatNumber";
+import { prixCompact, prixPrincipal, prixSuffixe } from "@/src/lib/bien-prix";
+import { texteBrut } from "@/src/lib/texte-brut";
 
 const containerStyle = {
   width: "100%",
@@ -207,7 +208,7 @@ function HeroMap({ biens, selectedBien, onSelectBien }: { biens: BienPublicRow[]
                 ? "bg-secondary text-white scale-110 shadow-secondary/30" 
                 : "bg-white text-secondary scale-100 hover:scale-105"
             )}>
-              {formatNumber(b.prix || b.prix_month)} FCFA
+              {prixCompact(b)}
               <div className={cn(
                 "absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] transition-colors duration-300",
                 hoveredBienId === b.id ? "border-t-secondary" : "border-t-white"
@@ -757,11 +758,18 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                                 </p>
                               </div>
                               <div className="text-left sm:text-right">
+                                {/* L'unité était choisie séparément du montant :
+                                    « Sur demande » se retrouvait suivi d'un
+                                    « / mois », et un tarif à la nuitée était
+                                    annoncé « Total ». Les deux sortent
+                                    désormais du même calcul. */}
                                 <div className="text-xs text-stone-500 font-bold mb-1 uppercase tracking-wider">Prix</div>
                                 <div className="text-2xl font-black text-primary">
-                                  {selectedBien.prix != null ? formatNumber(selectedBien.prix) + " FCFA" : (selectedBien.prix_month != null ? formatNumber(selectedBien.prix_month) + " FCFA" : "Sur demande")}
+                                  {prixCompact(selectedBien)}
                                 </div>
-                                <div className="text-xs text-stone-400 mt-1 font-medium">{selectedBien.prix ? "Total" : "/ mois"}</div>
+                                <div className="text-xs text-stone-400 mt-1 font-medium">
+                                  {prixSuffixe(selectedBien)}
+                                </div>
                               </div>
                             </div>
                             
@@ -808,7 +816,12 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                             <div className="mb-12">
                               <h3 className="font-bold text-secondary text-xl mb-4">À propos de ce bien</h3>
                               <p className="text-stone-600 leading-relaxed text-lg">
-                                {selectedBien.short_description || selectedBien.description || "Aucune description détaillée n'est disponible pour ce bien d'exception pour le moment. Veuillez nous contacter pour plus d'informations."}
+                                {/* La description longue se saisit en markdown :
+                                    sans cette mise à plat, un « ## » de titre
+                                    s'afficherait tel quel dans l'aperçu. */}
+                                {selectedBien.short_description?.trim() ||
+                                  texteBrut(selectedBien.description) ||
+                                  "Aucune description détaillée n'est disponible pour ce bien d'exception pour le moment. Veuillez nous contacter pour plus d'informations."}
                               </p>
                             </div>
                           </div>
@@ -870,7 +883,14 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                               .filter(Boolean)
                               .join(", ");
                             const imageUrl = bien.image || "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=800&auto=format&fit=crop";
-                            const priceText = bien.prix != null ? formatNumber(bien.prix) + " FCFA" : (bien.prix_month != null ? formatNumber(bien.prix_month) + " FCFA / mois" : "Prix sur demande");
+                            // Le montant ET son unité, choisis ensemble : le
+                            // tarif à la nuitée d'un meublé n'est plus présenté
+                            // comme un prix sec, et l'absence de montant devient
+                            // « Sur demande » au lieu d'un « FCFA » orphelin.
+                            const prixVignette = prixPrincipal(bien);
+                            const priceText = prixVignette.surDemande
+                              ? "Prix sur demande"
+                              : `${prixCompact(bien)}${prixVignette.suffixe ? ` ${prixVignette.suffixe}` : ""}`;
 
                             return (
                               <div key={bien.id} onClick={() => setSelectedBien(bien)}>

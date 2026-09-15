@@ -23,7 +23,8 @@ import { deleteAdminImage } from "./upload";
 // Types
 // ============================================================================
 
-const BIEN_SELECT = `
+/** Colonnes acquises, présentes dans tous les environnements. */
+const BIEN_SELECT_AVANT_0024 = `
       id, name, short_description, description, image, prix, prix_month,
       chambre, salon, salle_bains, capacity, address, ville_commune, pays,
       localisation, latitude, longitude, adresse_complete, lien_video, area,
@@ -35,6 +36,49 @@ const BIEN_SELECT = `
       categories_bien:categorie_bien_id (id, name)
     `;
 
+const BIEN_SELECT = `prix_sur_demande, ${BIEN_SELECT_AVANT_0024}`;
+
+/**
+ * Lit `biens` en retombant sur le select d'avant la migration 0024 quand
+ * `prix_sur_demande` n'existe pas encore.
+ *
+ * PostgREST ne se contente pas d'ignorer une colonne inconnue : il rejette la
+ * requête ENTIÈRE. Sans ce repli, déployer ce code avant d'avoir appliqué le
+ * SQL viderait /admin/biens — une liste vide, aucune erreur à l'écran, et
+ * l'agence qui croit avoir perdu son catalogue. C'est exactement ce que les
+ * jointures géographiques de `getAllBiens` ont déjà coûté.
+ *
+ * L'écriture, elle, n'a pas de repli : `upsertBien` échouera franchement, et
+ * `formatBienError` nomme la migration à appliquer. Une lecture dégradée se
+ * rattrape ; une écriture qui perdrait silencieusement la case, non.
+ */
+type ReponseLecture = {
+  data: unknown;
+  error: { message: string } | null;
+};
+
+async function lireBiens<T>(
+  requete: (select: string) => PromiseLike<ReponseLecture>,
+): Promise<{ data: T | null; error: { message: string } | null }> {
+  let reponse = await requete(BIEN_SELECT);
+
+  if (
+    reponse.error &&
+    reponse.error.message?.toLowerCase().includes("prix_sur_demande")
+  ) {
+    console.warn(
+      "biens : colonne prix_sur_demande absente, migration 0024 non appliquée.",
+    );
+    reponse = await requete(BIEN_SELECT_AVANT_0024);
+  }
+
+  // Le client Supabase est créé sans générique `Database` et ne peut plus
+  // déduire la forme des lignes d'un select passé en variable. L'assertion
+  // était déjà faite en aval (`b as unknown as BienAdminRow`) ; elle est
+  // simplement remontée ici, où le select et le type se lisent côte à côte.
+  return { data: (reponse.data ?? null) as T | null, error: reponse.error };
+}
+
 export type BienAdminRow = {
   id: string;
   name: string | null;
@@ -43,6 +87,10 @@ export type BienAdminRow = {
   image: string | null; // legacy field (cover photo héritée du folder)
   prix: number | null;
   prix_month: number | null;
+  /** Migration 0024 : le montant reste confidentiel, la vitrine annonce
+   *  « Prix sur demande ». Optionnelle, car le repli de lecture d'avant 0024
+   *  ne la renvoie pas — `undefined` vaut alors « non coché ». */
+  prix_sur_demande?: boolean | null;
   chambre: number | null;
   salon: number | null;
   salle_bains: number | null;
@@ -102,10 +150,12 @@ export async function listBiensAdmin(): Promise<BienAdminRow[]> {
   //    (migration 0012_biens_geocoords.sql obligatoire — ajoute les
   //    colonnes latitude/longitude. Si tu vois une erreur du genre
   //    "column biens.latitude does not exist", applique la migration.)
-  const { data: biens, error } = await supabase
-    .from("biens")
-    .select(BIEN_SELECT)
-    .order("created_at", { ascending: false });
+  const { data: biens, error } = await lireBiens<BienAdminRow[]>((select) =>
+    supabase
+      .from("biens")
+      .select(select)
+      .order("created_at", { ascending: false }),
+  );
 
   if (error) {
     console.error("listBiensAdmin error:", error);
@@ -134,7 +184,7 @@ export async function listBiensAdmin(): Promise<BienAdminRow[]> {
   }
 
   return biens.map((b) => ({
-    ...(b as unknown as BienAdminRow),
+    ...b,
     cover_url: coverByBien.get(b.id) ?? b.image ?? null,
     images_count: countByBien.get(b.id) ?? 0,
   }));
@@ -160,11 +210,9 @@ export async function getBienAdmin(
 
   const supabase = await createClient();
 
-  const { data: bien, error } = await supabase
-    .from("biens")
-    .select(BIEN_SELECT)
-    .eq("id", id)
-    .maybeSingle();
+  const { data: bien, error } = await lireBiens<BienAdminRow>((select) =>
+    supabase.from("biens").select(select).eq("id", id).maybeSingle(),
+  );
 
   if (error || !bien) {
     if (error) console.error("getBienAdmin error:", error);
@@ -181,7 +229,7 @@ export async function getBienAdmin(
     .order("ordre", { ascending: true });
 
   return {
-    bien: bien as unknown as BienAdminRow,
+    bien,
     images: (images as BienImage[]) ?? [],
   };
 }
@@ -274,6 +322,8 @@ export type BienFormData = {
   description?: string | null;
   prix?: number | null;
   prix_month?: number | null;
+  /** Ne publier aucun montant : la vitrine annonce « Prix sur demande ». */
+  prix_sur_demande?: boolean;
   chambre?: number | null;
   salon?: number | null;
   salle_bains?: number | null;
@@ -323,6 +373,7 @@ export async function upsertBien(
     description: input.description?.trim() || null,
     prix: input.prix ?? null,
     prix_month: input.prix_month ?? null,
+    prix_sur_demande: input.prix_sur_demande ?? false,
     chambre: input.chambre ?? null,
     salon: input.salon ?? null,
     salle_bains: input.salle_bains ?? null,
@@ -563,16 +614,23 @@ function formatBienError(rawMessage: string): string {
     // Le message d'origine parlait de GPS quelle que soit la colonne
     // manquante, ce qui envoyait l'admin sur une fausse piste. On nomme
     // la migration correspondant à la colonne réellement absente.
+    //
+    // Une table plutôt qu'une cascade de ternaires : chaque migration qui
+    // ajoute une colonne à `biens` ajoute ici une ligne, et l'ordre des tests
+    // cesse d'être un piège — « area » est un fragment de plusieurs mots.
+    const MIGRATIONS: ReadonlyArray<readonly [string[], string]> = [
+      [["prix_sur_demande"], "0024_prix_sur_demande.sql"],
+      [
+        ["commune_id", "quartier_id", "area"],
+        "0015_communes_quartiers_annonces.sql",
+      ],
+      [["adresse_complete", "lien_video"], "0014_refonte_luxe.sql"],
+      [["latitude", "longitude"], "0012_biens_geocoords.sql"],
+    ];
     const migration =
-      msg.includes("commune_id") ||
-      msg.includes("quartier_id") ||
-      msg.includes("area")
-        ? "0015_communes_quartiers_annonces.sql"
-        : msg.includes("adresse_complete") || msg.includes("lien_video")
-          ? "0014_refonte_luxe.sql"
-          : msg.includes("latitude") || msg.includes("longitude")
-            ? "0012_biens_geocoords.sql"
-            : null;
+      MIGRATIONS.find(([colonnes]) =>
+        colonnes.some((colonne) => msg.includes(colonne)),
+      )?.[1] ?? null;
 
     if (migration) {
       return (

@@ -1,6 +1,7 @@
 import DescriptionSection from "@/components/properties/[property_id]/description-section";
 import { getSiteContact } from "@/src/lib/site-contact";
-import { estMeuble, estVente } from "@/src/lib/bien-nature";
+import { prixPrincipal } from "@/src/lib/bien-prix";
+import { texteBrut } from "@/src/lib/texte-brut";
 import GallerySection from "@/components/properties/[property_id]/gallery-section";
 import SimilarProperties from "@/components/properties/[property_id]/similar-properties";
 
@@ -29,6 +30,11 @@ type BienFiche = {
   image: string | null;
   prix: number | null;
   prix_month: number | null;
+  prix_sur_demande?: boolean | null;
+  commune_id?: string | null;
+  quartier_id?: string | null;
+  type_bien_id?: number | null;
+  service_bien_id?: number | null;
   chambre: number | null;
   salle_bains: number | null;
   capacity: number | null;
@@ -62,29 +68,15 @@ export async function generateMetadata({
   const service = bien.services_bien?.name ?? "";
   // L'unité était choisie sur la seule présence de `prix_month` : un bien en
   // « Vente » n'ayant que `prix` voyait son prix de vente suffixé « FCFA/nuit »
-  // dans la <meta description> et dans la carte Open Graph. On la choisit donc
-  // sur le service et la catégorie, comme le fait la fiche elle-même.
-  const isVente = estVente(bien);
-  const isMeuble = estMeuble(bien);
-
-  const montantVente = bien.prix
-    ? `${bien.prix.toLocaleString("fr-FR")} FCFA`
-    : null;
-  const montantNuit = bien.prix
-    ? `${bien.prix.toLocaleString("fr-FR")} FCFA/nuit`
-    : null;
-  const montantMois = bien.prix_month
-    ? `${bien.prix_month.toLocaleString("fr-FR")} FCFA/mois`
-    : null;
-
-  let price: string | null;
-  if (isVente) {
-    price = montantVente;
-  } else if (isMeuble && montantNuit) {
-    price = montantNuit;
-  } else {
-    price = montantMois ?? montantNuit;
-  }
+  // dans la <meta description> et dans la carte Open Graph. Le choix du montant
+  // ET de son unité revient maintenant à `prixPrincipal`, qui sert aussi la
+  // fiche : les deux ne peuvent plus diverger.
+  const prix = prixPrincipal(bien);
+  const price = prix.surDemande
+    ? "prix sur demande"
+    : `${prix.montant.toLocaleString("fr-FR")} FCFA${
+        prix.suffixe ? ` ${prix.suffixe}` : ""
+      }`;
 
   const titleParts = [type, bien.name, "à", ville].filter(Boolean);
   const title = titleParts.join(" ");
@@ -158,12 +150,18 @@ export default async function Page(props: {
       : `${SITE_URL}${fiche.image}`
     : null;
 
+  // `prixPrincipal` répond déjà « sur demande » pour la case cochée comme pour
+  // l'absence de montant : un seul test suffit.
+  const prixFiche = prixPrincipal(fiche);
+
   const jsonLd: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "RealEstateListing",
     name: fiche.name,
     url,
-    description: fiche.description ?? fiche.short_description,
+    // La description se saisit en markdown : Google reprend ce champ tel
+    // quel, il ne doit pas y rester de dièses ni de crochets de lien.
+    description: texteBrut(fiche.description) || fiche.short_description,
     image: coverImage,
     datePosted: fiche.created_at,
     address: {
@@ -174,10 +172,13 @@ export default async function Page(props: {
     },
     numberOfRooms: fiche.chambre,
     numberOfBathroomsTotal: fiche.salle_bains,
-    offers: fiche.prix
+    // Pas d'`Offer` sans montant publiable : un prix sur demande n'a pas de
+    // prix à déclarer, et publier un 0 ferait remonter le bien dans les
+    // recherches « moins de X » de Google comme une affaire à zéro franc.
+    offers: !prixFiche.surDemande
       ? {
           "@type": "Offer",
-          price: fiche.prix,
+          price: prixFiche.montant,
           priceCurrency: "XOF",
           availability: "https://schema.org/InStock",
           url,
@@ -201,7 +202,7 @@ export default async function Page(props: {
       />
       <DescriptionSection bien={bien} contact={contact} />
       <GallerySection bien={bien} />
-      <SimilarProperties currentBienId={fiche.id} />
+      <SimilarProperties bien={bien} />
 
     </>
   );

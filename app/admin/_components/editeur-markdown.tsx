@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
  * rendre.
  *
  * Les motifs des outils « ligne » sont calqués sur ceux du moteur
- * (article-markdown.tsx) : un bouton qui reconnaîtrait moins de formes que lui
+ * (components/texte-riche.tsx) : un bouton qui reconnaîtrait moins de formes que lui
  * réempilerait son préfixe sur une ligne déjà mise en forme à la main.
  */
 

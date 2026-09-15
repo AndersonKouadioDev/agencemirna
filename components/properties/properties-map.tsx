@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Home, Maximize2, Building2 } from "lucide-react";
 import { GoogleMap, useJsApiLoader, OverlayViewF } from "@react-google-maps/api";
-import { formatNumber } from "@/utils/formatNumber";
+import { prixCompact } from "@/src/lib/bien-prix";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -23,9 +23,20 @@ type BienSource = {
   ville_commune?: string | null;
   prix?: number | null;
   prix_month?: number | null;
+  prix_sur_demande?: boolean | null;
   image?: string | null;
   types_bien?: { name?: string | null } | null;
-  services_bien?: { name?: string | null } | null;
+  // `est_vente` / `est_meuble` décident quel montant l'épingle met en avant :
+  // le tarif à la nuitée d'un meublé, pas son loyer mensuel.
+  services_bien?: {
+    name?: string | null;
+    est_vente?: boolean | null;
+    est_meuble?: boolean | null;
+  } | null;
+  categories_bien?: {
+    name?: string | null;
+    est_meuble?: boolean | null;
+  } | null;
 };
 
 /** Même ligne, une fois garanti qu'elle porte des coordonnées exploitables. */
@@ -66,9 +77,11 @@ export function PropertiesMap({ biens }: { biens: BienSource[] }) {
         ville_commune: b.ville_commune,
         prix: b.prix,
         prix_month: b.prix_month,
+        prix_sur_demande: b.prix_sur_demande,
         image: b.image,
         types_bien: b.types_bien,
         services_bien: b.services_bien,
+        categories_bien: b.categories_bien,
       }));
   }, [biens]);
 
@@ -215,7 +228,7 @@ export function PropertiesMap({ biens }: { biens: BienSource[] }) {
                         : "bg-white text-secondary scale-100 hover:scale-105"
                     )}
                   >
-                    {formatNumber(bien.prix || bien.prix_month)} FCFA
+                    {prixCompact(bien)}
                     <div
                       className={cn(
                         "absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] transition-colors duration-300",
@@ -279,7 +292,7 @@ export function PropertiesMap({ biens }: { biens: BienSource[] }) {
                           </p>
                           <div className="flex items-center justify-between mt-3">
                             <div className="text-primary font-bold text-sm">
-                              {formatNumber(bien.prix || bien.prix_month)} FCFA
+                              {prixCompact(bien)}
                             </div>
                             <Link
                               href={`/properties/${bien.id}`}

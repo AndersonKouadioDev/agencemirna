@@ -152,6 +152,9 @@ export type BienPublicRow = {
   image: string | null;
   prix: number | null;
   prix_month: number | null;
+  /** Migration 0024 : le montant n'est pas publié, la vitrine annonce
+   *  « Prix sur demande ». Optionnelle tant que le SQL n'est pas appliqué. */
+  prix_sur_demande?: boolean | null;
   chambre: number | null;
   salon: number | null;
   salle_bains: number | null;
@@ -176,8 +179,19 @@ export type BienPublicRow = {
   /** Absente de certains environnements : le sitemap retombe sur la date du jour. */
   updated_at?: string | null;
   types_bien: { id: number; name: string | null } | null;
-  services_bien: { id: number; name: string | null } | null;
-  categories_bien: { id: number; name: string | null } | null;
+  // `est_vente` / `est_meuble` viennent de la migration 0020 : c'est ce qui
+  // décide de l'unité d'un prix, sans dépendre du libellé (voir bien-nature.ts).
+  services_bien:
+    | {
+        id: number;
+        name: string | null;
+        est_vente?: boolean | null;
+        est_meuble?: boolean | null;
+      }
+    | null;
+  categories_bien:
+    | { id: number; name: string | null; est_meuble?: boolean | null }
+    | null;
   communes?: { id: string; nom: string | null; slug: string | null } | null;
   quartiers?: { id: string; name: string | null } | null;
 };

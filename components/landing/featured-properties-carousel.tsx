@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { prixPrincipal } from "@/src/lib/bien-prix";
 
 export type FeaturedBien = {
   id: string;
@@ -19,12 +20,19 @@ export type FeaturedBien = {
   image: string | null;
   prix: number | null;
   prix_month: number | null;
+  prix_sur_demande?: boolean | null;
   ville_commune: string | null;
   chambre: number | null;
   salle_bains: number | null;
   capacity: number | null;
   types_bien?: { name: string | null } | null;
-  services_bien?: { name: string | null } | null;
+  // `est_vente` / `est_meuble` décident quel montant la vignette met en avant.
+  services_bien?: {
+    name: string | null;
+    est_vente?: boolean | null;
+    est_meuble?: boolean | null;
+  } | null;
+  categories_bien?: { name: string | null; est_meuble?: boolean | null } | null;
 };
 
 /**
@@ -151,8 +159,10 @@ export default function FeaturedPropertiesCarousel({
 // ============================================================================
 
 function PropertyCard({ bien }: { bien: FeaturedBien }) {
-  // Use price calculation
-  const price = bien.prix != null ? bien.prix : bien.prix_month;
+  // `prix != null` retenait un montant à 0, affiché « 0 FCFA », et choisissait
+  // toujours `prix` d'abord — donc le tarif à la nuitée d'un meublé présenté
+  // comme un prix sec, à côté du loyer mensuel de son voisin.
+  const prix = prixPrincipal(bien);
   
   return (
     <Link
@@ -195,10 +205,17 @@ function PropertyCard({ bien }: { bien: FeaturedBien }) {
           <p className="text-xs md:text-sm font-medium text-white/80 line-clamp-1">
             {bien.types_bien?.name ?? bien.name ?? "Découvrez cette pépite"}
           </p>
-          {price != null && (
+          {/* Le bloc disparaissait faute de montant, laissant la ligne du
+              type de bien seule et désaxée dans une grille où toutes les
+              autres vignettes portent un prix. */}
+          {prix.surDemande ? (
+            <div className="shrink-0 text-white/70 text-xs font-semibold">
+              Sur demande
+            </div>
+          ) : (
             <div className="shrink-0 flex items-baseline">
               <span className="text-[#F5B324] font-bold text-lg">
-                {price.toLocaleString("fr-FR")}
+                {prix.montant.toLocaleString("fr-FR")}
               </span>
               <span className="text-[#F5B324] text-[10px] font-semibold ml-0.5">FCFA</span>
             </div>

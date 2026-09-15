@@ -29,7 +29,7 @@ import type {
 } from "@/src/actions/admin/content";
 import { POSITIONS_IMAGE, type PositionImage } from "@/src/lib/article-sections";
 import { ApercuSection } from "./apercu-section";
-import { EditeurMarkdown } from "./editeur-markdown";
+import { EditeurMarkdown } from "@/app/admin/_components/editeur-markdown";
 
 /**
  * Éditeur du corps d'article : une liste de sections ordonnées.

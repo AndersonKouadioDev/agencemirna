@@ -1,4 +1,5 @@
 import { estMeuble, estVente } from "@/src/lib/bien-nature";
+import { montantUtile, prixSurDemande } from "@/src/lib/bien-prix";
 import { formatNumber } from "@/utils/formatNumber";
 import PropertyCard from "../property-card";
 
@@ -21,6 +22,8 @@ type BienCarteSource = {
   capacity?: number | null;
   prix?: number | null;
   prix_month?: number | null;
+  /** Migration 0024. Absente avant, `undefined` valant « non coché ». */
+  prix_sur_demande?: boolean | null;
   area?: number | string | null;
   types_bien?: { id?: number | null; name?: string | null } | null;
   services_bien?: { name?: string | null } | null;
@@ -45,6 +48,11 @@ export default function PropertySection({
         // Nature du bien lue sur les colonnes explicites plutôt que déduite
         // d'un libellé : renommer une catégorie ne change plus l'affichage.
         const furnished = estMeuble(bien);
+        // `!= null` laissait passer un prix à 0, rendu « 0 FCFA » : un montant
+        // annoncé, et faux. `montantUtile` écarte le zéro comme l'absence, et
+        // la carte bascule alors sur « Sur demande ».
+        const prixJour = montantUtile(bien.prix);
+        const prixMois = montantUtile(bien.prix_month);
         const nbPieces = (bien.chambre ?? 0) + (bien.salon ?? 0);
         const pieces = nbPieces > 0 ? `${nbPieces} pièce${nbPieces > 1 ? "s" : ""}` : "";
         // Toutes ces colonnes sont nullables : la concaténation littérale
@@ -77,12 +85,11 @@ export default function PropertySection({
             status={serviceName}
             furnished={furnished}
             forSale={estVente(bien)}
-            price={bien.prix != null ? formatNumber(bien.prix) + " FCFA" : ""}
+            price={prixJour != null ? formatNumber(prixJour) + " FCFA" : ""}
             pricePerMonth={
-              bien.prix_month != null
-                ? formatNumber(bien.prix_month) + " FCFA"
-                : ""
+              prixMois != null ? formatNumber(prixMois) + " FCFA" : ""
             }
+            priceOnRequest={prixSurDemande(bien)}
           />
         );
       })}

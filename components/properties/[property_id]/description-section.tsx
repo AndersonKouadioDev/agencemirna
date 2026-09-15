@@ -2,6 +2,7 @@
 
 import type { SiteContact } from "@/src/lib/site-contact";
 import { estMeuble, estVente } from "@/src/lib/bien-nature";
+import { montantUtile, prixPrincipal } from "@/src/lib/bien-prix";
 
 import Motion from "@/components/motion";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatNumber } from "@/utils/formatNumber";
+import { TexteRiche } from "@/components/texte-riche";
 import { RequestVisitButton } from "./request-visit-button";
 import {
   DateRangePicker,
@@ -62,11 +64,20 @@ type BienFicheSource = {
   salle_bains?: number | null;
   prix?: number | null;
   prix_month?: number | null;
+  /** Migration 0024 : le montant n'est pas publié. */
+  prix_sur_demande?: boolean | null;
   latitude?: number | null;
   longitude?: number | null;
   types_bien?: { name?: string | null } | null;
-  services_bien?: { name?: string | null } | null;
-  categories_bien?: { name?: string | null } | null;
+  services_bien?: {
+    name?: string | null;
+    est_vente?: boolean | null;
+    est_meuble?: boolean | null;
+  } | null;
+  categories_bien?: {
+    name?: string | null;
+    est_meuble?: boolean | null;
+  } | null;
 };
 
 export default function DescriptionSection({
@@ -94,31 +105,11 @@ export default function DescriptionSection({
     theme = { badge: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20", dot: "bg-indigo-500" };
   }
 
-  // Le montant et son unité doivent être choisis ensemble. Auparavant l'unité
-  // était figée par le thème : un bien meublé sans `prix` retombait sur
-  // `prix_month` tout en gardant « / nuitée », affichant donc un loyer mensuel
-  // à la nuitée — contredit à l'écran par la PriceCard de la même page, qui
-  // annonce le même montant « / mois ».
-  let priceLabel = "Loyer mensuel";
-  let priceSuffix = "/ mois";
-  let displayPrice: number | null = null;
-
-  if (isVente) {
-    priceLabel = "Prix de vente";
-    priceSuffix = "";
-    displayPrice = bien.prix ?? null;
-  } else if (isMeuble && bien.prix != null) {
-    priceLabel = "À partir de";
-    priceSuffix = "/ nuitée";
-    displayPrice = bien.prix;
-  } else if (bien.prix_month != null) {
-    displayPrice = bien.prix_month;
-  } else if (bien.prix != null) {
-    // `prix` est le tarif journalier partout ailleurs sur la fiche.
-    priceLabel = "À partir de";
-    priceSuffix = "/ nuitée";
-    displayPrice = bien.prix;
-  }
+  // Le montant et son unité sont choisis ensemble, par le module partagé.
+  // Cette page en portait sa propre copie, et l'encadré de droite une
+  // troisième : le même bien pouvait annoncer « 0 FCFA » d'un côté et rien du
+  // tout de l'autre, à deux centimètres d'écart.
+  const prix = prixPrincipal(bien);
 
   // `adresse_complete` n'était rendue que dans la bulle de la carte, donc
   // invisible dès qu'il manque une coordonnée GPS. Saisie en admin comme
@@ -184,18 +175,23 @@ export default function DescriptionSection({
                  ))}
              </div>
              
-             {/* Un bien sans aucun montant saisi affichait « Loyer mensuel /
-                 0 FCFA / mois » : le repli `?? 0` annonce un prix aussi faux
-                 qu'un prix inventé, et `formatNumber(null)` rendrait de son
-                 côté un « FCFA » orphelin. On masque le bloc entier. */}
-             {displayPrice != null && (
-               <div className="md:text-right">
-                 <div className="text-sm text-stone-400 font-bold uppercase tracking-widest mb-1">{priceLabel}</div>
-                 <div className="text-3xl md:text-4xl font-bold text-secondary">
-                   {formatNumber(displayPrice)} FCFA <span className="text-lg font-normal text-stone-500">{priceSuffix}</span>
+             {/* Un bien sans montant affichait « Loyer mensuel / 0 FCFA /
+                 mois » : un prix annoncé, et faux. Le masquer entièrement
+                 n'était pas mieux — l'en-tête perdait sa colonne de droite et
+                 la ligne du titre se décalait. On dit donc que le prix se
+                 demande, ce qui est à la fois vrai et informatif. */}
+             <div className="md:text-right">
+               <div className="text-sm text-stone-400 font-bold uppercase tracking-widest mb-1">{prix.libelle}</div>
+               {prix.surDemande ? (
+                 <div className="text-2xl md:text-3xl font-bold text-stone-500">
+                   Sur demande
                  </div>
-               </div>
-             )}
+               ) : (
+                 <div className="text-3xl md:text-4xl font-bold text-secondary">
+                   {formatNumber(prix.montant)} FCFA <span className="text-lg font-normal text-stone-500">{prix.suffixe}</span>
+                 </div>
+               )}
+             </div>
            </div>
          </Motion>
 
@@ -270,8 +266,16 @@ export default function DescriptionSection({
               {/* Description */}
               <Motion variant="verticalSlideIn">
                 <h3 className="text-3xl font-agate font-bold text-secondary mb-6">À propos de ce bien</h3>
-                <div className="prose prose-stone max-w-none text-stone-600 leading-relaxed whitespace-pre-wrap text-lg">
-                  {bien.description || bien.short_description}
+                {/* Le champ se saisit maintenant en markdown depuis l'admin.
+                    Injecté tel quel dans un `whitespace-pre-wrap`, un « ## »
+                    de titre s'affichait littéralement — et les classes `prose`
+                    accolées ne produisaient rien, faute du plugin typography.
+                    Même moteur que les articles : il construit des éléments
+                    React, jamais du HTML brut. */}
+                <div className="text-lg">
+                  <TexteRiche
+                    source={bien.description || bien.short_description || ""}
+                  />
                 </div>
               </Motion>
 
@@ -339,6 +343,17 @@ type PlageSejour = NonNullable<
 > | null;
 
 const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: BienFicheSource, contact: SiteContact, isMeuble: boolean, isVente: boolean }) => {
+  // `bien.prix ?` traitait un montant à 0 comme une absence dans une branche et
+  // l'affichait dans l'autre. `montantUtile` tranche une fois pour toutes.
+  //
+  // `misEnAvant` couvre en plus le cas tordu d'un bien en vente sur lequel
+  // seul le loyer mensuel a été saisi : il répond « sur demande » plutôt que de
+  // présenter un loyer comme un prix de vente. C'est ce qui permet à la branche
+  // « vente » ci-dessous de se passer de tout repli.
+  const misEnAvant = prixPrincipal(bien);
+  const prixJournalier = montantUtile(bien.prix);
+  const prixMensuel = montantUtile(bien.prix_month);
+
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const formRef = useRef<HTMLFormElement>(null);
 
@@ -416,29 +431,42 @@ const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: BienFicheSource
   return (
     <Card className="w-full bg-white shadow-xl rounded-[32px] overflow-hidden border border-stone-100">
       <div className="p-8 pb-6 border-b border-stone-100 bg-stone-50/50">
-        {isVente ? (
+        {/* C'est ici que s'affichait « PRIX DE VENTE — 0 FCFA » : le repli
+            `bien.prix ?? 0` annonçait un montant sur les quatre biens en vente
+            dont le prix n'est pas saisi. Un prix inventé est pire qu'un prix
+            absent, et zéro est le plus trompeur de tous. */}
+        {misEnAvant.surDemande ? (
+          <div>
+            <div className="text-xs text-stone-400 font-bold uppercase tracking-widest mb-1">Prix</div>
+            <h2 className="text-3xl font-bold text-secondary">Sur demande</h2>
+            <p className="text-sm text-stone-500 mt-2">
+              Le prix de ce bien se communique de vive voix. Écrivez-nous ou
+              appelez-nous, nous vous répondons rapidement.
+            </p>
+          </div>
+        ) : isVente ? (
           <div>
             <div className="text-xs text-stone-400 font-bold uppercase tracking-widest mb-1">Prix de vente</div>
             <h2 className="text-3xl font-bold text-secondary">
-              {formatNumber(bien.prix ?? 0)} <span className="text-xl">FCFA</span>
+              {formatNumber(misEnAvant.montant)} <span className="text-xl">FCFA</span>
             </h2>
           </div>
         ) : (
           <div className="space-y-4">
-            {bien.prix_month ? (
+            {prixMensuel != null ? (
               <div>
                 <div className="text-xs text-stone-400 font-bold uppercase tracking-widest mb-1">Loyer mensuel</div>
                 <h2 className="text-3xl font-bold text-secondary">
-                  {formatNumber(bien.prix_month)} <span className="text-xl">FCFA</span>
+                  {formatNumber(prixMensuel)} <span className="text-xl">FCFA</span>
                   <span className="text-base font-normal text-stone-500"> / mois</span>
                 </h2>
               </div>
             ) : null}
-            {bien.prix ? (
+            {prixJournalier != null ? (
               <div>
                 <div className="text-xs text-stone-400 font-bold uppercase tracking-widest mb-1">Tarif journalier</div>
                 <h2 className="text-2xl font-bold text-primary">
-                  {formatNumber(bien.prix)} <span className="text-lg">FCFA</span>
+                  {formatNumber(prixJournalier)} <span className="text-lg">FCFA</span>
                   <span className="text-sm font-normal text-stone-500"> / jour</span>
                 </h2>
               </div>

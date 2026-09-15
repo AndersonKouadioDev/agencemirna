@@ -27,6 +27,7 @@ export default function PropertyCard({
   status,
   price,
   pricePerMonth,
+  priceOnRequest,
   furnished,
   forSale,
 }: {
@@ -47,6 +48,9 @@ export default function PropertyCard({
   status: string;
   price: string;
   pricePerMonth?: string;
+  /** `biens.prix_sur_demande` : l'agence ne publie pas le montant. Prime sur
+   *  `price` et `pricePerMonth`, qui peuvent rester renseignés. */
+  priceOnRequest?: boolean;
   /** Vient de `services_bien.est_vente`. Laisser indéfini fait retomber sur
    *  le libellé du service, le temps que la migration 0020 soit appliquée. */
   forSale?: boolean;
@@ -111,6 +115,14 @@ export default function PropertyCard({
         {price} <span className="text-sm font-normal text-stone-500">/nuitée</span>
       </div>
     ) : null;
+  }
+
+  // L'agence a décidé de ne pas publier le montant. C'est le prix qui
+  // disparaît, pas la nature du bien : la pastille de couleur et le libellé du
+  // service, posés par les branches ci-dessus, restent ceux d'une vente ou
+  // d'une location meublée.
+  if (priceOnRequest) {
+    priceBlock = null;
   }
 
   // `biens.localisation` est un champ texte libre et nullable. Le repli `?? "#"`
@@ -222,14 +234,20 @@ export default function PropertyCard({
 
             {/* FOOTER: PRICE & ACTION */}
             <div className="flex items-end justify-between">
-              {/* Aucun montant : on masque aussi le libellé, qui annonçait
-                  sinon un « Prix demandé » suivi du seul suffixe d'unité. */}
+              {/* Faute de montant, la carte ne rendait rien : un vide sous le
+                  filet de séparation, que l'œil lit comme une carte cassée —
+                  d'autant que ses voisines, elles, affichent un prix. On dit
+                  donc ce qui est vrai, dans les termes du métier : le prix se
+                  demande. Le libellé change avec, « Prix demandé » au-dessus
+                  de « Sur demande » se lisant deux fois. */}
               <div>
-                {priceBlock && (
-                  <>
-                    <div className="text-[10px] text-stone-400 uppercase tracking-widest font-bold mb-1">Prix demandé</div>
-                    {priceBlock}
-                  </>
+                <div className="text-[10px] text-stone-400 uppercase tracking-widest font-bold mb-1">
+                  {priceBlock ? "Prix demandé" : "Prix"}
+                </div>
+                {priceBlock ?? (
+                  <div className="text-lg font-bold text-stone-500">
+                    Sur demande
+                  </div>
                 )}
               </div>
               

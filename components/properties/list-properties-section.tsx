@@ -19,6 +19,7 @@ import Image from "next/image";
 import PropertySection from "./property-section";
 import Motion from "../motion";
 import { cn } from "@/lib/utils";
+import { prixPrincipal } from "@/src/lib/bien-prix";
 import type {
   CatalogueFacettes,
   PublicCommune,
@@ -49,10 +50,17 @@ type BienListe = {
   capacity?: number | null;
   prix?: number | null;
   prix_month?: number | null;
+  prix_sur_demande?: boolean | null;
   area?: number | null;
   types_bien?: { id?: number | null; name?: string | null } | null;
-  services_bien?: { name?: string | null } | null;
-  categories_bien?: { name?: string | null } | null;
+  // `est_vente` / `est_meuble` décident de l'unité d'un prix : sans elles, le
+  // tri par montant comparerait des loyers mensuels à des tarifs à la nuitée.
+  services_bien?: {
+    name?: string | null;
+    est_vente?: boolean | null;
+    est_meuble?: boolean | null;
+  } | null;
+  categories_bien?: { name?: string | null; est_meuble?: boolean | null } | null;
 };
 
 type Filters = {
@@ -196,24 +204,36 @@ export default function ListPropertiesSection({
       const priceMin = filters.priceMin ? parseInt(filters.priceMin, 10) : null;
       const priceMax = filters.priceMax ? parseInt(filters.priceMax, 10) : null;
       if (priceMin !== null || priceMax !== null) {
-        const p = bien.prix ?? bien.prix_month ?? null;
-        if (p === null) return false;
-        if (priceMin !== null && p < priceMin) return false;
-        if (priceMax !== null && p > priceMax) return false;
+        // Un bien dont le prix n'est pas publié ne peut pas répondre à une
+        // fourchette : le retenir reviendrait à trier sur un montant que le
+        // visiteur ne voit pas, et à le lui révéler par déduction.
+        const prix = prixPrincipal(bien);
+        if (prix.surDemande) return false;
+        if (priceMin !== null && prix.montant < priceMin) return false;
+        if (priceMax !== null && prix.montant > priceMax) return false;
       }
       const chMin = filters.chambres ? parseInt(filters.chambres, 10) : null;
       if (chMin !== null && (bien.chambre ?? 0) < chMin) return false;
       return true;
     });
 
-    if (filters.sort === "price_asc") {
-      list = [...list].sort(
-        (a, b) => (a.prix ?? a.prix_month ?? 0) - (b.prix ?? b.prix_month ?? 0),
-      );
-    } else if (filters.sort === "price_desc") {
-      list = [...list].sort(
-        (a, b) => (b.prix ?? b.prix_month ?? 0) - (a.prix ?? a.prix_month ?? 0),
-      );
+    if (filters.sort === "price_asc" || filters.sort === "price_desc") {
+      // `?? 0` plaçait les biens sans prix en tête du tri croissant : la page
+      // s'ouvrait sur une rangée de « Sur demande ». Ils n'ont pas de place
+      // dans un classement par montant — ils vont à la fin, dans les deux sens.
+      const croissant = filters.sort === "price_asc";
+      const montantDe = (bien: BienListe) => {
+        const prix = prixPrincipal(bien);
+        return prix.surDemande ? null : prix.montant;
+      };
+      list = [...list].sort((a, b) => {
+        const ma = montantDe(a);
+        const mb = montantDe(b);
+        if (ma === null && mb === null) return 0;
+        if (ma === null) return 1;
+        if (mb === null) return -1;
+        return croissant ? ma - mb : mb - ma;
+      });
     } else if (filters.sort === "name_asc") {
       list = [...list].sort((a, b) =>
         (a.name ?? "").localeCompare(b.name ?? ""),

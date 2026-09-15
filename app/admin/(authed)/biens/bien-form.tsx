@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { AddressAutocomplete } from "@/components/admin/address-autocomplete";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -17,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImageUploader } from "../../_components/image-uploader";
+import { EditeurMarkdown } from "@/app/admin/_components/editeur-markdown";
 import {
   upsertBien,
   type BienAdminRow,
@@ -103,6 +103,12 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
   // Toggle activation (par défaut true pour les nouveaux biens)
   const [isActive, setIsActive] = React.useState<boolean>(
     bien?.is_active ?? true,
+  );
+
+  // Booléen, donc hors de `FormState` qui ne porte que des chaînes. Absent du
+  // repli de lecture d'avant la migration 0024 : `?? false` couvre ce cas.
+  const [prixSurDemande, setPrixSurDemande] = React.useState<boolean>(
+    bien?.prix_sur_demande ?? false,
   );
 
   const [submitting, setSubmitting] = React.useState(false);
@@ -200,6 +206,7 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
       description: form.description || null,
       prix: parseNumber(form.prix),
       prix_month: parseNumber(form.prix_month),
+      prix_sur_demande: prixSurDemande,
       chambre: parseNumber(form.chambre),
       salon: parseNumber(form.salon),
       salle_bains: parseNumber(form.salle_bains),
@@ -312,12 +319,17 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
             </Field>
 
             <Field label="Description complète">
-              <Textarea
-                value={form.description}
-                onChange={(e) => update("description", e.target.value)}
+              <EditeurMarkdown
+                valeur={form.description}
+                onChange={(valeur) => update("description", valeur)}
                 placeholder="Description détaillée affichée sur la fiche du bien"
-                rows={6}
+                rows={10}
               />
+              <Hint>
+                Titres, gras, listes et liens sont rendus tels quels sur la
+                fiche. La description courte, elle, reste du texte simple :
+                elle sert de ligne d&apos;accroche sur les cartes.
+              </Hint>
             </Field>
           </Section>
 
@@ -630,6 +642,24 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
 
           {/* Section : Prix */}
           <Section title="Prix">
+            <label className="flex items-start gap-3 cursor-pointer select-none rounded-md p-2 -m-2 hover:bg-stone-50">
+              <input
+                type="checkbox"
+                checked={prixSurDemande}
+                onChange={(e) => setPrixSurDemande(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded border-stone-300 text-primary focus:ring-primary/30"
+              />
+              <span className="flex-1">
+                <span className="block text-sm font-medium text-neutral-900">
+                  Prix sur demande
+                </span>
+                <span className="block text-xs text-neutral-500 mt-0.5">
+                  Aucun montant n&apos;est publié : le site affiche « Prix sur
+                  demande » et invite à vous contacter.
+                </span>
+              </span>
+            </label>
+
             <Field label="Prix (FCFA)">
               <Input
                 type="number"
@@ -651,6 +681,26 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
                 Laisser vide si non applicable (vente, location courte durée)
               </Hint>
             </Field>
+
+            {/* Deux messages distincts, parce que ce sont deux situations
+                distinctes. La case cochée est une décision : le montant reste
+                saisi, il ne sort simplement pas. L'absence de montant est un
+                manque : le prix s'affichera de lui-même dès qu'il sera saisi. */}
+            {prixSurDemande ? (
+              <p className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-[11px] text-amber-800">
+                Les montants ci-dessus restent enregistrés pour votre usage
+                interne, mais <strong>ne seront pas affichés</strong> tant que
+                la case est cochée.
+              </p>
+            ) : (
+              !parseNumber(form.prix) &&
+              !parseNumber(form.prix_month) && (
+                <p className="rounded-md bg-stone-50 border border-stone-200 px-3 py-2 text-[11px] text-neutral-600">
+                  Sans montant, le site affichera « Prix sur demande ». Cochez
+                  la case ci-dessus si c&apos;est voulu.
+                </p>
+              )
+            )}
           </Section>
 
           {/* Section : Caractéristiques */}
