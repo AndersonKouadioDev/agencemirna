@@ -3,6 +3,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { STATIC_SERVICES } from "@/src/data/services";
 import { WHATSAPP_URL_PAR_DEFAUT } from "@/src/data/contact";
+import { EmplacementPub } from "@/components/publicites/emplacement-pub";
 import { AnimatedServices } from "./_components/animated-services";
 
 export const dynamic = "force-static";
@@ -39,6 +40,8 @@ export default function ServicesHubPage() {
           </p>
         </div>
       </section>
+
+      <EmplacementPub cle="services-haut" className="mx-auto max-w-7xl px-6 pt-10 lg:px-8" />
 
       {/* LISTE DES SERVICES (ZIGZAG ANIMÉ) */}
       <section className="py-24 sm:py-32 bg-white relative">

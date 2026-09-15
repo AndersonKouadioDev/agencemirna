@@ -1,3 +1,4 @@
+import { EmplacementPub } from "@/components/publicites/emplacement-pub";
 import DescriptionSection from "@/components/properties/[property_id]/description-section";
 import { getSiteContact } from "@/src/lib/site-contact";
 import { prixPrincipal } from "@/src/lib/bien-prix";
@@ -208,8 +209,12 @@ export default async function Page(props: {
         bien={bien}
         contact={contact}
         annonceVideo={annonceVideo}
+        // Server Component passé en prop : la colonne est un Client Component
+        // et ne peut pas lire la base elle-même.
+        pubAside={<EmplacementPub cle="bien-aside" />}
       />
       <GallerySection bien={bien} />
+      <EmplacementPub cle="bien-bas" className="container mx-auto px-4 md:px-8 max-w-screen-xl py-8" />
       <SimilarProperties bien={bien} />
 
     </>

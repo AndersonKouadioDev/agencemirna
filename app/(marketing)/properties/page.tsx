@@ -1,3 +1,4 @@
+import { EmplacementPub } from "@/components/publicites/emplacement-pub";
 import HeroSection from "@/components/properties/hero-section";
 import ListPropertiesSection from "@/components/properties/list-properties-section";
 import { getAllBiens } from "@/src/actions/bien.actions";
@@ -70,6 +71,7 @@ export default async function Page({
   return (
     <>
       <HeroSection />
+      <EmplacementPub cle="catalogue-haut" className="container mx-auto px-4 md:px-8 pt-8" />
       <ListPropertiesSection
         initialBiens={biens ?? []}
         types={refData.types}

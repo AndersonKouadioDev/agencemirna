@@ -88,11 +88,14 @@ export default function DescriptionSection({
   bien,
   contact,
   annonceVideo,
+  pubAside,
 }: {
   bien: BienFicheSource;
   contact: SiteContact;
   /** Annonce vidéo mettant ce bien en avant, quand l'agence en a publié une. */
   annonceVideo?: PublicAnnonce | null;
+  /** Emplacement publicitaire de la colonne, rendu côté serveur par la page. */
+  pubAside?: React.ReactNode;
 }) {
   // La nature du bien vient désormais de colonnes explicites
   // (services_bien.est_vente, categories_bien.est_meuble) : renommer une
@@ -339,6 +342,9 @@ export default function DescriptionSection({
                   <PriceCard bien={bien} contact={contact} isMeuble={isMeuble} isVente={isVente} />
                 </Motion>
              </div>
+             {/* Sous le formulaire, hors du bloc collant : une pub ne doit pas
+                 pousser le contact hors d'atteinte. Ne rend rien sans pub. */}
+             {pubAside && <div className="mt-6">{pubAside}</div>}
            </div>
 
          </div>

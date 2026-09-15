@@ -17,6 +17,7 @@ import {
 import { normaliserUrlImage } from "@/src/lib/image-url";
 import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
 import { ArticleMarkdown } from "./article-markdown";
+import { EmplacementPub } from "@/components/publicites/emplacement-pub";
 import { ArticleSections, preparerSections } from "./article-sections";
 import { getSiteContact } from "@/src/lib/site-contact";
 
@@ -189,6 +190,8 @@ export default async function ArticlePage({
           )}
         </div>
       </section>
+
+      <EmplacementPub cle="article-bas" className="mx-auto max-w-3xl px-6 pb-16 lg:px-8" />
 
       {/* ARTICLES À LIRE AUSSI */}
       {others.length > 0 && (

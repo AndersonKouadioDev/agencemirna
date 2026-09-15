@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Calendar, Clock, Newspaper } from "lucide-react";
+import { EmplacementPub } from "@/components/publicites/emplacement-pub";
 import { getActiveArticles } from "@/src/actions/public";
 import { normaliserUrlImage } from "@/src/lib/image-url";
 import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
@@ -65,6 +66,8 @@ export default async function BlogPage() {
           </p>
         </div>
       </section>
+
+      <EmplacementPub cle="blog-haut" className="mx-auto max-w-6xl px-6 pb-12 lg:px-8" />
 
       {/* ARTICLE EN VEDETTE */}
       {featured && (

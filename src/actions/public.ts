@@ -742,3 +742,82 @@ export async function getInfosBandeau(): Promise<PublicInfoBandeau[]> {
   }
   return data as PublicInfoBandeau[];
 }
+
+
+// ============================================================================
+// Publicités
+// ============================================================================
+
+export type PublicPubliciteBien = {
+  id: string;
+  name: string | null;
+  image: string | null;
+  ville_commune: string | null;
+};
+
+export type PublicPublicite = {
+  id: string;
+  titre: string;
+  type: "image" | "texte" | "video";
+  emplacement: string;
+  image: string | null;
+  video_url: string | null;
+  accroche: string | null;
+  corps: string | null;
+  lien: string | null;
+  cta_label: string | null;
+  /** Bien promu. `null` s'il est dépublié : la pub reste, sans destination. */
+  bien: PublicPubliciteBien | null;
+};
+
+const PUB_SELECT =
+  "id, titre, type, emplacement, image, video_url, accroche, corps, lien, cta_label, " +
+  "bien:bien_id (id, name, image, ville_commune, is_active)";
+
+/**
+ * Publicités actives d'un emplacement, dans l'ordre voulu par l'agence.
+ *
+ * Toujours un tableau — jamais `null`, jamais d'exception : ces balises sont
+ * posées sur toutes les pages du site, et une table absente (migration 0027
+ * pas encore appliquée) ne doit rendre… rien. Un emplacement vide ne rend pas
+ * même un cadre.
+ */
+export async function getPublicitesPourEmplacement(
+  cle: string,
+): Promise<PublicPublicite[]> {
+  const supabase = await createClient();
+  const nowIso = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from("publicites")
+    .select(PUB_SELECT)
+    .eq("emplacement", cle)
+    // Filtrage explicite : la policy admin est `FOR ALL` et se combine en OU
+    // avec la policy publique — un admin connecté verrait sinon ce qu'il vient
+    // de dépublier.
+    .eq("is_active", true)
+    .or(`starts_at.is.null,starts_at.lte.${nowIso}`)
+    .or(`ends_at.is.null,ends_at.gte.${nowIso}`)
+    .order("ordre", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (error || !data) {
+    if (error) {
+      const absente = /does not exist|schema cache/i.test(error.message ?? "");
+      if (absente) {
+        console.warn("publicites : table absente, migration 0027 non appliquée.");
+      } else {
+        console.error("getPublicitesPourEmplacement error:", error);
+      }
+    }
+    return [];
+  }
+
+  // Un bien dépublié ne doit plus être promu comme destination : la pub reste
+  // visible mais perd son lien — même règle que les annonces.
+  return (data as unknown as PublicPublicite[]).map((p) =>
+    p.bien && (p.bien as { is_active?: boolean }).is_active === false
+      ? { ...p, bien: null }
+      : p,
+  );
+}

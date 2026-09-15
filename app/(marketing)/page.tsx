@@ -1,3 +1,4 @@
+import { EmplacementPub } from "@/components/publicites/emplacement-pub";
 import FeaturedPropertiesServer from "@/components/landing/featured-properties-server";
 import HeroSection from "@/components/landing/hero-section";
 import ServicesShowcase from "@/components/landing/services-showcase";
@@ -35,6 +36,7 @@ export default async function Page() {
         <HeroSection communes={communes} quartiers={quartiers} types={refData.types} services={refData.services} whatsappUrl={contact.whatsappMessageUrl} facettes={facettes} />
         {/* 2. Bandeau Services Rapides */}
         <ServicesShowcase />
+        <EmplacementPub cle="accueil-haut" className="container mx-auto px-4 md:px-8 py-8" />
       </div>
 
       {/* 3. Opportunités (Promotions & Nouveautés) - Urgence & Ventes */}
@@ -44,6 +46,7 @@ export default async function Page() {
       <FeaturedPropertiesServer />
 
       {/* 5. Catégories de biens */}
+      <EmplacementPub cle="accueil-milieu" className="container mx-auto px-4 md:px-8 py-8" />
       <CategoriesSection types={refData.types} facettes={facettes} />
 
       {/* 6. Quartiers Phares */}
@@ -53,6 +56,7 @@ export default async function Page() {
       <ServicesBento />
 
       {/* 8. Preuve Sociale (Avis) */}
+      <EmplacementPub cle="accueil-bas" className="container mx-auto px-4 md:px-8 py-8" />
       <TestimonialsSection testimonials={testimonials} />
 
       {/* 9. Appel à l'action principal (Estimation / Leads) */}

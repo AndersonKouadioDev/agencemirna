@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getActiveAnnonces } from "@/src/actions/public";
 import { Megaphone, Sparkles, BellRing } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { EmplacementPub } from "@/components/publicites/emplacement-pub";
 import { AnnoncesGrid } from "./_components/annonces-grid";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +34,8 @@ export default async function AnnoncesPage() {
             limitées sur nos biens d'exception.
           </p>
         </div>
+
+        <EmplacementPub cle="annonces-haut" className="mb-12" />
 
         {/* GRILLE DES ANNONCES (Nouvelle version avec les cards animées) */}
         {isEmpty ? (
