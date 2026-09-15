@@ -1,157 +1,116 @@
 import Image from "next/image";
 import Link from "next/link";
-import { BedIcon, BathIcon, MapPinIcon, Maximize2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Megaphone, ArrowRight } from "lucide-react";
 import type { PublicAnnonce } from "@/src/actions/public";
 import { annonceHref } from "@/src/lib/annonce";
 import { normaliserUrlImage } from "@/src/lib/image-url";
 import { formatNumber } from "@/utils/formatNumber";
 
-/**
- * Couleur du badge selon le type d'annonce. Les libellés viennent de la table
- * `types_annonce`, on compare donc sans accent ni casse.
- */
-function badgeClass(type: string | null | undefined) {
-  const t = (type ?? "")
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
-  if (t.includes("promotion") || t.includes("baisse")) return "bg-red-500";
-  if (t.includes("exclusiv")) return "bg-[#F5B324]";
-  if (t.includes("coup")) return "bg-rose-600";
-  return "bg-[#1B3C35]";
+function badgeColor(type: string | null | undefined) {
+  const t = (type ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (t.includes("promotion") || t.includes("baisse")) return "bg-red-50 text-red-600 border-red-200";
+  if (t.includes("exclusiv")) return "bg-amber-50 text-[#F5B324] border-amber-200";
+  if (t.includes("coup")) return "bg-rose-50 text-rose-600 border-rose-200";
+  return "bg-stone-50 text-stone-600 border-stone-200";
 }
 
-/**
- * Carte d'annonce, partagée par l'accueil et la page /annonces.
- *
- * L'annonce ne porte que ce qui lui est propre — titre, type, accroche, visuel.
- * Le prix et les caractéristiques sont lus sur le bien mis en avant, pour
- * qu'une modification du bien se répercute sans ressaisie.
- */
 export default function AnnonceCard({ annonce }: { annonce: PublicAnnonce }) {
   const href = annonceHref(annonce);
   const type = annonce.types_annonce?.name ?? null;
   const bien = annonce.bien;
-
-  // Visuel de l'annonce, sinon photo du bien mis en avant.
-  // next/image LÈVE sur un hôte absent des `remotePatterns` et fait tomber la
-  // page : une adresse héritée hors motif retombe ici sur le visuel d'attente.
-  const image =
-    normaliserUrlImage(annonce.image) || normaliserUrlImage(bien?.image) || null;
-
-  // Un bien en location affiche son loyer mensuel, un bien en vente son prix.
+  const image = normaliserUrlImage(annonce.image) || normaliserUrlImage(bien?.image) || null;
   const prix = bien?.prix ?? null;
   const prixMois = bien?.prix_month ?? null;
 
   const contenu = (
-      <div className="bg-white rounded-[2rem] overflow-hidden h-full flex flex-col shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-stone-100">
-        <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
-          {image ? (
-            <Image
-              src={image}
-              alt={annonce.title}
-              fill
-              sizes="(max-width: 768px) 100vw, 33vw"
-              className="object-cover group-hover:scale-105 transition-transform duration-700"
-            />
+    <div className="group relative bg-white border border-stone-200 border-t-4 border-t-primary p-6 md:p-8 flex flex-col h-full hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+      
+      {/* EN-TÊTE : Type et Sous-titre */}
+      <div className="flex items-center justify-between mb-5">
+        {type ? (
+          <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest border rounded-full ${badgeColor(type)}`}>
+            {type}
+          </span>
+        ) : (
+          <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-widest border rounded-full bg-stone-50 text-stone-500 border-stone-200">
+            Opportunité
+          </span>
+        )}
+        
+        {annonce.sous_titre && (
+          <span className="text-[10px] font-bold text-stone-400 uppercase tracking-widest truncate max-w-[50%] text-right">
+            {annonce.sous_titre}
+          </span>
+        )}
+      </div>
+
+      {/* TITRE : Grand et éditorial */}
+      <h3 className="font-agate text-2xl md:text-3xl font-bold text-secondary leading-tight mb-4 group-hover:text-primary transition-colors line-clamp-2">
+        {annonce.title}
+      </h3>
+
+      {/* DESCRIPTION */}
+      {annonce.description && (
+        <p className="text-stone-500 text-sm leading-relaxed mb-6 line-clamp-3">
+          {annonce.description}
+        </p>
+      )}
+
+      {/* IMAGE : Encart style article ou post */}
+      <div className="relative w-full aspect-video overflow-hidden rounded-xl bg-stone-100 mb-6 mt-auto">
+        {image ? (
+          <Image
+            src={image}
+            alt={annonce.title}
+            fill
+            sizes="(max-width: 768px) 100vw, 33vw"
+            className="object-cover transform group-hover:scale-105 transition-transform duration-700 ease-in-out"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Megaphone className="h-8 w-8 text-stone-300" />
+          </div>
+        )}
+        
+        {/* Petit Overlay sur l'image pour indiquer la zone géographique */}
+        {bien?.ville_commune && (
+           <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-stone-600 shadow-sm">
+             {bien.ville_commune}
+           </div>
+        )}
+      </div>
+
+      {/* PIED DE CARTE : Prix & CTA */}
+      <div className="pt-5 border-t border-dashed border-stone-200 flex items-center justify-between">
+        <div className="flex flex-col">
+          {prixMois != null ? (
+            <>
+              <span className="text-[10px] text-stone-400 uppercase tracking-widest font-bold mb-0.5">Loyer</span>
+              <span className="font-bold text-lg text-secondary">{formatNumber(prixMois)} <span className="text-xs font-normal text-stone-500">FCFA/m</span></span>
+            </>
+          ) : prix != null ? (
+            <>
+              <span className="text-[10px] text-stone-400 uppercase tracking-widest font-bold mb-0.5">Prix Offre</span>
+              <span className="font-bold text-lg text-secondary">{formatNumber(prix)} <span className="text-xs font-normal text-stone-500">FCFA</span></span>
+            </>
           ) : (
-            <div className="absolute inset-0 grid place-items-center text-stone-300">
-              <Maximize2 className="h-8 w-8" />
-            </div>
-          )}
-          {type && (
-            <Badge
-              className={`absolute top-4 left-4 ${badgeClass(type)} text-white border-none px-3 py-1 font-bold tracking-wide`}
-            >
-              {type}
-            </Badge>
+            <span className="font-bold text-sm text-stone-500">Sur demande</span>
           )}
         </div>
-
-        <div className="p-6 md:p-8 flex flex-col grow">
-          <h3 className="font-bold text-xl text-secondary leading-tight mb-2 group-hover:text-primary transition-colors line-clamp-2">
-            {annonce.title}
-          </h3>
-
-          {annonce.sous_titre && (
-            <p className="text-stone-500 text-sm font-medium mb-3 line-clamp-2">
-              {annonce.sous_titre}
-            </p>
-          )}
-
-          {/* Le texte saisi en back-office n'était rendu nulle part : l'agence
-              le rédigeait, l'enregistrait et le relisait dans le vide. */}
-          {annonce.description && (
-            <p className="text-stone-600 text-sm leading-relaxed mb-4 line-clamp-3">
-              {annonce.description}
-            </p>
-          )}
-
-          {bien?.ville_commune && (
-            <div className="flex items-center gap-1.5 text-stone-400 text-xs font-semibold uppercase tracking-wider mb-4">
-              <MapPinIcon className="h-3.5 w-3.5" />
-              <span className="truncate">{bien.ville_commune}</span>
-            </div>
-          )}
-
-          {/* Caractéristiques lues sur le bien, jamais ressaisies sur l'annonce */}
-          {bien && (bien.chambre != null || bien.salle_bains != null || bien.area != null) && (
-            <div className="flex flex-wrap items-center gap-2 mb-4">
-              {bien.chambre != null && (
-                <span className="inline-flex items-center gap-1.5 bg-stone-50 border border-stone-100 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-stone-600">
-                  <BedIcon className="h-3.5 w-3.5 text-stone-400" />
-                  {bien.chambre}
-                </span>
-              )}
-              {bien.salle_bains != null && (
-                <span className="inline-flex items-center gap-1.5 bg-stone-50 border border-stone-100 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-stone-600">
-                  <BathIcon className="h-3.5 w-3.5 text-stone-400" />
-                  {bien.salle_bains}
-                </span>
-              )}
-              {bien.area != null && (
-                <span className="inline-flex items-center gap-1.5 bg-stone-50 border border-stone-100 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-stone-600">
-                  <Maximize2 className="h-3.5 w-3.5 text-stone-400" />
-                  {formatNumber(bien.area)} m²
-                </span>
-              )}
-            </div>
-          )}
-
-          <div className="mt-auto pt-4 border-t border-stone-200/60 flex items-end justify-between gap-3">
-            <div>
-              {prixMois != null ? (
-                <span className="text-lg font-bold text-[#F5B324]">
-                  {formatNumber(prixMois)} FCFA
-                  <span className="text-xs font-normal text-stone-500"> /mois</span>
-                </span>
-              ) : prix != null ? (
-                <span className="text-lg font-bold text-[#F5B324]">
-                  {formatNumber(prix)} FCFA
-                </span>
-              ) : (
-                <span className="text-sm font-semibold text-stone-400">
-                  Prix sur demande
-                </span>
-              )}
-            </div>
-            {annonce.cta_label && (
-              <span className="text-xs font-bold uppercase tracking-wider text-stone-500 group-hover:text-primary transition-colors">
-                {annonce.cta_label}
-              </span>
-            )}
-          </div>
+        
+        <div className="inline-flex items-center justify-center gap-2 text-sm font-bold text-primary group-hover:text-secondary transition-colors">
+          {annonce.cta_label || "Découvrir"}
+          <ArrowRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
         </div>
       </div>
+    </div>
   );
 
-  // Sans destination, la carte reste affichée mais n'est pas cliquable.
   return href ? (
-    <Link href={href} className="group block h-full">
+    <Link href={href} className="block h-full outline-none focus-visible:ring-2 focus-visible:ring-primary">
       {contenu}
     </Link>
   ) : (
-    <div className="group block h-full">{contenu}</div>
+    <div className="block h-full">{contenu}</div>
   );
 }

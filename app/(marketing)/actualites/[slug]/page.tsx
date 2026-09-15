@@ -82,20 +82,22 @@ export default async function ArticlePage({
       {/* HERO ARTICLE */}
       <section className="relative pt-40 sm:pt-48 pb-12 sm:pt-48 sm:pb-16">
         <div className="mx-auto max-w-3xl px-6 lg:px-8">
-          <Link
-            href="/blog"
-            className="inline-flex items-center gap-1.5 text-sm text-neutral-600 hover:text-primary transition-colors mb-8"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Retour au blog
-          </Link>
+          <div className="flex flex-wrap items-center gap-3 mb-8">
+            <Link
+              href="/blog"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-stone-600 hover:text-primary transition-colors bg-white border border-stone-200 px-4 py-1.5 rounded-full shadow-sm"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Retour au blog
+            </Link>
 
-          {article.category && (
-            <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-primary mb-5">
-              <Sparkles className="h-3 w-3" />
-              {article.category}
-            </div>
-          )}
+            {article.category && (
+              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 border border-primary/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary">
+                <Sparkles className="h-3.5 w-3.5" />
+                {article.category}
+              </div>
+            )}
+          </div>
 
           <h1 className="font-agate text-4xl sm:text-5xl md:text-6xl font-bold text-secondary leading-[1.1]">
             {article.title}

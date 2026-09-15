@@ -253,19 +253,21 @@ function Lightbox({
     >
       {/* Topbar lightbox : toujours au-dessus, bouton X bien visible */}
       <div
-        className="relative z-10 flex items-center justify-between px-4 py-3 text-white bg-gradient-to-b from-black/50 to-transparent"
+        className="relative z-20 flex items-center justify-between px-4 pt-safe-top pb-3 text-white bg-gradient-to-b from-black/80 via-black/40 to-transparent"
+        style={{ paddingTop: 'max(env(safe-area-inset-top), 1rem)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <span className="text-sm tabular-nums font-medium">
+        <span className="text-sm tabular-nums font-medium bg-black/40 px-3 py-1.5 rounded-full backdrop-blur">
           {index + 1} / {images.length}
         </span>
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/15 backdrop-blur border border-white/20 text-white hover:bg-white/30 transition-colors"
+          className="inline-flex items-center gap-2 h-11 px-4 rounded-full bg-white/20 backdrop-blur border border-white/30 text-white hover:bg-white/40 transition-colors font-semibold text-sm"
           aria-label="Fermer la galerie"
         >
           <X className="h-5 w-5" />
+          <span className="hidden sm:inline">Fermer</span>
         </button>
       </div>
 
@@ -323,6 +325,21 @@ function Lightbox({
           </button>
         </>
       )}
+      
+      {/* Mobile close button at the bottom */}
+      <div 
+        className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 sm:hidden"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-white font-bold text-sm shadow-xl"
+        >
+          <X className="h-4 w-4" />
+          Fermer le plein écran
+        </button>
+      </div>
     </div>
   );
 }
