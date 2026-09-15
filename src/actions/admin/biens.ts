@@ -610,7 +610,15 @@ export async function deleteBien(id: string): Promise<ActionResult> {
  */
 function formatBienError(rawMessage: string): string {
   const msg = rawMessage.toLowerCase();
-  if (msg.includes("column") && msg.includes("does not exist")) {
+  // Deux formulations pour la même cause : Postgres dit « column x does not
+  // exist » sur un SELECT, PostgREST « Could not find the 'x' column ... in the
+  // schema cache » sur un INSERT/UPDATE. Ne reconnaître que la première laissait
+  // le message brut à l'admin au moment de l'enregistrement — le seul moment où
+  // il avait besoin qu'on lui nomme la migration.
+  const colonneAbsente =
+    (msg.includes("column") && msg.includes("does not exist")) ||
+    (msg.includes("schema cache") && msg.includes("could not find"));
+  if (colonneAbsente) {
     // Le message d'origine parlait de GPS quelle que soit la colonne
     // manquante, ce qui envoyait l'admin sur une fausse piste. On nomme
     // la migration correspondant à la colonne réellement absente.

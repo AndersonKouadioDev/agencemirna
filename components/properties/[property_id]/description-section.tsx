@@ -11,6 +11,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { formatNumber } from "@/utils/formatNumber";
 import { TexteRiche } from "@/components/texte-riche";
+import { LecteurVideo } from "@/components/video/lecteur-video";
+import { ModaleVideo } from "@/components/video/modale-video";
+import { mediaAnnonce } from "@/src/lib/annonce";
+import type { PublicAnnonce } from "@/src/actions/public";
 import { RequestVisitButton } from "./request-visit-button";
 import {
   DateRangePicker,
@@ -83,9 +87,12 @@ type BienFicheSource = {
 export default function DescriptionSection({
   bien,
   contact,
+  annonceVideo,
 }: {
   bien: BienFicheSource;
   contact: SiteContact;
+  /** Annonce vidéo mettant ce bien en avant, quand l'agence en a publié une. */
+  annonceVideo?: PublicAnnonce | null;
 }) {
   // La nature du bien vient désormais de colonnes explicites
   // (services_bien.est_vente, categories_bien.est_meuble) : renommer une
@@ -287,7 +294,7 @@ export default function DescriptionSection({
                   colonne d'équipements existera. */}
 
               {/* Video */}
-              <PropertyVideo videoUrl={bien.lien_video} />
+              <PropertyVideo videoUrl={bien.lien_video} poster={bien.image} />
 
               {/* Map */}
               <Motion variant="verticalSlideIn">
@@ -309,6 +316,19 @@ export default function DescriptionSection({
 
            {/* RIGHT COLUMN: Sticky Form */}
            <div className="lg:col-span-4 relative">
+             {/* La vidéo est au-dessus de l'encadré de contact — elle se
+                 remarque, et c'est elle qui donne envie d'écrire — mais HORS du
+                 bloc collant. Les deux collés ensemble dépassaient la hauteur
+                 de l'écran sur un portable, et le bas du formulaire devenait
+                 inatteignable : on ne peut pas faire défiler ce qui est collé.
+                 Ainsi la vidéo se lit à l'arrivée, puis laisse la place. */}
+             {annonceVideo && (
+               <Motion variant="verticalSlideIn" animationParams={{ delay: 0.15 }}>
+                 <div className="mb-6">
+                   <EncartVideoAnnonce annonce={annonceVideo} />
+                 </div>
+               </Motion>
+             )}
              <div className="sticky top-32">
                 <Motion variant="verticalSlideIn" animationParams={{ delay: 0.2 }}>
                   <PriceCard bien={bien} contact={contact} isMeuble={isMeuble} isVente={isVente} />
@@ -319,6 +339,68 @@ export default function DescriptionSection({
          </div>
        </div>
     </section>
+  );
+}
+
+/**
+ * La vidéo de l'annonce, dans la colonne de droite de la fiche.
+ *
+ * Elle se lit sur place — la colonne est assez large pour ça — et le bouton
+ * d'agrandissement ouvre la même vidéo en grand par-dessus la page.
+ *
+ * Les deux lecteurs ne doivent jamais jouer ensemble : `suspendre` ramène celui
+ * de la colonne à son affiche dès que la modale s'ouvre. Sans cela, le visiteur
+ * entendrait deux bandes-son décalées d'une seconde sans comprendre d'où vient
+ * la seconde.
+ *
+ * Suspendre plutôt que remonter avec un `key` : le remontage arrachait le
+ * déclencheur du DOM pendant que React Aria refermait la modale, et le focus
+ * qui devait lui revenir retombait sur `<body>`.
+ */
+function EncartVideoAnnonce({ annonce }: { annonce: PublicAnnonce }) {
+  const [modaleOuverte, setModaleOuverte] = useState(false);
+  const media = mediaAnnonce(annonce);
+
+  if (media?.type !== "video") return null;
+
+  const etiquette = annonce.types_annonce?.name ?? "En vidéo";
+
+  return (
+    <Card className="w-full overflow-hidden rounded-[32px] border border-stone-100 bg-white shadow-xl">
+      <div className="flex items-center justify-between gap-3 border-b border-stone-100 bg-stone-50/50 px-6 py-4">
+        <div className="min-w-0">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-primary">
+            {etiquette}
+          </div>
+          <p className="truncate text-sm font-bold text-secondary">
+            {annonce.title}
+          </p>
+        </div>
+      </div>
+
+      <div className="p-4">
+        <ModaleVideo
+          url={media.url}
+          affiche={media.affiche}
+          titre={annonce.title}
+          onChangementOuverture={setModaleOuverte}
+          declencheur={(ouvrir) => (
+            <LecteurVideo
+              suspendre={modaleOuverte}
+              url={media.url}
+              affiche={media.affiche}
+              titre={annonce.title}
+              onAgrandir={ouvrir}
+            />
+          )}
+        />
+        {annonce.description && (
+          <p className="mt-3 line-clamp-3 text-xs leading-relaxed text-stone-500">
+            {annonce.description}
+          </p>
+        )}
+      </div>
+    </Card>
   );
 }
 

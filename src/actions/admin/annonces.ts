@@ -8,6 +8,7 @@ import {
   MESSAGE_URL_IMAGE_INVALIDE,
   normaliserUrlImage,
 } from "@/src/lib/image-url";
+import { MESSAGE_URL_VIDEO_INVALIDE, videoLisible } from "@/src/lib/video";
 
 /**
  * Server Actions admin pour la table `promotions` (créas, bannières,
@@ -19,11 +20,47 @@ import {
 // Types
 // ============================================================================
 
-const ANNONCE_SELECT =
+const ANNONCE_SELECT_AVANT_0025 =
   "id, title, description, sous_titre, image, cta_label, cta_url, starts_at, ends_at, " +
   "show_on_home, is_active, ordre, updated_at, type_annonce_id, bien_id, " +
   "types_annonce:type_annonce_id (id, name), " +
   "biens:bien_id (id, name, image, prix, prix_month, ville_commune)";
+
+const ANNONCE_SELECT = "media_type, video_url, " + ANNONCE_SELECT_AVANT_0025;
+
+/**
+ * Lit `annonces` en retombant sur le select d'avant la migration 0025 quand
+ * `media_type` n'existe pas encore.
+ *
+ * PostgREST rejette la requête ENTIÈRE pour une colonne inconnue : sans ce
+ * repli, /admin/annonces afficherait une liste vide, sans erreur — l'agence
+ * croirait avoir perdu ses annonces. L'écriture, elle, échoue franchement et
+ * `formatAnnonceError` nomme la migration à appliquer.
+ */
+type ReponseLecture = { data: unknown; error: { message: string } | null };
+
+async function lireAnnonces<T>(
+  requete: (select: string) => PromiseLike<ReponseLecture>,
+): Promise<{ data: T | null; error: { message: string } | null }> {
+  let reponse = await requete(ANNONCE_SELECT);
+
+  const absente = (message: string | undefined) => {
+    const m = (message ?? "").toLowerCase();
+    return m.includes("media_type") && m.includes("does not exist");
+  };
+
+  if (absente(reponse.error?.message)) {
+    console.warn(
+      "annonces : colonnes media_type/video_url absentes, migration 0025 non appliquée.",
+    );
+    reponse = await requete(ANNONCE_SELECT_AVANT_0025);
+  }
+
+  // Le client Supabase est créé sans générique `Database` et ne peut plus
+  // déduire la forme des lignes d'un select passé en variable. L'assertion
+  // était déjà faite en aval ; elle remonte simplement ici.
+  return { data: (reponse.data ?? null) as T | null, error: reponse.error };
+}
 
 export type AnnonceBienLie = {
   id: string;
@@ -45,6 +82,12 @@ export type AnnonceAdminRow = {
   biens: AnnonceBienLie | null;
   /** Optionnelle : la photo du bien lié sert de repli. */
   image: string | null;
+  /**
+   * Migration 0025. Optionnelles, car le repli de lecture d'avant 0025 ne les
+   * renvoie pas : `undefined` se comporte alors comme une annonce en image.
+   */
+  media_type?: "image" | "video" | null;
+  video_url?: string | null;
   cta_label: string | null;
   cta_url: string | null;
   starts_at: string | null;
@@ -64,6 +107,10 @@ export type AnnonceFormData = {
   /** Bien mis en avant. Obligatoire : c'est lui qui porte les informations. */
   bien_id?: string | null;
   image?: string | null;
+  /** « image » ou « video ». Absent = image, le comportement d'avant 0025. */
+  media_type?: "image" | "video";
+  /** Adresse de la vidéo. Ignorée quand `media_type` vaut « image ». */
+  video_url?: string | null;
   cta_label?: string | null;
   cta_url?: string | null;
   starts_at?: string | null;
@@ -130,16 +177,15 @@ export async function listBiensPourAnnonce(): Promise<BienOption[]> {
 
 export async function listAnnoncesAdmin(): Promise<AnnonceAdminRow[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("annonces")
-    .select(ANNONCE_SELECT)
-    .order("ordre", { ascending: true });
+  const { data, error } = await lireAnnonces<AnnonceAdminRow[]>((select) =>
+    supabase.from("annonces").select(select).order("ordre", { ascending: true }),
+  );
 
   if (error || !data) {
     if (error) console.error("listAnnoncesAdmin error:", error);
     return [];
   }
-  return data as unknown as AnnonceAdminRow[];
+  return data;
 }
 
 // ============================================================================
@@ -150,17 +196,15 @@ export async function getAnnonceAdmin(
   id: string,
 ): Promise<AnnonceAdminRow | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("annonces")
-    .select(ANNONCE_SELECT)
-    .eq("id", id)
-    .maybeSingle();
+  const { data, error } = await lireAnnonces<AnnonceAdminRow>((select) =>
+    supabase.from("annonces").select(select).eq("id", id).maybeSingle(),
+  );
 
   if (error || !data) {
     if (error) console.error("getAnnonceAdmin error:", error);
     return null;
   }
-  return data as unknown as AnnonceAdminRow;
+  return data;
 }
 
 // ============================================================================
@@ -203,6 +247,30 @@ export async function upsertPromotion(
     return { ok: false, error: MESSAGE_URL_IMAGE_INVALIDE };
   }
 
+  // L'adresse de la vidéo est conservée même en mode image : l'admin qui
+  // hésite entre les deux ne doit pas la ressaisir à chaque bascule. Seul
+  // `media_type` décide de ce qui s'affiche, et elle n'est donc jamais lue
+  // tant qu'il vaut « image » — c'est aussi pourquoi on ne la contrôle que
+  // lorsqu'elle sert : refuser d'enregistrer une annonce en IMAGE à cause d'un
+  // reliquat dans un champ masqué serait incompréhensible.
+  const mediaType: "image" | "video" =
+    input.media_type === "video" ? "video" : "image";
+  const videoUrl = (input.video_url ?? "").trim() || null;
+
+  if (mediaType === "video") {
+    if (!videoUrl) {
+      return {
+        ok: false,
+        error:
+          "Cette annonce est en mode vidéo : indiquez l'adresse de la vidéo, " +
+          "ou repassez-la en mode image.",
+      };
+    }
+    if (!videoLisible(videoUrl)) {
+      return { ok: false, error: MESSAGE_URL_VIDEO_INVALIDE };
+    }
+  }
+
   const supabase = await createClient();
 
   const data = {
@@ -211,8 +279,11 @@ export async function upsertPromotion(
     sous_titre: input.sous_titre?.trim() || null,
     type_annonce_id: input.type_annonce_id ?? null,
     bien_id: input.bien_id ?? null,
-    // Facultative : la photo du bien lié sert de repli à l'affichage.
+    // Facultative : la photo du bien lié sert de repli à l'affichage. En mode
+    // vidéo, elle devient l'affiche montrée avant lecture.
     image,
+    media_type: mediaType,
+    video_url: videoUrl,
     cta_label: input.cta_label?.trim() || null,
     cta_url: input.cta_url?.trim() || null,
     starts_at: input.starts_at || null,
@@ -227,7 +298,7 @@ export async function upsertPromotion(
       .from("annonces")
       .update(data)
       .eq("id", input.id);
-    if (error) return { ok: false, error: error.message };
+    if (error) return { ok: false, error: formatAnnonceError(error.message) };
     // Portée « layout » et non « page » : MarqueeBar est monté dans le layout
     // marketing, et les sept pages sous /services sont en `force-static`. Une
     // purge de « / » seule les laissait défiler l'ancien bandeau indéfiniment.
@@ -249,7 +320,10 @@ export async function upsertPromotion(
       .select("id")
       .single();
     if (error || !created) {
-      return { ok: false, error: error?.message ?? "Erreur de création." };
+      return {
+        ok: false,
+        error: formatAnnonceError(error?.message ?? "Erreur de création."),
+      };
     }
     revalidatePath("/admin/annonces");
     revalidatePath("/annonces");
@@ -334,4 +408,53 @@ export async function upsertAnnonceAndRedirect(input: AnnonceFormData) {
     redirect("/admin/annonces?flash=saved");
   }
   return result;
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+/**
+ * Traduit les erreurs Postgres en messages exploitables par l'admin.
+ *
+ * Deux familles : la colonne absente parce que la migration n'a pas été
+ * appliquée, et la contrainte violée. Sans cette traduction, l'admin lit
+ * « new row for relation "annonces" violates check constraint
+ * "annonces_video_url_requise" » et n'a aucun moyen de savoir quoi corriger.
+ */
+function formatAnnonceError(rawMessage: string): string {
+  const msg = rawMessage.toLowerCase();
+
+  // Deux formulations pour la même cause, et c'est un piège :
+  //   SELECT  -> Postgres 42703 « column annonces.media_type does not exist »
+  //   INSERT  -> PostgREST PGRST204 « Could not find the 'media_type' column
+  //              of 'annonces' in the schema cache »
+  // Ne tester que la première laissait l'admin devant le message brut de
+  // PostgREST — précisément dans le cas qu'on voulait expliquer, l'écriture.
+  if (
+    (msg.includes("media_type") || msg.includes("video_url")) &&
+    (msg.includes("does not exist") ||
+      msg.includes("schema cache") ||
+      msg.includes("could not find"))
+  ) {
+    return (
+      "Le choix image / vidéo demande la migration 0025_annonce_media.sql, qui " +
+      "n'a pas encore été appliquée. Ouvre Supabase → SQL Editor, exécute le " +
+      "contenu de supabase/migrations/0025_annonce_media.sql, puis réessaie. " +
+      `(détail : ${rawMessage})`
+    );
+  }
+
+  if (msg.includes("annonces_video_url_requise")) {
+    return (
+      "Une annonce en mode vidéo doit porter l'adresse de sa vidéo. " +
+      "Renseignez-la, ou repassez l'annonce en mode image."
+    );
+  }
+
+  if (msg.includes("annonces_media_type_valide")) {
+    return "Type de média inconnu : choisissez « Image » ou « Vidéo ».";
+  }
+
+  return rawMessage;
 }

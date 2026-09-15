@@ -25,6 +25,7 @@ import {
   Home,
   Megaphone,
   Pencil,
+  Play,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -215,6 +216,18 @@ function PromotionCard({
             className="object-cover"
           />
         )}
+        {/* Une annonce en vidéo ne se distinguait en rien d'une annonce en
+            image dans cette liste : le choix fait au formulaire n'avait aucune
+            relecture, et une adresse de vidéo effacée par mégarde passait
+            inaperçue jusqu'à la vitrine. Le visuel affiché ici reste l'affiche,
+            ce que la pastille explique. */}
+        {promo.media_type === "video" && (
+          <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm">
+            <Play className="h-2.5 w-2.5 fill-current" />
+            Vidéo
+          </span>
+        )}
+
         {/* Badges */}
         <div className="absolute top-2 left-2 flex flex-col gap-1">
           {promo.show_on_home && (

@@ -2,33 +2,31 @@
 
 import React from "react";
 import { PlayCircle } from "lucide-react";
+import { LecteurVideo } from "@/components/video/lecteur-video";
+import { videoLisible } from "@/src/lib/video";
 
-export default function PropertyVideo({ videoUrl }: { videoUrl?: string | null }) {
-  if (!videoUrl) return null;
-
-  // Extract YouTube ID
-  let videoId = "";
-  try {
-    const url = new URL(videoUrl);
-    if (url.hostname.includes("youtube.com")) {
-      videoId = url.searchParams.get("v") || "";
-      // Les liens partagés depuis l'application mobile, une diffusion ou un
-      // code d'intégration n'ont pas de paramètre `v` : l'identifiant est
-      // alors le segment qui suit /shorts/, /embed/, /live/ ou /v/.
-      if (!videoId) {
-        videoId =
-          url.pathname.match(/^\/(?:shorts|embed|live|v)\/([^/?#]+)/)?.[1] ?? "";
-      }
-    } else if (url.hostname.includes("youtu.be")) {
-      // `slice(1)` gardait les segments suivants d'un lien de playlist.
-      videoId = url.pathname.split("/").filter(Boolean)[0] ?? "";
-    }
-  } catch {
-    // URL invalide
-    return null;
-  }
-
-  if (!videoId) return null;
+/**
+ * La visite filmée d'un bien (`biens.lien_video`).
+ *
+ * La reconnaissance de l'adresse et le lecteur vivent maintenant dans
+ * `src/lib/video.ts` et `components/video/lecteur-video.tsx`, partagés avec les
+ * annonces. Ce composant n'apporte plus que l'habillage de section.
+ *
+ * Deux gains au passage : la visite accepte désormais Vimeo et un fichier
+ * .mp4 direct, pas seulement YouTube ; et elle ne charge plus l'`<iframe>` tant
+ * que le visiteur n'a pas cliqué — la fiche d'un bien posait jusqu'ici le
+ * lecteur YouTube au chargement, avec ses scripts et ses traceurs, que la
+ * vidéo soit regardée ou non.
+ */
+export default function PropertyVideo({
+  videoUrl,
+  poster,
+}: {
+  videoUrl?: string | null;
+  /** Affiche facultative. À défaut, la miniature du fournisseur. */
+  poster?: string | null;
+}) {
+  if (!videoLisible(videoUrl)) return null;
 
   return (
     <div className="mt-12">
@@ -36,15 +34,12 @@ export default function PropertyVideo({ videoUrl }: { videoUrl?: string | null }
         <PlayCircle className="h-6 w-6 text-primary" />
         Visite en vidéo
       </h3>
-      <div className="relative rounded-2xl overflow-hidden aspect-video shadow-md border border-stone-100">
-        <iframe
-          src={`https://www.youtube.com/embed/${videoId}`}
-          title="Vidéo du bien"
-          className="absolute inset-0 w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        ></iframe>
-      </div>
+      <LecteurVideo
+        url={videoUrl!}
+        affiche={poster}
+        titre="Visite du bien"
+        className="shadow-md border border-stone-100"
+      />
     </div>
   );
 }

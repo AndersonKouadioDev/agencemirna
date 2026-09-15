@@ -6,6 +6,7 @@ import GallerySection from "@/components/properties/[property_id]/gallery-sectio
 import SimilarProperties from "@/components/properties/[property_id]/similar-properties";
 
 import { getBienWithImages } from "@/src/actions/bien.actions";
+import { getAnnonceVideoDuBien } from "@/src/actions/public";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
@@ -124,9 +125,12 @@ export default async function Page(props: {
   params: Promise<{ property_id: string }>;
 }) {
   const params = await props.params;
-  const [bien, contact] = await Promise.all([
+  // La vidéo est lue en parallèle du bien : elle ne conditionne pas le rendu de
+  // la fiche, et la faire attendre le bien doublerait l'aller-retour.
+  const [bien, contact, annonceVideo] = await Promise.all([
     getBienWithImages(params.property_id),
     getSiteContact(),
+    getAnnonceVideoDuBien(params.property_id),
   ]);
 
   if (!bien) {
@@ -200,7 +204,11 @@ export default async function Page(props: {
           { name: fiche.name ?? "Bien", url: `/properties/${params.property_id}` },
         ]}
       />
-      <DescriptionSection bien={bien} contact={contact} />
+      <DescriptionSection
+        bien={bien}
+        contact={contact}
+        annonceVideo={annonceVideo}
+      />
       <GallerySection bien={bien} />
       <SimilarProperties bien={bien} />
 

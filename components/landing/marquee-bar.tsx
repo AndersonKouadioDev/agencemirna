@@ -6,6 +6,7 @@ import {
   Sparkles,
   ArrowRight,
   Newspaper,
+  PlayCircle,
 } from "lucide-react";
 import { getActiveAnnonces } from "@/src/actions/public";
 import { annonceHref } from "@/src/lib/annonce";
@@ -58,7 +59,10 @@ export default async function MarqueeBar() {
 
   // Construit la liste : promos actives (max 3) puis fallback pour remplir
   const promoItems: AnnouncementItem[] = promos.slice(0, 3).map((p) => ({
-    icon: Sparkles,
+    // Une annonce vidéo se signale par son pictogramme : le bandeau la rendait
+    // exactement comme une autre, et le visiteur découvrait la vidéo seulement
+    // après avoir cliqué.
+    icon: p.media_type === "video" ? PlayCircle : Sparkles,
     text: p.title,
     // Une annonce sans destination renvoie vers la liste : dans un bandeau
     // défilant, un élément non cliquable passerait pour un bug d'affichage.

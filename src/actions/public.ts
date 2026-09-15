@@ -2,6 +2,7 @@
 
 import { createClient } from "../supabase/server";
 import { STATIC_SERVICES, type PublicService } from "@/src/data/services";
+import { videoLisible } from "@/src/lib/video";
 
 /**
  * POURQUOI un `.eq("is_active", true)` explicite sur chaque lecture publique.
@@ -532,6 +533,8 @@ export type PublicAnnonceBien = {
   image: string | null;
   prix: number | null;
   prix_month: number | null;
+  /** Migration 0024 : l'annonce ne doit pas republier un prix volontairement tu. */
+  prix_sur_demande?: boolean | null;
   ville_commune: string | null;
   chambre: number | null;
   salle_bains: number | null;
@@ -546,7 +549,15 @@ export type PublicAnnonce = {
   sous_titre: string | null;
   cta_url: string | null;
   cta_label: string | null;
+  /** Visuel de l'annonce, ou affiche de la vidéo. La photo du bien sert de repli. */
   image: string | null;
+  /**
+   * Migration 0025. `undefined` tant qu'elle n'est pas appliquée : le repli de
+   * lecture ci-dessous ne renvoie pas ces deux colonnes, et tout se comporte
+   * alors comme avant — une annonce en image.
+   */
+  media_type?: "image" | "video" | null;
+  video_url?: string | null;
   starts_at: string | null;
   ends_at: string | null;
   ordre: number;
@@ -555,10 +566,35 @@ export type PublicAnnonce = {
   bien: PublicAnnonceBien | null;
 };
 
-const ANNONCE_SELECT =
+const ANNONCE_BASE =
   "id, title, description, sous_titre, created_at, cta_url, cta_label, image, starts_at, ends_at, ordre, " +
-  "types_annonce:type_annonce_id (id, name), " +
-  "bien:bien_id (id, name, image, prix, prix_month, ville_commune, chambre, salle_bains, area, is_active)";
+  "types_annonce:type_annonce_id (id, name)";
+
+const BIEN_JOINT =
+  "id, name, image, prix, prix_month, ville_commune, chambre, salle_bains, area, is_active";
+
+/**
+ * Selects du plus complet au plus ancien, essayés dans cet ordre.
+ *
+ * Deux migrations récentes ajoutent des colonnes lues ici, et elles s'appliquent
+ * indépendamment : 0024 (`biens.prix_sur_demande`) et 0025 (`annonces.media_type`
+ * et `video_url`). PostgREST ne se contente pas d'ignorer une colonne inconnue,
+ * il rejette la requête ENTIÈRE — une seule des deux manquante viderait d'un
+ * coup la page /annonces, la section de l'accueil ET le bandeau défilant, sans
+ * la moindre erreur à l'écran.
+ *
+ * Les quatre combinaisons sont donc énumérées plutôt que devinées depuis le
+ * message d'erreur : c'est plus long à lire, mais on ne peut pas se tromper sur
+ * la colonne que Postgres nomme, ni sur l'ordre dans lequel les migrations
+ * seront appliquées. Une fois les deux passées, la première variante répond et
+ * les suivantes ne sont jamais exécutées.
+ */
+const ANNONCE_SELECTS = [
+  `media_type, video_url, ${ANNONCE_BASE}, bien:bien_id (${BIEN_JOINT}, prix_sur_demande)`,
+  `media_type, video_url, ${ANNONCE_BASE}, bien:bien_id (${BIEN_JOINT})`,
+  `${ANNONCE_BASE}, bien:bien_id (${BIEN_JOINT}, prix_sur_demande)`,
+  `${ANNONCE_BASE}, bien:bien_id (${BIEN_JOINT})`,
+];
 
 /**
  * Annonces visibles publiquement.
@@ -571,25 +607,47 @@ const ANNONCE_SELECT =
 export async function getActiveAnnonces(opts?: {
   onHome?: boolean;
   limit?: number;
+  /** Restreint aux annonces mettant en avant ce bien. */
+  bienId?: string;
 }): Promise<PublicAnnonce[]> {
   const supabase = await createClient();
   const nowIso = new Date().toISOString();
 
-  let q = supabase
-    .from("annonces")
-    .select(ANNONCE_SELECT)
-    .eq("is_active", true)
-    .or(`starts_at.is.null,starts_at.lte.${nowIso}`)
-    .or(`ends_at.is.null,ends_at.gte.${nowIso}`)
-    // Trié par `ordre` : c'est ce que pilote le glisser-déposer de l'admin,
-    // qui n'avait jusqu'ici aucun effet sur le site.
-    .order("ordre", { ascending: true })
-    .order("created_at", { ascending: false });
+  const requete = (select: string) => {
+    let q = supabase
+      .from("annonces")
+      .select(select)
+      .eq("is_active", true)
+      .or(`starts_at.is.null,starts_at.lte.${nowIso}`)
+      .or(`ends_at.is.null,ends_at.gte.${nowIso}`)
+      // Trié par `ordre` : c'est ce que pilote le glisser-déposer de l'admin,
+      // qui n'avait jusqu'ici aucun effet sur le site.
+      .order("ordre", { ascending: true })
+      .order("created_at", { ascending: false });
 
-  if (opts?.onHome) q = q.eq("show_on_home", true);
-  if (opts?.limit) q = q.limit(opts.limit);
+    if (opts?.onHome) q = q.eq("show_on_home", true);
+    if (opts?.bienId) q = q.eq("bien_id", opts.bienId);
+    if (opts?.limit) q = q.limit(opts.limit);
+    return q;
+  };
 
-  const { data, error } = await q;
+  // On descend les variantes jusqu'à ce que l'une passe. Seule une colonne
+  // absente justifie de réessayer : une panne réseau ou un refus de la RLS se
+  // reproduirait à l'identique sur les trois suivantes, et les masquerait
+  // derrière un message parlant d'une migration qui n'y est pour rien.
+  let data: unknown = null;
+  let error: { message: string } | null = null;
+
+  for (const select of ANNONCE_SELECTS) {
+    ({ data, error } = await requete(select));
+    if (!error) break;
+    if (!/does not exist/i.test(error.message ?? "")) break;
+    console.warn(
+      `annonces : colonne absente pour le select « ${select.slice(0, 40)}… », ` +
+        "migration 0024 ou 0025 non appliquée. Repli sur un select plus ancien.",
+    );
+  }
+
   if (error || !data) {
     if (error) console.error("getActiveAnnonces error:", error);
     return [];
@@ -602,6 +660,29 @@ export async function getActiveAnnonces(opts?: {
     a.bien && (a.bien as { is_active?: boolean }).is_active === false
       ? { ...a, bien: null }
       : a,
+  );
+}
+
+/**
+ * La vidéo mise en avant pour ce bien, s'il en existe une.
+ *
+ * Sert l'encadré de la fiche : quand l'agence a publié une annonce vidéo sur un
+ * bien, le visiteur qui arrive sur sa fiche doit pouvoir la regarder sans
+ * repasser par /annonces. On ne retient que les annonces réellement regardables
+ * — une adresse que le lecteur ne sait pas lire ne vaut pas un encadré vide.
+ *
+ * La première l'emporte : `getActiveAnnonces` trie déjà par `ordre`, qui est ce
+ * que l'admin arrange au glisser-déposer.
+ */
+export async function getAnnonceVideoDuBien(
+  bienId: string | null | undefined,
+): Promise<PublicAnnonce | null> {
+  if (!bienId) return null;
+  const annonces = await getActiveAnnonces({ bienId });
+  return (
+    annonces.find(
+      (a) => a.media_type === "video" && videoLisible(a.video_url),
+    ) ?? null
   );
 }
 

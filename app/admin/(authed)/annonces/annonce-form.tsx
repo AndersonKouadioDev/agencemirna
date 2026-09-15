@@ -13,6 +13,8 @@ import {
   MESSAGE_URL_IMAGE_INVALIDE,
   normaliserUrlImage,
 } from "@/src/lib/image-url";
+import { MESSAGE_URL_VIDEO_INVALIDE, videoLisible } from "@/src/lib/video";
+import { LecteurVideo } from "@/components/video/lecteur-video";
 import {
   AnnonceFormData,
   AnnonceAdminRow,
@@ -51,6 +53,14 @@ export function AnnonceForm({
   const [imageUrls, setImageUrls] = useState<string[]>(
     imageRendable ? [imageRendable] : [],
   );
+
+  // Le média de l'annonce : une image OU une vidéo, jamais les deux. `image`
+  // reste utile en mode vidéo — elle devient l'affiche montrée avant lecture.
+  const [mediaType, setMediaType] = useState<"image" | "video">(
+    promo?.media_type === "video" ? "video" : "image",
+  );
+  const [videoUrl, setVideoUrl] = useState(promo?.video_url ?? "");
+  const idUrlVideo = React.useId();
 
   const [ctaLabel, setCtaLabel] = useState(promo?.cta_label || "");
   const [ctaUrl, setCtaUrl] = useState(promo?.cta_url || "");
@@ -139,6 +149,25 @@ export function AnnonceForm({
       return;
     }
 
+    // Contrôlée ici en plus de l'action : l'admin voit le message sous les
+    // yeux, à côté du champ, plutôt qu'après un aller-retour serveur.
+    if (mediaType === "video") {
+      const adresse = videoUrl.trim();
+      if (!adresse) {
+        setError(
+          "Cette annonce est en mode vidéo : indiquez l'adresse de la vidéo, " +
+            "ou repassez-la en mode image.",
+        );
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+      if (!videoLisible(adresse)) {
+        setError(MESSAGE_URL_VIDEO_INVALIDE);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        return;
+      }
+    }
+
     setSubmitting(true);
 
     // L'image est facultative : à défaut, la carte reprend la photo du bien.
@@ -152,6 +181,8 @@ export function AnnonceForm({
       type_annonce_id: typeId ? parseInt(typeId, 10) : null,
       bien_id: bienId,
       image: finalImage,
+      media_type: mediaType,
+      video_url: videoUrl.trim() || null,
       cta_label: ctaLabel.trim() || null,
       // Laissé vide, le lien est dérivé du bien : /properties/<bien_id>.
       cta_url: ctaUrl.trim() || null,
@@ -334,43 +365,144 @@ export function AnnonceForm({
           </Section>
 
           <Section
-            title="Image"
-            subtitle="Facultatif : sans visuel, la carte reprend la photo du bien. Format conseillé : 4/3 ou 16/9."
+            title="Visuel de l'annonce"
+            subtitle="Une image ou une vidéo, au choix. Sans visuel, la carte reprend la photo du bien."
           >
-            <ImageUploader
-              value={imageUrls}
-              onChange={setImageUrls}
-              onUploadingChange={setPhotosEnEnvoi}
-              pathPrefix={pathPrefix}
-              maxFiles={1}
-              disabled={submitting}
-            />
-            {photosEnEnvoi > 0 && (
-              <p className="text-xs text-primary font-medium mt-2">
-                Envoi en cours : l&apos;enregistrement est bloqué tant que le
-                visuel n&apos;est pas monté.
-              </p>
+            <fieldset className="grid grid-cols-2 gap-3">
+              <legend className="sr-only">Type de média</legend>
+              {(
+                [
+                  {
+                    valeur: "image" as const,
+                    titre: "Image",
+                    aide: "Une photo fixe, comme aujourd'hui.",
+                  },
+                  {
+                    valeur: "video" as const,
+                    titre: "Vidéo",
+                    aide: "YouTube, Vimeo, ou un fichier .mp4.",
+                  },
+                ]
+              ).map((choix) => (
+                <label
+                  key={choix.valeur}
+                  className={`flex cursor-pointer gap-3 rounded-lg border p-3 transition-colors ${
+                    mediaType === choix.valeur
+                      ? "border-primary bg-primary/5"
+                      : "border-stone-200 hover:bg-stone-50"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="media_type"
+                    value={choix.valeur}
+                    checked={mediaType === choix.valeur}
+                    onChange={() => setMediaType(choix.valeur)}
+                    className="mt-0.5 h-4 w-4 border-stone-300 text-primary focus:ring-primary/30"
+                  />
+                  <span className="flex-1">
+                    <span className="block text-sm font-medium text-neutral-900">
+                      {choix.titre}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-neutral-500">
+                      {choix.aide}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+
+            {mediaType === "video" && (
+              <div className="rounded-lg border border-stone-200 bg-stone-50/60 p-4">
+                <Label
+                  htmlFor={idUrlVideo}
+                  className="mb-2 block text-xs font-semibold uppercase tracking-wider text-neutral-500"
+                >
+                  Adresse de la vidéo
+                  <span className="ml-0.5 text-red-500">*</span>
+                </Label>
+                <Input
+                  id={idUrlVideo}
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=…"
+                  className="text-sm"
+                />
+                <p className="mt-1 text-xs text-stone-500">
+                  Collez le lien de partage YouTube ou Vimeo, ou l&apos;adresse
+                  https d&apos;un fichier .mp4 / .webm. Les liens courts
+                  (youtu.be) et les Shorts fonctionnent aussi.
+                </p>
+
+                {/* Prévisualisation immédiate : l'admin voit tout de suite si
+                    son lien est reconnu, plutôt que de le découvrir sur le
+                    site. Un lien illisible ne rend rien — d'où le message. */}
+                {videoUrl.trim() &&
+                  (videoLisible(videoUrl) ? (
+                    <div className="mt-3">
+                      <LecteurVideo
+                        url={videoUrl.trim()}
+                        affiche={imageUrls[0] ?? imageAltUrl}
+                        titre={title || "Aperçu"}
+                        className="max-w-sm"
+                      />
+                    </div>
+                  ) : (
+                    <p className="mt-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                      {MESSAGE_URL_VIDEO_INVALIDE}
+                    </p>
+                  ))}
+              </div>
             )}
 
-            <div className="mt-4 pt-4 border-t border-stone-200">
-              <Label
-                htmlFor={idUrlImage}
-                className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2 block"
-              >
-                Ou réutiliser une image existante (URL)
-              </Label>
-              <Input
-                id={idUrlImage}
-                value={imageAltUrl}
-                onChange={(e) => setImageAltUrl(e.target.value)}
-                placeholder="Ex : /images/biens/bien1.jpg ou https://…"
-                className="text-sm"
-              />
-              <p className="text-xs text-stone-500 mt-1">
-                Chemin interne commençant par « / », ou adresse https d&apos;un
-                domaine autorisé. Toute autre adresse est refusée : elle
-                empêcherait l&apos;image de s&apos;afficher sur le site.
+            <div className={mediaType === "video" ? "pt-2" : undefined}>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+                {mediaType === "video"
+                  ? "Affiche de la vidéo (facultative)"
+                  : "Image"}
               </p>
+              {mediaType === "video" && (
+                <p className="mb-3 text-xs text-stone-500">
+                  Image figée montrée avant que le visiteur ne lance la lecture.
+                  Sans elle, YouTube fournit sa propre miniature ; Vimeo et les
+                  fichiers directs n&apos;en ont pas.
+                </p>
+              )}
+              <ImageUploader
+                value={imageUrls}
+                onChange={setImageUrls}
+                onUploadingChange={setPhotosEnEnvoi}
+                pathPrefix={pathPrefix}
+                maxFiles={1}
+                disabled={submitting}
+              />
+              {photosEnEnvoi > 0 && (
+                <p className="text-xs text-primary font-medium mt-2">
+                  Envoi en cours : l&apos;enregistrement est bloqué tant que le
+                  visuel n&apos;est pas monté.
+                </p>
+              )}
+
+              <div className="mt-4 pt-4 border-t border-stone-200">
+                <Label
+                  htmlFor={idUrlImage}
+                  className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2 block"
+                >
+                  Ou réutiliser une image existante (URL)
+                </Label>
+                <Input
+                  id={idUrlImage}
+                  value={imageAltUrl}
+                  onChange={(e) => setImageAltUrl(e.target.value)}
+                  placeholder="Ex : /images/biens/bien1.jpg ou https://…"
+                  className="text-sm"
+                />
+                <p className="text-xs text-stone-500 mt-1">
+                  Chemin interne commençant par « / », ou adresse https d&apos;un
+                  domaine autorisé. Toute autre adresse est refusée : elle
+                  empêcherait l&apos;image de s&apos;afficher sur le site.
+                </p>
+              </div>
             </div>
           </Section>
 
