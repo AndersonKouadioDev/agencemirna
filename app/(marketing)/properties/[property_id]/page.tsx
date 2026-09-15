@@ -1,5 +1,6 @@
 import DescriptionSection from "@/components/properties/[property_id]/description-section";
 import { getSiteContact } from "@/src/lib/site-contact";
+import { estMeuble, estVente } from "@/src/lib/bien-nature";
 import GallerySection from "@/components/properties/[property_id]/gallery-section";
 import SimilarProperties from "@/components/properties/[property_id]/similar-properties";
 
@@ -63,14 +64,8 @@ export async function generateMetadata({
   // « Vente » n'ayant que `prix` voyait son prix de vente suffixé « FCFA/nuit »
   // dans la <meta description> et dans la carte Open Graph. On la choisit donc
   // sur le service et la catégorie, comme le fait la fiche elle-même.
-  const serviceName = service.toLowerCase();
-  const categorieName = (bien.categories_bien?.name ?? "").toLowerCase();
-  const isVente = serviceName.includes("vente");
-  const isMeuble = categorieName
-    ? categorieName.includes("meubl") && !categorieName.includes("non meubl")
-    : serviceName.includes("meublé") ||
-      serviceName.includes("courte") ||
-      serviceName.includes("vacance");
+  const isVente = estVente(bien);
+  const isMeuble = estMeuble(bien);
 
   const montantVente = bien.prix
     ? `${bien.prix.toLocaleString("fr-FR")} FCFA`

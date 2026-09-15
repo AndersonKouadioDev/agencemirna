@@ -1,3 +1,4 @@
+import { estMeuble, estVente } from "@/src/lib/bien-nature";
 import { formatNumber } from "@/utils/formatNumber";
 import PropertyCard from "../property-card";
 
@@ -38,16 +39,12 @@ export default function PropertySection({
         // éviter les crashs (ex. bien sans prix → null.toString()).
         const typeName = bien.types_bien?.name ?? "";
         const serviceName = bien.services_bien?.name ?? "";
-        const categorie = (bien.categories_bien?.name ?? "").toLowerCase();
-        // `undefined` et non `false` quand aucune catégorie n'est saisie :
-        // PropertyCard doit pouvoir retomber sur le libellé du service dans ce
-        // seul cas, sans qu'une catégorie absente ne soit lue comme « non meublé ».
-        const furnished = categorie
-          ? categorie.includes("meubl") && !categorie.includes("non meubl")
-          : undefined;
         // Le décompte de pièces se déduit des pièces saisies, pas du rang de
         // `types_bien` : tester `types_bien.id > 1` masquait la mention pour
         // le type dont l'identifiant vaut 1, au hasard de l'ordre de la table.
+        // Nature du bien lue sur les colonnes explicites plutôt que déduite
+        // d'un libellé : renommer une catégorie ne change plus l'affichage.
+        const furnished = estMeuble(bien);
         const nbPieces = (bien.chambre ?? 0) + (bien.salon ?? 0);
         const pieces = nbPieces > 0 ? `${nbPieces} pièce${nbPieces > 1 ? "s" : ""}` : "";
         // Toutes ces colonnes sont nullables : la concaténation littérale
@@ -79,6 +76,7 @@ export default function PropertySection({
             area={bien.area ? `${bien.area} m²` : undefined}
             status={serviceName}
             furnished={furnished}
+            forSale={estVente(bien)}
             price={bien.prix != null ? formatNumber(bien.prix) + " FCFA" : ""}
             pricePerMonth={
               bien.prix_month != null

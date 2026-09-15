@@ -1,6 +1,7 @@
 "use client";
 
 import type { SiteContact } from "@/src/lib/site-contact";
+import { estMeuble, estVente } from "@/src/lib/bien-nature";
 
 import Motion from "@/components/motion";
 import { Avatar, AvatarImage } from "@/components/ui/avatar";
@@ -75,22 +76,11 @@ export default function DescriptionSection({
   bien: BienFicheSource;
   contact: SiteContact;
 }) {
-  const serviceName = (bien?.services_bien?.name || "").toLowerCase();
-  const categorieName = (bien?.categories_bien?.name || "").toLowerCase();
-
-  const isVente = serviceName.includes("vente");
-  // L'ameublement est porté par `categories_bien` (Meublé / Semi-meublé /
-  // Non meublé). Quand la catégorie est renseignée elle tranche SEULE, dans
-  // les deux sens : le libellé du service « Location meublée » contient le mot
-  // « meublé » et annulait donc une catégorie « Non meublé », rouvrant le
-  // sélecteur de dates et le tarif à la nuitée sur un bien vide de meubles.
-  // Le service n'est consulté qu'à défaut de catégorie, pour le service
-  // générique « Location » qui ne dit pas s'il est meublé.
-  const isMeuble = categorieName
-    ? categorieName.includes("meubl") && !categorieName.includes("non meubl")
-    : serviceName.includes("meublé") ||
-      serviceName.includes("courte") ||
-      serviceName.includes("vacance");
+  // La nature du bien vient désormais de colonnes explicites
+  // (services_bien.est_vente, categories_bien.est_meuble) : renommer une
+  // entrée depuis /admin/taxonomie ne change plus l'affichage du prix.
+  const isVente = estVente(bien);
+  const isMeuble = estMeuble(bien);
 
   
   let theme = {

@@ -1,3 +1,4 @@
+import { estMeuble, estVente } from "@/src/lib/bien-nature";
 import { getAllBiens } from "@/src/actions/bien.actions";
 import PropertyCard from "@/components/property-card";
 import { formatNumber } from "@/utils/formatNumber";
@@ -50,8 +51,6 @@ export default async function SimilarProperties({ currentBienId }: { currentBien
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {similarBiens.map((bien) => {
-            const categorie = (bien.categories_bien?.name ?? "").toLowerCase();
-
             return (
               <PropertyCard
                 key={bien.id}
@@ -71,11 +70,8 @@ export default async function SimilarProperties({ currentBienId }: { currentBien
                 bedrooms={bien.chambre ?? undefined}
                 bathrooms={bien.salle_bains ?? undefined}
                 status={bien.services_bien?.name || "Disponible"}
-                furnished={
-                  categorie
-                    ? categorie.includes("meubl") && !categorie.includes("non meubl")
-                    : undefined
-                }
+                furnished={estMeuble(bien)}
+                forSale={estVente(bien)}
                 price={bien.prix ? `${formatNumber(bien.prix)} FCFA` : ""}
                 pricePerMonth={bien.prix_month ? `${formatNumber(bien.prix_month)} FCFA` : ""}
               />

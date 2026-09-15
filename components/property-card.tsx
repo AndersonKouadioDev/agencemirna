@@ -28,6 +28,7 @@ export default function PropertyCard({
   price,
   pricePerMonth,
   furnished,
+  forSale,
 }: {
   id: string;
   /** `biens.image` est nullable : on accepte l'absence plutôt que de laisser
@@ -46,6 +47,9 @@ export default function PropertyCard({
   status: string;
   price: string;
   pricePerMonth?: string;
+  /** Vient de `services_bien.est_vente`. Laisser indéfini fait retomber sur
+   *  le libellé du service, le temps que la migration 0020 soit appliquée. */
+  forSale?: boolean;
   /** Vient de `categories_bien`. Quand elle est renseignée, la catégorie
    *  tranche SEULE : le libellé du service « Location meublée » contient le mot
    *  « meublé » et annulerait une catégorie « Non meublé ». Laisser `undefined`
@@ -66,7 +70,9 @@ export default function PropertyCard({
 
   let priceBlock;
 
-  if (s.includes("vente")) {
+  const estUneVente = forSale != null ? forSale : s.includes("vente");
+
+  if (estUneVente) {
     theme.dotColor = "bg-[#F5B324]";
     priceBlock = price ? (
       <div className="text-xl font-bold text-secondary">{price}</div>
