@@ -29,7 +29,7 @@ import {
   StarOff,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { deleteAdminImage, uploadAdminImage } from "@/src/actions/admin/upload";
+import { deleteAdminImage, signerEnvoiImage } from "@/src/actions/admin/upload";
 
 /**
  * <ImageUploader> : composant controlled multi-images.
@@ -126,16 +126,42 @@ export function ImageUploader({
     const newErrors: string[] = [];
 
     for (const file of toUpload) {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("pathPrefix", pathPrefix);
       try {
-        const result = await uploadAdminImage(formData);
-        if (result.ok) {
-          newUrls.push(result.url);
-          cheminsEnvoyes.current.set(result.url, result.path);
+        // Le fichier ne passe plus par le serveur Next : on demande une URL
+        // signée, puis on écrit directement dans le Storage. Traverser une
+        // Server Action plafonnait l'envoi à 1 Mo (et à 4,5 Mo sur Vercel),
+        // alors que l'interface annonce 8 Mo — un PNG de 3 Mo était refusé
+        // avec un message technique incompréhensible pour le rédacteur.
+        const signature = await signerEnvoiImage({
+          pathPrefix,
+          fileName: file.name,
+          contentType: file.type,
+          size: file.size,
+        });
+
+        if (!signature.ok) {
+          newErrors.push(`${file.name} : ${signature.error}`);
+          setUploading((n) => n - 1);
+          continue;
+        }
+
+        const reponse = await fetch(signature.signedUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": file.type,
+            // Les noms de fichier sont uniques : le cache peut être long.
+            "Cache-Control": "31536000",
+          },
+          body: file,
+        });
+
+        if (!reponse.ok) {
+          newErrors.push(
+            `${file.name} : envoi refusé par le stockage (${reponse.status}).`,
+          );
         } else {
-          newErrors.push(`${file.name} : ${result.error}`);
+          newUrls.push(signature.publicUrl);
+          cheminsEnvoyes.current.set(signature.publicUrl, signature.path);
         }
       } catch (e) {
         newErrors.push(

@@ -18,80 +18,68 @@ export type UploadResult =
   | { ok: false; error: string };
 
 /**
- * Server Action : upload d'une image vers Supabase Storage (bucket "images").
+ * Server Action : prépare un envoi DIRECT du navigateur vers Supabase Storage.
  *
- * Sécurité :
- * - Vérifie que le user est admin (sinon 403)
- * - Valide le type MIME et la taille
- * - Génère un nom de fichier aléatoire (anti-collision, anti-énumération)
+ * Le fichier ne transite plus par le serveur Next. C'est ce qui permet de
+ * tenir la limite de 8 Mo annoncée dans l'interface : le corps d'une Server
+ * Action est plafonné à 1 Mo par défaut, et relever ce plafond ne suffirait
+ * pas — Vercel cape de son côté la requête d'une fonction serverless à
+ * 4,5 Mo. Un fichier de 3 Mo était donc refusé avec un message technique
+ * illisible pour le rédacteur.
  *
- * Args (FormData) :
- * - `file` (File) : le fichier à uploader (obligatoire)
- * - `pathPrefix` (string) : préfixe du chemin dans le bucket
- *   ex: "biens/abc-123" → fichier stocké dans biens/abc-123/<random>.jpg
+ * Ce qui traverse ici n'est que la description du fichier : le contrôle admin,
+ * le type et la taille sont vérifiés avant de signer, et le chemin est
+ * toujours généré côté serveur — le client ne choisit jamais où il écrit.
  *
- * Retourne l'URL publique en cas de succès.
+ * NB : le navigateur pourrait déclarer une taille inexacte. Le garde-fou
+ * définitif reste la limite de taille du bucket, côté Supabase.
  */
-export async function uploadAdminImage(
-  formData: FormData,
-): Promise<UploadResult> {
-  // 1. Vérif admin
-  const admin = await getAdminUser();
-  if (!admin) {
-    return { ok: false, error: "Non autorisé." };
-  }
+export type SignatureEnvoi =
+  | { ok: true; signedUrl: string; path: string; publicUrl: string }
+  | { ok: false; error: string };
 
-  // 2. Validation du fichier
-  const file = formData.get("file");
-  if (!(file instanceof File)) {
-    return { ok: false, error: "Fichier manquant." };
-  }
-  if (file.size === 0) {
+export async function signerEnvoiImage(input: {
+  pathPrefix: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+}): Promise<SignatureEnvoi> {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, error: "Non autorisé." };
+
+  if (!input.size || input.size <= 0) {
     return { ok: false, error: "Fichier vide." };
   }
-  if (file.size > MAX_SIZE_BYTES) {
+  if (input.size > MAX_SIZE_BYTES) {
     return {
       ok: false,
       error: `Fichier trop volumineux (max ${formatBytes(MAX_SIZE_BYTES)}).`,
     };
   }
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  if (!ALLOWED_TYPES.includes(input.contentType)) {
     return {
       ok: false,
-      error: `Type de fichier non supporté : ${file.type}. Autorisés : ${ALLOWED_TYPES.join(", ")}.`,
+      error: `Type de fichier non supporté : ${input.contentType}. Autorisés : ${ALLOWED_TYPES.join(", ")}.`,
     };
   }
 
-  // 3. Path : préfixe (sanitized) + nom aléatoire + extension d'origine
-  const rawPrefix = String(formData.get("pathPrefix") ?? "misc").trim();
-  const pathPrefix = sanitizePathPrefix(rawPrefix);
-  const ext = getExtension(file.name, file.type);
+  const pathPrefix = sanitizePathPrefix(String(input.pathPrefix ?? "misc").trim());
+  const ext = getExtension(input.fileName, input.contentType);
   const random = randomBytes(8).toString("hex");
   const path = `${pathPrefix}/${Date.now()}-${random}${ext}`;
 
-  // 4. Upload via le client Supabase serveur (cookies admin)
   const supabase = await createClient();
-  const arrayBuffer = await file.arrayBuffer();
-
-  const { error: uploadError } = await supabase.storage
+  const { data, error } = await supabase.storage
     .from(BUCKET)
-    .upload(path, arrayBuffer, {
-      contentType: file.type,
-      cacheControl: "31536000", // 1 an : les noms de fichier sont uniques
-      upsert: false,
-    });
+    .createSignedUploadUrl(path);
 
-  if (uploadError) {
-    console.error("uploadAdminImage error:", uploadError);
-    return { ok: false, error: uploadError.message };
+  if (error || !data) {
+    console.error("signerEnvoiImage error:", error);
+    return { ok: false, error: error?.message ?? "Signature impossible." };
   }
 
-  // 5. URL publique
-  const { data: publicUrlData } = supabase.storage
-    .from(BUCKET)
-    .getPublicUrl(path);
-
-  return { ok: true, url: publicUrlData.publicUrl, path };
+  const { data: publique } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  return { ok: true, signedUrl: data.signedUrl, path, publicUrl: publique.publicUrl };
 }
 
 /**
