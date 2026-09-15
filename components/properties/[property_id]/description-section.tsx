@@ -112,6 +112,33 @@ export default function DescriptionSection({
     theme = { badge: "bg-indigo-500/10 text-indigo-600 border-indigo-500/20", dot: "bg-indigo-500" };
   }
 
+  /**
+   * Caractéristiques réellement saisies, dans l'ordre d'affichage.
+   *
+   * `!= null` et non `&&` : une valeur à 0 est une information — « 0 salon »
+   * dit d'un studio qu'il n'a pas de pièce de séjour séparée. C'est l'ABSENCE
+   * de saisie qui doit faire disparaître la tuile, pas la valeur zéro.
+   *
+   * La surface passe en tête : c'est la seule qui vaille pour tous les types de
+   * bien, du studio au terrain.
+   */
+  const caracteristiques = (
+    [
+      { cle: "area", libelle: "Surface", brut: bien?.area, unite: " m²", Icone: SpaceIcon },
+      { cle: "chambre", libelle: "Chambres", brut: bien?.chambre, unite: "", Icone: BedIcon },
+      { cle: "salon", libelle: "Salons", brut: bien?.salon, unite: "", Icone: Sofa },
+      { cle: "salle_bains", libelle: "Salles de bain", brut: bien?.salle_bains, unite: "", Icone: BathIcon },
+      { cle: "capacity", libelle: "Capacité", brut: bien?.capacity, unite: " pers.", Icone: Users },
+    ] as const
+  )
+    .filter((c) => c.brut != null)
+    .map((c) => ({
+      cle: c.cle,
+      libelle: c.libelle,
+      valeur: `${c.brut}${c.unite}`,
+      Icone: c.Icone,
+    }));
+
   // Le montant et son unité sont choisis ensemble, par le module partagé.
   // Cette page en portait sa propre copie, et l'encadré de droite une
   // troisième : le même bien pouvait annoncer « 0 FCFA » d'un côté et rien du
@@ -221,54 +248,32 @@ export default function DescriptionSection({
            <div className="lg:col-span-8 flex flex-col gap-12">
               
               {/* Features Bar */}
-              <Motion variant="verticalSlideIn">
-                <div className="flex flex-wrap items-center gap-8 p-6 md:p-8 bg-white rounded-[24px] border border-stone-100 shadow-sm">
-                   {/* `area &&` laissait React rendre le nombre 0 tout seul au
-                       milieu du bandeau ; `!= null` aligne la tuile sur ses
-                       voisines. Et le nombre nu se lisait mal sans son unité,
-                       que l'admin annonce pourtant (« Surface (m²) »). */}
-                   {bien?.area != null && (
-                     <div className="flex flex-col gap-1">
-                       <span className="text-xs text-stone-400 font-bold uppercase tracking-widest">Surface</span>
-                       <div className="flex items-center gap-2 text-secondary font-semibold text-lg">
-                         <SpaceIcon className="w-5 h-5 text-primary" /> {bien?.area} m²
-                       </div>
-                     </div>
-                   )}
-                   {bien?.chambre != null && (
-                     <div className="flex flex-col gap-1">
-                       <span className="text-xs text-stone-400 font-bold uppercase tracking-widest">Chambres</span>
-                       <div className="flex items-center gap-2 text-secondary font-semibold text-lg">
-                         <BedIcon className="w-5 h-5 text-primary" /> {bien?.chambre}
-                       </div>
-                     </div>
-                   )}
-                   {bien?.salon != null && (
-                     <div className="flex flex-col gap-1">
-                       <span className="text-xs text-stone-400 font-bold uppercase tracking-widest">Salons</span>
-                       <div className="flex items-center gap-2 text-secondary font-semibold text-lg">
-                         <Sofa className="w-5 h-5 text-primary" /> {bien?.salon}
-                       </div>
-                     </div>
-                   )}
-                   {bien?.salle_bains != null && (
-                     <div className="flex flex-col gap-1">
-                       <span className="text-xs text-stone-400 font-bold uppercase tracking-widest">Salles de bain</span>
-                       <div className="flex items-center gap-2 text-secondary font-semibold text-lg">
-                         <BathIcon className="w-5 h-5 text-primary" /> {bien?.salle_bains}
-                       </div>
-                     </div>
-                   )}
-                   {bien?.capacity != null && (
-                     <div className="flex flex-col gap-1">
-                       <span className="text-xs text-stone-400 font-bold uppercase tracking-widest">Capacité</span>
-                       <div className="flex items-center gap-2 text-secondary font-semibold text-lg">
-                         <Users className="w-5 h-5 text-primary" /> {bien?.capacity} pers.
-                       </div>
-                     </div>
-                   )}
-                </div>
-              </Motion>
+              {/* Le bandeau se rendait même sans rien à montrer : sur quatre
+                  biens sur douze — les deux « Appartements », TERRAIN et Villas
+                  Duplex —, aucune des cinq caractéristiques n'est saisie, et la
+                  page affichait une carte blanche haute de cent pixels entre la
+                  photo et la description. Une boîte vide n'est pas un conteneur
+                  neutre : elle se lit comme un contenu qui n'a pas chargé.
+
+                  Les tuiles sont assemblées d'abord, rendues ensuite — c'est ce
+                  qui rend « n'a rien à dire » vérifiable, plutôt que réparti
+                  entre cinq conditions qu'il faut lire ensemble pour conclure. */}
+              {caracteristiques.length > 0 && (
+                <Motion variant="verticalSlideIn">
+                  <div className="flex flex-wrap items-center gap-8 p-6 md:p-8 bg-white rounded-[24px] border border-stone-100 shadow-sm">
+                    {caracteristiques.map(({ cle, libelle, valeur, Icone }) => (
+                      <div key={cle} className="flex flex-col gap-1">
+                        <span className="text-xs text-stone-400 font-bold uppercase tracking-widest">
+                          {libelle}
+                        </span>
+                        <div className="flex items-center gap-2 text-secondary font-semibold text-lg">
+                          <Icone className="w-5 h-5 text-primary" /> {valeur}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Motion>
+              )}
 
               {/* Description */}
               <Motion variant="verticalSlideIn">
