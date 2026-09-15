@@ -156,6 +156,18 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
    * Double critère : le rattachement par `commune_id` est la référence, mais
    * les quartiers saisis avant la migration n'ont que le libellé texte.
    */
+  /**
+   * Ce que le type choisi autorise (migration 0028, réglable depuis
+   * /admin/taxonomie). Sans type, ou avant la migration, tout est proposé :
+   * on ne retire jamais un champ sur un doute.
+   */
+  const typeChoisi = React.useMemo(
+    () => reference.types.find((t) => t.id.toString() === form.type_bien_id) ?? null,
+    [reference.types, form.type_bien_id],
+  );
+  const aPieces = typeChoisi?.a_pieces ?? true;
+  const aCapacite = typeChoisi?.a_capacite ?? true;
+
   const quartiersDeLaCommune = React.useMemo(() => {
     if (!form.commune_id) return [];
     const commune = reference.communes.find((c) => c.id === form.commune_id);
@@ -207,10 +219,13 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
       prix: parseNumber(form.prix),
       prix_month: parseNumber(form.prix_month),
       prix_sur_demande: prixSurDemande,
-      chambre: parseNumber(form.chambre),
-      salon: parseNumber(form.salon),
-      salle_bains: parseNumber(form.salle_bains),
-      capacity: parseNumber(form.capacity),
+      // Un champ que le type n'autorise pas part à null, quoi que le
+      // formulaire ait retenu d'un type précédent : un Appartement repassé en
+      // Terrain ne doit pas garder « 3 chambres » en base, ni sur sa fiche.
+      chambre: aPieces ? parseNumber(form.chambre) : null,
+      salon: aPieces ? parseNumber(form.salon) : null,
+      salle_bains: aPieces ? parseNumber(form.salle_bains) : null,
+      capacity: aCapacite ? parseNumber(form.capacity) : null,
       address: form.address || null,
       ville_commune: form.ville_commune || null,
       pays: form.pays || null,
@@ -704,52 +719,85 @@ export function BienForm({ bien, images = [], reference }: BienFormProps) {
           </Section>
 
           {/* Section : Caractéristiques */}
-          <Section title="Caractéristiques">
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Chambres">
-                <Input
-                  type="number"
-                  value={form.chambre}
-                  onChange={(e) => update("chambre", e.target.value)}
-                  min="0"
-                />
-              </Field>
-              <Field label="Salons">
-                <Input
-                  type="number"
-                  value={form.salon}
-                  onChange={(e) => update("salon", e.target.value)}
-                  min="0"
-                />
-              </Field>
-              <Field label="Salles de bain">
-                <Input
-                  type="number"
-                  value={form.salle_bains}
-                  onChange={(e) => update("salle_bains", e.target.value)}
-                  min="0"
-                />
-              </Field>
-              <Field label="Capacité">
-                <Input
-                  type="number"
-                  value={form.capacity}
-                  onChange={(e) => update("capacity", e.target.value)}
-                  placeholder="personnes"
-                  min="1"
-                />
-              </Field>
-              <Field label="Surface (m²)">
-                <Input
-                  type="number"
-                  value={form.area}
-                  onChange={(e) => update("area", e.target.value)}
-                  placeholder="Ex : 120"
-                  min="0"
-                  step="0.01"
-                />
-              </Field>
-            </div>
+          <Section
+            title="Caractéristiques"
+            subtitle={
+              typeChoisi
+                ? aPieces || aCapacite
+                  ? "Les champs proposés dépendent du type choisi."
+                  : `Un ${typeChoisi.name.toLowerCase()} n'a ni pièces ni capacité : seule la surface compte.`
+                : "Choisissez un type pour n'afficher que les champs utiles."
+            }
+          >
+            {/* La surface d'abord : c'est la seule caractéristique qui vaille
+                pour tous les types, du studio au terrain — et elle était vide
+                sur les douze biens, noyée parmi quatre champs résidentiels. */}
+            <Field label="Surface (m²)">
+              <Input
+                type="number"
+                value={form.area}
+                onChange={(e) => update("area", e.target.value)}
+                placeholder="Ex : 120"
+                min="0"
+                step="0.01"
+              />
+            </Field>
+
+            {(aPieces || aCapacite) && (
+              <div className="grid grid-cols-2 gap-3">
+                {aPieces && (
+                  <>
+                    <Field label="Chambres">
+                      <Input
+                        type="number"
+                        value={form.chambre}
+                        onChange={(e) => update("chambre", e.target.value)}
+                        min="0"
+                      />
+                    </Field>
+                    <Field label="Salons">
+                      <Input
+                        type="number"
+                        value={form.salon}
+                        onChange={(e) => update("salon", e.target.value)}
+                        min="0"
+                      />
+                    </Field>
+                    <Field label="Salles de bain">
+                      <Input
+                        type="number"
+                        value={form.salle_bains}
+                        onChange={(e) => update("salle_bains", e.target.value)}
+                        min="0"
+                        step="0.5"
+                      />
+                    </Field>
+                  </>
+                )}
+                {aCapacite && (
+                  <Field label="Capacité">
+                    <Input
+                      type="number"
+                      value={form.capacity}
+                      onChange={(e) => update("capacity", e.target.value)}
+                      placeholder="personnes"
+                      min="1"
+                    />
+                  </Field>
+                )}
+              </div>
+            )}
+
+            {/* Les valeurs masquées ne sont pas perdues à l'écran, mais elles
+                ne partiront pas : dit clairement plutôt que découvert sur la
+                fiche. */}
+            {typeChoisi && !aPieces && (form.chambre || form.salon || form.salle_bains) && (
+              <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
+                Chambres, salons et salles de bain ne seront pas enregistrés pour
+                ce type. Changez de type pour les retrouver, ou réglez ce que le
+                type autorise dans Types &amp; services.
+              </p>
+            )}
           </Section>
         </div>
       </div>

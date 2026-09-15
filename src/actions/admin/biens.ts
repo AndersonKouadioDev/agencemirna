@@ -239,7 +239,8 @@ export async function getBienAdmin(
 // ============================================================================
 
 export type ReferenceData = {
-  types: { id: number; name: string }[];
+  /** Drapeaux de la migration 0028 : `undefined` avant, et vaut alors « oui ». */
+  types: { id: number; name: string; a_pieces?: boolean; a_capacite?: boolean }[];
   services: { id: number; name: string }[];
   categories: { id: number; name: string }[];
   communes: { id: string; nom: string; is_active: boolean }[];
@@ -266,13 +267,24 @@ export async function getReferenceData(): Promise<ReferenceData> {
   // src/actions/public.ts : sur un `.order("name")` seul, le rang réglé depuis
   // /admin/taxonomie n'avait aucun effet sur ces listes déroulantes. `name`
   // reste en second pour départager les rangs égaux (0 par défaut).
-  const [typesRes, servicesRes, categoriesRes, communesRes, quartiersRes] =
-    await Promise.all([
+  // Les types portent deux drapeaux (0028). PostgREST rejette le select ENTIER
+  // pour une colonne absente, et dans le `Promise.all` ci-dessous l'erreur
+  // deviendrait `[]` sans bruit — la liste des types serait vide au moment de
+  // créer un bien. On les lit à part, avec un repli sans drapeaux.
+  const lireTypes = (colonnes: string) =>
     supabase
       .from("types_bien")
-      .select("id, name")
+      .select(colonnes)
       .order("ordre", { ascending: true })
-      .order("name", { ascending: true }),
+      .order("name", { ascending: true });
+  let typesRes = await lireTypes("id, name, a_pieces, a_capacite");
+  if (typesRes.error && /a_pieces|a_capacite/i.test(typesRes.error.message ?? "")) {
+    console.warn("types_bien : drapeaux absents, migration 0028 non appliquée.");
+    typesRes = await lireTypes("id, name");
+  }
+
+  const [servicesRes, categoriesRes, communesRes, quartiersRes] =
+    await Promise.all([
     supabase
       .from("services_bien")
       .select("id, name")
@@ -294,10 +306,7 @@ export async function getReferenceData(): Promise<ReferenceData> {
   ]);
 
   return {
-    types: (typesRes.data ?? []).filter((t) => t.name) as {
-      id: number;
-      name: string;
-    }[],
+    types: ((typesRes.data ?? []) as ReferenceData["types"]).filter((t) => t.name),
     services: (servicesRes.data ?? []).filter((s) => s.name) as {
       id: number;
       name: string;

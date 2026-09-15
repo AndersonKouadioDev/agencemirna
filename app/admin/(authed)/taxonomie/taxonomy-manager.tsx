@@ -22,9 +22,19 @@ type Brouillon = {
   nomInitial: string;
   image: string | null;
   ordre: number | null;
+  /** Types seulement (migration 0028) : ce que le formulaire de bien propose. */
+  a_pieces: boolean;
+  a_capacite: boolean;
 };
 
-const VIDE: Brouillon = { name: "", nomInitial: "", image: null, ordre: null };
+const VIDE: Brouillon = {
+  name: "",
+  nomInitial: "",
+  image: null,
+  ordre: null,
+  a_pieces: true,
+  a_capacite: true,
+};
 
 /**
  * Seuls les types et les services portent un visuel exploité par le site : le
@@ -229,6 +239,9 @@ export function TaxonomyManager({
       nomInitial: row.name,
       image: row.image,
       ordre: row.ordre,
+      // `undefined` avant 0028, ou sur les autres tables : vaut « oui ».
+      a_pieces: row.a_pieces ?? true,
+      a_capacite: row.a_capacite ?? true,
     });
   }
 
@@ -276,6 +289,11 @@ export function TaxonomyManager({
       name: brouillon.name,
       image,
       ordre: brouillon.ordre,
+      // Transmis pour les seuls types : l'action n'écrit ces colonnes que là,
+      // et les autres tables ne les ont pas.
+      ...(table === "types_bien"
+        ? { a_pieces: brouillon.a_pieces, a_capacite: brouillon.a_capacite }
+        : {}),
     });
 
     setBusy(null);
@@ -369,6 +387,46 @@ export function TaxonomyManager({
               />
             </div>
           </div>
+
+          {table === "types_bien" && (
+            <fieldset className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <legend className="mb-1 text-xs font-medium text-neutral-700">
+                Ce que le formulaire de bien propose pour ce type
+              </legend>
+              {(
+                [
+                  {
+                    cle: "a_pieces" as const,
+                    titre: "Pièces",
+                    aide: "Chambres, salons, salles de bain. Non pour un terrain, un entrepôt.",
+                  },
+                  {
+                    cle: "a_capacite" as const,
+                    titre: "Capacité d'accueil",
+                    aide: "Nombre de personnes. Non pour un terrain, un local.",
+                  },
+                ]
+              ).map((c) => (
+                <label
+                  key={c.cle}
+                  className="flex cursor-pointer items-start gap-3 rounded-md border border-stone-200 bg-white p-3 hover:bg-stone-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={brouillon[c.cle]}
+                    onChange={(e) =>
+                      setBrouillon({ ...brouillon, [c.cle]: e.target.checked })
+                    }
+                    className="mt-0.5 h-4 w-4 rounded border-stone-300 text-primary focus:ring-primary/30"
+                  />
+                  <span className="flex-1">
+                    <span className="block text-sm font-medium text-neutral-900">{c.titre}</span>
+                    <span className="mt-0.5 block text-xs text-neutral-500">{c.aide}</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          )}
 
           <p className="text-xs text-neutral-500 -mt-1">
             {avecImage
@@ -550,6 +608,22 @@ export function TaxonomyManager({
                 )}
               </div>
 
+              {table === "types_bien" && (
+                <span
+                  className="hidden shrink-0 gap-1 sm:flex"
+                  title="Ce que le formulaire de bien propose pour ce type"
+                >
+                  {(row.a_pieces ?? true) && (
+                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-neutral-600">pièces</span>
+                  )}
+                  {(row.a_capacite ?? true) && (
+                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-neutral-600">capacité</span>
+                  )}
+                  {!(row.a_pieces ?? true) && !(row.a_capacite ?? true) && (
+                    <span className="rounded-full bg-stone-100 px-2 py-0.5 text-[10px] font-semibold uppercase text-neutral-500">surface seule</span>
+                  )}
+                </span>
+              )}
               <span className="text-xs font-mono text-neutral-400 shrink-0">
                 {row.ordre}
               </span>

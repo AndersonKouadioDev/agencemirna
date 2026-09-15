@@ -30,6 +30,13 @@ export type TaxonomyRow = {
   name: string;
   image: string | null;
   ordre: number;
+  /**
+   * Migration 0028, `types_bien` uniquement : le formulaire de bien propose
+   * pièces / capacité selon le type. `undefined` pour les autres tables, et
+   * pour les types tant que le SQL n'est pas passé — vaut alors « oui ».
+   */
+  a_pieces?: boolean;
+  a_capacite?: boolean;
 };
 export type TaxonomyTable = "types_bien" | "services_bien" | "categories_bien";
 
@@ -60,9 +67,15 @@ export async function listTaxonomy(table: TaxonomyTable): Promise<TaxonomyRow[]>
 
   const supabase = await createClient();
 
+  // Les types portent deux drapeaux (0028). Une colonne absente fait rejeter
+  // tout le select : le repli ci-dessous rattrape ce cas comme celui de 0018.
+  const colonnes =
+    table === "types_bien"
+      ? "id, name, image, ordre, a_pieces, a_capacite"
+      : "id, name, image, ordre";
   const complet = await supabase
     .from(table)
-    .select("id, name, image, ordre")
+    .select(colonnes)
     .order("ordre", { ascending: true })
     .order("name", { ascending: true });
 
@@ -81,6 +94,9 @@ export async function listTaxonomy(table: TaxonomyTable): Promise<TaxonomyRow[]>
 }
 
 export type TaxonomyFormData = {
+  /** types_bien seulement. Écrits uniquement s'ils sont transmis. */
+  a_pieces?: boolean;
+  a_capacite?: boolean;
   id?: number;
   name: string;
   image?: string | null;
@@ -137,6 +153,12 @@ export async function upsertTaxonomyEntry(
   // une valeur, c'est ainsi que le formulaire retire une image.
   if (input.image !== undefined) payload.image = input.image?.trim() || null;
   if (input.ordre != null) payload.ordre = input.ordre;
+  // Drapeaux des types : jamais écrits sur les autres tables, qui n'ont pas
+  // la colonne et refuseraient toute la ligne.
+  if (table === "types_bien") {
+    if (input.a_pieces !== undefined) payload.a_pieces = input.a_pieces;
+    if (input.a_capacite !== undefined) payload.a_capacite = input.a_capacite;
+  }
 
   if (input.id) {
     // Sans `.select()`, PostgREST répond 204 sans corps : une mise à jour qui
@@ -148,7 +170,7 @@ export async function upsertTaxonomyEntry(
       .eq("id", input.id)
       .select("id")
       .maybeSingle();
-    if (error) return { ok: false, error: error.message };
+    if (error) return { ok: false, error: formatErreurTaxonomie(error.message) };
     if (!modifie) {
       return { ok: false, error: "Entrée introuvable ou droits insuffisants." };
     }
@@ -170,9 +192,26 @@ export async function upsertTaxonomyEntry(
     .insert({ ...payload, ordre: input.ordre ?? suivant })
     .select("id")
     .single();
-  if (error || !data) return { ok: false, error: error?.message ?? "Erreur." };
+  if (error || !data) {
+    return { ok: false, error: formatErreurTaxonomie(error?.message ?? "Erreur.") };
+  }
   revalider();
   return { ok: true, data: { id: data.id as number } };
+}
+
+/** PostgREST nomme la colonne absente ; on nomme la migration. */
+function formatErreurTaxonomie(brut: string): string {
+  const m = brut.toLowerCase();
+  if (
+    (m.includes("a_pieces") || m.includes("a_capacite")) &&
+    (m.includes("does not exist") || m.includes("schema cache") || m.includes("could not find"))
+  ) {
+    return (
+      "Les drapeaux des types demandent la migration 0028_types_bien_drapeaux.sql, " +
+      `pas encore appliquée. Exécute-la dans Supabase → SQL Editor, puis réessaie. (détail : ${brut})`
+    );
+  }
+  return brut;
 }
 
 export async function deleteTaxonomyEntry(
