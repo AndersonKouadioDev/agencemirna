@@ -390,6 +390,16 @@ export async function getActiveTestimonials(opts?: {
 // Articles (blog "Le marché immobilier décodé")
 // ============================================================================
 
+export type PublicArticleSection = {
+  id: string;
+  ordre: number;
+  titre: string | null;
+  contenu_md: string | null;
+  images: string[];
+  /** gauche | centre | droite | entoure */
+  position_image: string;
+};
+
 export type PublicArticle = {
   id: string;
   slug: string;
@@ -401,28 +411,64 @@ export type PublicArticle = {
   read_time_minutes: number | null;
   published_at: string;
   ordre: number;
+  /** Corps de l'article. `content_md` n'est plus qu'un vestige conservé par la
+   *  migration 0023, au cas où une reprise serait à rejouer. */
+  sections: PublicArticleSection[];
+  /**
+   * Faux UNIQUEMENT quand la lecture des sections a échoué (migration 0023
+   * pas encore appliquée). Un article réellement vidé de ses sections renvoie
+   * `true` avec un tableau vide : sans cette distinction, la page retombait
+   * sur `content_md` et ressuscitait le texte que le rédacteur venait de
+   * supprimer.
+   */
+  sectionsDisponibles: boolean;
 };
 
 export async function getArticleBySlug(slug: string): Promise<PublicArticle | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("articles")
-    .select(
-      "id, slug, title, excerpt, content_md, image, category, read_time_minutes, published_at, ordre",
-    )
-    .eq("slug", slug)
-    // `published_at` est saisissable en admin : sans ce garde, un article daté
-    // du futur sortait dès son enregistrement.
-    .lte("published_at", new Date().toISOString())
-    // Filtre explicite, jamais délégué à la RLS : voir la note en tête de fichier.
-    .eq("is_active", true)
-    .maybeSingle();
-  // Sans cette trace, une requête cassée (colonne renommée, migration non
-  // appliquée) est indiscernable d'un slug inconnu : la page d'article
-  // répondait 404 en silence. C'est la seule lecture du fichier qui
-  // ignorait `error`.
-  if (error) console.error("getArticleBySlug error:", error);
-  return (data as PublicArticle) ?? null;
+
+  const COLONNES =
+    "id, slug, title, excerpt, content_md, image, category, read_time_minutes, published_at, ordre";
+
+  const lire = (colonnes: string) =>
+    supabase
+      .from("articles")
+      .select(colonnes)
+      .eq("slug", slug)
+      // `published_at` est saisissable en admin : sans ce garde, un article daté
+      // du futur sortait dès son enregistrement.
+      .lte("published_at", new Date().toISOString())
+      // Filtre explicite, jamais délégué à la RLS : voir la note en tête de fichier.
+      .eq("is_active", true)
+      .maybeSingle();
+
+  // La jointure sur `article_sections` vient de la migration 0023. Tant
+  // qu'elle n'est pas appliquée, PostgREST rejette la requête entière : sans
+  // ce repli, TOUS les articles répondraient 404.
+  const avecSections = await lire(
+    COLONNES +
+      ", sections:article_sections (id, ordre, titre, contenu_md, images, position_image)",
+  );
+
+  const sectionsDisponibles = !avecSections.error;
+
+  const brut = sectionsDisponibles
+    ? avecSections.data
+    : (console.error(
+        "getArticleBySlug : sections indisponibles, repli sans corps.",
+        avecSections.error,
+      ),
+      (await lire(COLONNES)).data);
+
+  if (!brut) return null;
+
+  const article = brut as unknown as PublicArticle;
+  return {
+    ...article,
+    sectionsDisponibles,
+    // PostgREST ne garantit pas l'ordre d'une ressource imbriquée.
+    sections: [...(article.sections ?? [])].sort((a, b) => a.ordre - b.ordre),
+  };
 }
 
 export async function getActiveArticles(opts?: {

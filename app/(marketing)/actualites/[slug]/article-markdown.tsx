@@ -25,9 +25,20 @@ import Link from "next/link";
  * citait deux fois un chemin du site — « /contact_us », « /about_us » — ou un
  * nom de champ comme `prix_month` voyait tout le texte intermédiaire basculer
  * en italique, souligné avalé au passage.
+ *
+ * Les quatre marqueurs d'emphase refusent en plus une espace collée au
+ * marqueur, comme l'exige CommonMark : une multiplication écrite en toutes
+ * lettres — « surface * prix * 12 » — ou deux renvois « 2 * » dans le même
+ * paragraphe faisaient sinon basculer tout le texte intermédiaire en italique,
+ * astérisques avalées. Le rédacteur n'a aucun moyen de deviner la cause.
+ *
+ * Le marqueur simple refuse en plus de s'ouvrir ou de se fermer contre son
+ * homologue double : sans cela « ** gras espacé ** », refusé par la règle
+ * ci-dessus, était repêché par l'alternative italique et sortait en « * gras
+ * espacé * » penché, marqueurs compris — plus trompeur que le texte brut.
  */
 const INLINE_RE =
-  /\*\*([\s\S]+?)\*\*|(?<![\p{L}\p{N}])__([\s\S]+?)__(?![\p{L}\p{N}])|\*([\s\S]+?)\*|(?<![\p{L}\p{N}])_([\s\S]+?)_(?![\p{L}\p{N}])|`([^`]+)`|\[([^\]]+)\]\(([^)\s]+)\)/u;
+  /\*\*(?!\s)([\s\S]+?)(?<!\s)\*\*|(?<![\p{L}\p{N}])__(?!\s)([\s\S]+?)(?<!\s)__(?![\p{L}\p{N}])|\*(?![\s*])([\s\S]+?)(?<![\s*])\*|(?<![\p{L}\p{N}])_(?![\s_])([\s\S]+?)(?<![\s_])_(?![\p{L}\p{N}])|`([^`]+)`|\[([^\]]+)\]\(([^)\s]+)\)/u;
 
 /** Seuls ces schémas sont émis ; le reste retombe en texte simple. */
 function hrefSur(brut: string): string | null {
@@ -62,7 +73,14 @@ function renduInline(texte: string, cle: string): React.ReactNode[] {
         </strong>,
       );
     } else if (italique !== undefined) {
-      noeuds.push(<em key={k}>{renduInline(italique, k)}</em>);
+      // `italic` explicite plutôt que le défaut du navigateur : le reset de
+      // Tailwind neutralise déjà titres, listes et liens, et l'italique ne
+      // tient plus qu'à une feuille de style d'agent utilisateur.
+      noeuds.push(
+        <em key={k} className="italic">
+          {renduInline(italique, k)}
+        </em>,
+      );
     } else if (m[5] !== undefined) {
       noeuds.push(
         <code
@@ -259,5 +277,9 @@ export function ArticleMarkdown({ source }: { source: string }) {
     );
   }
 
-  return <div className="text-neutral-800">{blocs}</div>;
+  // `break-words` couvre tout le corps d'un coup : une URL collée en clair dans
+  // un paragraphe, ou un mot-clé à rallonge, débordait la colonne de 327 px qui
+  // reste sur un écran de 375 px et faisait défiler la page entière de côté.
+  // Les blocs de code gardent leur propre ascenseur horizontal.
+  return <div className="text-neutral-800 break-words">{blocs}</div>;
 }

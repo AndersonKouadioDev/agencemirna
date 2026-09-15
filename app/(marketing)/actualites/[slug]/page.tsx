@@ -17,6 +17,7 @@ import {
 import { normaliserUrlImage } from "@/src/lib/image-url";
 import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
 import { ArticleMarkdown } from "./article-markdown";
+import { ArticleSections, preparerSections } from "./article-sections";
 import { getSiteContact } from "@/src/lib/site-contact";
 
 function formatDate(iso: string): string {
@@ -54,6 +55,12 @@ export default async function ArticlePage({
   // next/image LÈVE sur un hôte absent des `remotePatterns` au lieu de
   // l'ignorer : la couverture est filtrée avant de lui être passée.
   const couverture = normaliserUrlImage(article.image);
+
+  // Le corps de l'article vient des sections (migration 0023). `content_md` ne
+  // sert plus qu'au repli ci-dessous, le temps que la migration soit appliquée
+  // partout.
+  const sections = preparerSections(article.sections);
+  const ancienContenu = (article.content_md ?? "").trim();
 
   // Récupère 3 autres articles pour "À lire aussi"
   const others = (await getActiveArticles({ limit: 6 }))
@@ -139,8 +146,17 @@ export default async function ArticlePage({
       {/* CONTENU */}
       <section className="py-16 sm:py-20">
         <div className="mx-auto max-w-3xl px-6 lg:px-8">
-          {article.content_md ? (
-            <ArticleMarkdown source={article.content_md} />
+          {sections.length > 0 ? (
+            <ArticleSections sections={sections} titreArticle={article.title} />
+          ) : !article.sectionsDisponibles && ancienContenu ? (
+            // Repli réservé au cas où la LECTURE des sections a échoué
+            // (migration 0023 pas encore appliquée) : l'article reste lisible
+            // au lieu d'un message d'attente alors que son texte existe.
+            // Sans la condition `sectionsDisponibles`, un article que le
+            // rédacteur vient de vider de toutes ses sections aurait vu
+            // réapparaître son ancien texte — `content_md` est conservée
+            // indéfiniment par la migration.
+            <ArticleMarkdown source={ancienContenu} />
           ) : (
             <div className="rounded-2xl border border-stone-200 bg-white p-8 text-center">
               <p className="text-neutral-600">

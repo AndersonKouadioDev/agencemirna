@@ -8,7 +8,16 @@ import nextTypeScript from "eslint-config-next/typescript";
 
 const config = [
   {
-    ignores: [".next/**", "node_modules/**", "public/**"],
+    ignores: [
+      ".next/**",
+      "node_modules/**",
+      "public/**",
+      // Scripts jetables écrits à la racine pendant une passe de refactor.
+      // Ils ne font pas partie de l'application : les linter ferait sortir la
+      // commande en erreur et rendrait le garde-fou inutilisable.
+      "patch*.js",
+      "*.mjs.bak",
+    ],
   },
   ...next,
   // Indispensable pour les imports et variables morts : `no-unused-vars` n'est

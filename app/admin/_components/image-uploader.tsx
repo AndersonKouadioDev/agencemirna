@@ -206,16 +206,22 @@ export function ImageUploader({
         >
           <SortableContext items={value} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {value.map((url, i) => (
-                <ImageTile
-                  key={url}
-                  url={url}
-                  isCover={i === 0}
-                  disabled={disabled || uploading > 0}
-                  onRemove={() => handleRemove(url)}
-                  onSetCover={() => handleSetCover(url)}
-                />
-              ))}
+              {value.map((url, i) =>
+                // next/image ne sait rien faire d'une source vide : il rend un
+                // <img src=""> étalé sur toute la tuile. Une liste venue de la
+                // base peut en contenir une, la grille ne doit pas casser pour
+                // autant — l'entrée est sautée, les rangs restent justes.
+                url.trim() === "" ? null : (
+                  <ImageTile
+                    key={url}
+                    url={url}
+                    isCover={i === 0}
+                    disabled={disabled || uploading > 0}
+                    onRemove={() => handleRemove(url)}
+                    onSetCover={() => handleSetCover(url)}
+                  />
+                ),
+              )}
             </div>
           </SortableContext>
         </DndContext>
@@ -243,7 +249,9 @@ export function ImageUploader({
           </div>
           <div className="text-sm font-medium text-neutral-900">
             {uploading > 0 ? (
-              <>Envoi en cours… ({uploading} restant{uploading > 1 ? "s" : ""})</>
+              <>
+                Envoi en cours… ({uploading} restant{uploading > 1 ? "s" : ""})
+              </>
             ) : isDragActive ? (
               "Déposez les images ici"
             ) : (

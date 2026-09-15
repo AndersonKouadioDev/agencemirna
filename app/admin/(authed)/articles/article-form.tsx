@@ -9,7 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUploader } from "../../_components/image-uploader";
-import { upsertArticle, type ArticleRow } from "@/src/actions/admin/content";
+import {
+  upsertArticle,
+  type ArticleRow,
+  type ArticleSectionRow,
+} from "@/src/actions/admin/content";
+import {
+  EditeurSections,
+  creerSectionVide,
+  sectionsDepuisBase,
+  type SectionBrouillon,
+} from "./_components/editeur-sections";
 import {
   MESSAGE_URL_IMAGE_INVALIDE,
   normaliserUrlImage,
@@ -20,14 +30,27 @@ function toDateInput(iso?: string | null): string {
   return new Date(iso).toISOString().slice(0, 10);
 }
 
-export function ArticleForm({ row }: { row?: ArticleRow }) {
+export function ArticleForm({
+  row,
+  sections: sectionsEnBase,
+}: {
+  row?: ArticleRow;
+  sections?: ArticleSectionRow[];
+}) {
   const router = useRouter();
   const isEdit = !!row;
 
   const [title, setTitle] = React.useState(row?.title ?? "");
   const [slug, setSlug] = React.useState(row?.slug ?? "");
   const [excerpt, setExcerpt] = React.useState(row?.excerpt ?? "");
-  const [contentMd, setContentMd] = React.useState(row?.content_md ?? "");
+  // Le corps de l'article vit désormais dans `article_sections`. Un article
+  // repris par la migration 0023 arrive avec sa première section déjà
+  // remplie ; un article neuf part d'une section vide, pour que le rédacteur
+  // ait immédiatement où écrire.
+  const [sections, setSections] = React.useState<SectionBrouillon[]>(() => {
+    const reprises = sectionsDepuisBase(sectionsEnBase ?? []);
+    return reprises.length > 0 ? reprises : [creerSectionVide()];
+  });
   const [category, setCategory] = React.useState(row?.category ?? "");
   const [readTime, setReadTime] = React.useState<string>(
     row?.read_time_minutes?.toString() ?? "5",
@@ -55,6 +78,11 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
   // enregistrer pendant ce temps soumettait la liste INCHANGÉE, donc aucune
   // des photos déposées, et laissait les fichiers déjà montés orphelins.
   const [photosEnEnvoi, setPhotosEnEnvoi] = React.useState(0);
+  // Même garde pour les images de sections, remontée en un seul total par
+  // <EditeurSections> : elles passent par le même téléverseur, donc par le
+  // même piège.
+  const [imagesSectionsEnEnvoi, setImagesSectionsEnEnvoi] = React.useState(0);
+  const envoisEnCours = photosEnEnvoi + imagesSectionsEnEnvoi;
 
   // Ce libellé-ci est rendu hors d'un <Field> : sans `htmlFor`, il ne
   // désignait aucun champ, contrairement à son jumeau du formulaire d'annonce.
@@ -76,9 +104,9 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
     // La touche Entrée soumet le formulaire même bouton désactivé : la garde
     // doit vivre ici aussi, sinon l'image en vol serait perdue — et le
     // formulaire refuserait l'enregistrement, faute d'image.
-    if (photosEnEnvoi > 0) {
+    if (envoisEnCours > 0) {
       setError(
-        "L'image est encore en cours d'envoi. Patientez la fin de l'envoi avant d'enregistrer.",
+        "Une image est encore en cours d'envoi. Patientez la fin de l'envoi avant d'enregistrer.",
       );
       return;
     }
@@ -105,12 +133,34 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
 
     const ordreSaisi = Number.parseInt(ordre, 10);
 
+    // Une section restée vide n'a rien à publier : on l'écarte sans rien dire
+    // plutôt que de refuser l'enregistrement pour une ligne ajoutée par
+    // mégarde. L'ordre du tableau restant fait foi côté action.
+    const sectionsAEnvoyer = sections
+      .filter(
+        (s) =>
+          s.titre.trim() !== "" ||
+          s.contenu_md.trim() !== "" ||
+          s.images.length > 0,
+      )
+      .map((s) => ({
+        id: s.id,
+        titre: s.titre.trim() || null,
+        contenu_md: s.contenu_md.trim() || null,
+        images: s.images,
+        position_image: s.position_image,
+      }));
+
     const result = await upsertArticle({
       id: row?.id,
       slug,
       title,
       excerpt: excerpt || null,
-      content_md: contentMd || null,
+      // Le corps n'est plus saisi ici, mais `upsertArticle` réécrit la colonne
+      // à chaque enregistrement : la renvoyer inchangée préserve la copie de
+      // secours que la migration 0023 a laissée derrière elle. L'omettre la
+      // viderait dès la première sauvegarde.
+      content_md: row?.content_md ?? null,
       image: finalImage,
       category: category || null,
       read_time_minutes: readTime ? parseInt(readTime, 10) : null,
@@ -119,6 +169,7 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
         : null,
       is_active: isActive,
       ordre: Number.isNaN(ordreSaisi) ? undefined : ordreSaisi,
+      sections: sectionsAEnvoyer,
     });
 
     if (!result.ok) {
@@ -139,14 +190,14 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
           <ArrowLeft className="h-4 w-4" />
           Retour aux articles
         </Link>
-        <Button type="submit" disabled={submitting || photosEnEnvoi > 0}>
-          {submitting || photosEnEnvoi > 0 ? (
+        <Button type="submit" disabled={submitting || envoisEnCours > 0}>
+          {submitting || envoisEnCours > 0 ? (
             <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
           ) : (
             <Save className="h-4 w-4 mr-1.5" />
           )}
-          {photosEnEnvoi > 0
-            ? "Envoi de l'image…"
+          {envoisEnCours > 0
+            ? "Envoi des images…"
             : isEdit
               ? "Enregistrer"
               : "Publier l'article"}
@@ -198,25 +249,6 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
               />
             </Field>
 
-            <Field label="Contenu (markdown)">
-              <Textarea
-                value={contentMd}
-                onChange={(e) => setContentMd(e.target.value)}
-                placeholder="Contenu complet de l'article (markdown supporté)."
-                rows={12}
-              />
-              <p className="mt-1.5 text-xs text-neutral-500">
-                Affiché sur /actualites/[slug]. Mise en forme reconnue :
-                <code className="mx-1">## Titre</code>,
-                <code className="mx-1">**gras**</code>,
-                <code className="mx-1">*italique*</code>, listes
-                <code className="mx-1">- item</code> ou
-                <code className="mx-1">1. item</code>, citations
-                <code className="mx-1">&gt; texte</code> et liens
-                <code className="mx-1">[libellé](https://…)</code>. Les
-                retours à la ligne simples sont conservés.
-              </p>
-            </Field>
           </section>
 
           <section className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
@@ -319,6 +351,26 @@ export function ArticleForm({ row }: { row?: ArticleRow }) {
           </section>
         </div>
       </div>
+
+      <section className="rounded-xl border border-stone-200 bg-white p-5 space-y-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="font-semibold text-secondary">
+            Corps de l&apos;article
+          </h2>
+          <p className="text-xs text-neutral-500">
+            {sections.length} section{sections.length > 1 ? "s" : ""} —
+            affichées dans cet ordre sur la page publique.
+          </p>
+        </div>
+        <EditeurSections
+          sections={sections}
+          onChange={setSections}
+          pathPrefix={`${pathPrefix}/sections`}
+          titreArticle={title}
+          disabled={submitting}
+          onEnvoiChange={setImagesSectionsEnEnvoi}
+        />
+      </section>
     </form>
   );
 }

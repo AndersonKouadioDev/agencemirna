@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/src/supabase/server";
 import { getAdminUser } from "@/src/supabase/admin-auth";
 import { normaliserUrlImage } from "@/src/lib/image-url";
+import type { PositionImage } from "@/src/lib/article-sections";
 
 /**
  * Server Actions admin pour les 4 tables de contenu éditable :
@@ -291,6 +292,25 @@ export type ArticleRow = {
   updated_at: string;
 };
 
+
+export type ArticleSectionRow = {
+  id: string;
+  ordre: number;
+  titre: string | null;
+  contenu_md: string | null;
+  images: string[];
+  position_image: PositionImage;
+};
+
+/** Section envoyée par le formulaire : `id` absent = section nouvelle. */
+export type ArticleSectionInput = {
+  id?: string;
+  titre?: string | null;
+  contenu_md?: string | null;
+  images?: string[];
+  position_image?: PositionImage;
+};
+
 export type ArticleFormData = {
   id?: string;
   slug: string;
@@ -303,6 +323,10 @@ export type ArticleFormData = {
   published_at?: string | null;
   ordre?: number;
   is_active?: boolean;
+  /** Ordre du tableau = ordre d'affichage. Absent : les sections existantes
+   *  sont laissées telles quelles (un appelant qui ne les gère pas ne doit
+   *  pas les effacer). */
+  sections?: ArticleSectionInput[];
 };
 
 export async function listArticlesAdmin(): Promise<ArticleRow[]> {
@@ -339,6 +363,94 @@ function slugify(s: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "")
     .slice(0, 100);
+}
+
+
+/**
+ * Sections d'un article, dans l'ordre d'affichage.
+ *
+ * Lecture admin : la garde vaut ici comme ailleurs, le module porte
+ * « use server » et chaque export y est une route publique.
+ */
+export async function listArticleSections(
+  articleId: string,
+): Promise<ArticleSectionRow[]> {
+  const admin = await getAdminUser();
+  if (!admin) return [];
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("article_sections")
+    .select("id, ordre, titre, contenu_md, images, position_image")
+    .eq("article_id", articleId)
+    .order("ordre", { ascending: true });
+
+  if (error || !data) {
+    if (error) console.error("listArticleSections error:", error);
+    return [];
+  }
+  return data as ArticleSectionRow[];
+}
+
+/**
+ * Aligne les sections en base sur celles reçues du formulaire.
+ *
+ * Renvoie un message d'échec plutôt que de lever : `upsertArticle` doit
+ * pouvoir dire que l'article est enregistré mais que ses sections ne le sont
+ * pas — le contraire d'un succès muet, qui a déjà coûté une galerie de biens.
+ */
+async function synchroniserSections(
+  articleId: string,
+  sections: ArticleSectionInput[],
+): Promise<string | null> {
+  const supabase = await createClient();
+
+  const { data: existantes, error: erreurLecture } = await supabase
+    .from("article_sections")
+    .select("id")
+    .eq("article_id", articleId);
+
+  if (erreurLecture) {
+    // Sans cette liste, le DELETE ci-dessous porterait à faux : on renonce.
+    return `Sections non enregistrées : ${erreurLecture.message}`;
+  }
+
+  const gardees = new Set(sections.map((s) => s.id).filter(Boolean) as string[]);
+  const aSupprimer = (existantes ?? [])
+    .map((r) => r.id as string)
+    .filter((id) => !gardees.has(id));
+
+  const echecs: string[] = [];
+
+  if (aSupprimer.length > 0) {
+    const { error } = await supabase
+      .from("article_sections")
+      .delete()
+      .in("id", aSupprimer);
+    if (error) echecs.push(`suppression : ${error.message}`);
+  }
+
+  for (const [index, section] of sections.entries()) {
+    const images = (section.images ?? []).filter(Boolean).slice(0, 3);
+    const payload = {
+      article_id: articleId,
+      // L'ordre du tableau fait foi : le formulaire réordonne par
+      // glisser-déposer, il n'a pas à gérer de numérotation.
+      ordre: (index + 1) * 10,
+      titre: section.titre?.trim() || null,
+      contenu_md: section.contenu_md?.trim() || null,
+      images,
+      position_image: section.position_image ?? "droite",
+    };
+
+    const { error } = section.id
+      ? await supabase.from("article_sections").update(payload).eq("id", section.id)
+      : await supabase.from("article_sections").insert(payload);
+
+    if (error) echecs.push(`section ${index + 1} : ${error.message}`);
+  }
+
+  return echecs.length ? `Sections non enregistrées — ${echecs.join(" ; ")}` : null;
 }
 
 export async function upsertArticle(
@@ -385,6 +497,12 @@ export async function upsertArticle(
   if (input.id) {
     const { error } = await supabase.from("articles").update(avecOrdre).eq("id", input.id);
     if (error) return { ok: false, error: error.message };
+
+    if (input.sections) {
+      const echec = await synchroniserSections(input.id, input.sections);
+      if (echec) return { ok: false, error: echec };
+    }
+
     revaliderVitrine();
     revalidatePath("/admin/articles");
     return { ok: true, data: { id: input.id } };
@@ -402,9 +520,17 @@ export async function upsertArticle(
     .select("id")
     .single();
   if (error || !created) return { ok: false, error: error?.message ?? "Erreur." };
+
+  const nouvelId = created.id as string;
+  if (input.sections) {
+    const echec = await synchroniserSections(nouvelId, input.sections);
+    // L'article existe : on le signale pour que l'admin ne le recrée pas.
+    if (echec) return { ok: false, error: `Article créé, mais ${echec}` };
+  }
+
   revaliderVitrine();
   revalidatePath("/admin/articles");
-  return { ok: true, data: { id: created.id as string } };
+  return { ok: true, data: { id: nouvelId } };
 }
 
 export async function deleteArticle(id: string): Promise<ActionResult> {

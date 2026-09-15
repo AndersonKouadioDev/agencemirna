@@ -57,3 +57,6 @@ Thumbs.db
 .gstack/
 .claude/launch.json
 test_db.js
+
+# Scripts jetables de refactor, jamais versionnés
+patch*.js
