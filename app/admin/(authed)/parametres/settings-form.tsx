@@ -111,7 +111,7 @@ export function SettingsForm({ settings }: { settings: SiteSettingsRow | null })
               id={`${idChamp}-email`}
               value={formData.email} 
               onChange={e => setFormData({...formData, email: e.target.value})} 
-              placeholder="contact@agencemirna.com" 
+              placeholder="info@agencemirna.com" 
             />
           </div>
         </div>

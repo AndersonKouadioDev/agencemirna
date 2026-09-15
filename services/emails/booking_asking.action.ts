@@ -3,6 +3,7 @@
 import BookingRequestEmail from "@/emails/booking_asking.email";
 import BookingRequestConfirmationEmail from "@/emails/booking_asking_confirmation.email";
 import { Resend } from "resend";
+import { getSiteContact } from "@/src/lib/site-contact";
 
 let resendInstance: Resend | null = null;
 function getResend(): Resend {
@@ -39,12 +40,17 @@ export async function BookingRequest({
   message: string;
   propertyImage: string;
 }) {
+  // Le destinataire suit l'adresse saisie dans /admin/parametres : en dur,
+  // changer l'email du back-office n'avait aucun effet sur les demandes de
+  // réservation, qui partaient toujours à l'ancienne adresse.
+  const { email: emailAgence } = await getSiteContact();
+
   try {
     // Envoi de l'e-mail de demande de réservation à l'agence
     const { data: requestData, error: requestError } = await getResend().emails.send(
       {
         from: "website@agencemirna.com",
-        to: ["info@agencemirna.com"],
+        to: [emailAgence],
         subject: "Nouvelle demande de réservation - Agence Mirna",
         react: BookingRequestEmail({
           firstName,
@@ -68,7 +74,7 @@ export async function BookingRequest({
     // Envoi de l'e-mail de confirmation au client
     const { data: confirmationData, error: confirmationError } =
       await getResend().emails.send({
-        from: "info@agencemirna.com",
+        from: emailAgence,
         to: [email],
         subject: "Confirmation de votre demande de réservation - Agence Mirna",
         react: BookingRequestConfirmationEmail({
