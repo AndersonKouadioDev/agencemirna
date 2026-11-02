@@ -1,5 +1,6 @@
 import { CheckIcon } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import Motion from "../motion";
 
 export default function AboutSection() {
@@ -18,7 +19,14 @@ export default function AboutSection() {
                 <span className="whitespace-nowrap">Agence Mirna</span>
               </h2>
               <p className="text-sm md:text-lg mb-4">
-                Fondée en 2022 par Madame Barry Néné Yéro, l&apos;Agence Mirna
+                Fondée en 2022 par{" "}
+                <Link
+                  href="/mot-de-la-gerante"
+                  className="font-semibold text-secondary underline decoration-primary decoration-2 underline-offset-4 transition-colors hover:text-primary"
+                >
+                  Madame Barry Néné Yéro
+                </Link>
+                , l&apos;Agence Mirna
                 s&apos;est rapidement imposée comme un acteur dynamique du
                 marché immobilier à Abidjan, Côte d&apos;Ivoire. Située au cœur
                 de Marcory Zone 4, dans l&apos;immeuble Zorôgbê, notre agence

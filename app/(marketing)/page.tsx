@@ -4,6 +4,7 @@ import HeroSection from "@/components/landing/hero-section";
 import ServicesShowcase from "@/components/landing/services-showcase";
 import CategoriesSection from "@/components/landing/categories-section";
 import ServicesBento from "@/components/landing/services-bento";
+import MotGeranteSection from "@/components/landing/mot-gerante-section";
 import NewsGuidesSection from "@/components/landing/news-guides-section";
 import CtaBannerSection from "@/components/landing/cta-banner-section";
 import CommunesSection from "@/components/landing/communes-section";
@@ -55,14 +56,17 @@ export default async function Page() {
       {/* 7. Expertise & Services Détaillés (Construction, Gestion...) */}
       <ServicesBento />
 
-      {/* 8. Preuve Sociale (Avis) */}
+      {/* 8. Le mot de la gérante : un visage avant les avis clients */}
+      <MotGeranteSection />
+
+      {/* 9. Preuve Sociale (Avis) */}
       <EmplacementPub cle="accueil-bas" className="container mx-auto px-4 md:px-8 py-8" />
       <TestimonialsSection testimonials={testimonials} />
 
-      {/* 9. Appel à l'action principal (Estimation / Leads) */}
+      {/* 10. Appel à l'action principal (Estimation / Leads) */}
       <CtaBannerSection />
 
-      {/* 10. Actualités & Guides (SEO & Engagement) */}
+      {/* 11. Actualités & Guides (SEO & Engagement) */}
       <NewsGuidesSection />
     </>
   );

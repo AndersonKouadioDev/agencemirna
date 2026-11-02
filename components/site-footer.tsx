@@ -166,6 +166,7 @@ export async function SiteFooter({
             <div className="flex flex-col gap-4 text-sm text-stone-500">
               <Link href="/about" className="hover:text-primary transition-colors">À propos</Link>
               <Link href="/agents" className="hover:text-primary transition-colors">Notre équipe</Link>
+              <Link href="/mot-de-la-gerante" className="hover:text-primary transition-colors">Le mot de la gérante</Link>
               <Link href="/blog" className="hover:text-primary transition-colors">Presse</Link>
               <Link href="/contact_us" className="hover:text-primary transition-colors">Contact</Link>
             </div>

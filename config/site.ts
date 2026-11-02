@@ -10,6 +10,7 @@ import {
   MapPin,
   Users,
   Newspaper,
+  Quote,
   FileText,
   Briefcase,
   Warehouse,
@@ -22,7 +23,8 @@ import {
  *   1. Biens       (mega menu : Types + Services + Communes)
  *   2. Services    (dropdown simple, 6 services métier statiques)
  *   3. Annonces    (lien direct)
- *   4. L'agence    (dropdown : À propos, Notre équipe, Blog)
+ *   4. L'agence    (dropdown : À propos, Notre équipe, Mot de la gérante,
+ *                  Blog)
  *   5. Contact     (lien direct)
  *
  * Le menu « Biens » est alimenté par la base (types_bien, services_bien,
@@ -62,6 +64,7 @@ export type MenuIconName =
   | "chantier"
   | "promotion"
   | "equipe"
+  | "parole"
   | "journal";
 
 export const MENU_ICONS: Record<
@@ -80,6 +83,7 @@ export const MENU_ICONS: Record<
   chantier: HardHat,
   promotion: Landmark,
   equipe: Users,
+  parole: Quote,
   journal: Newspaper,
 };
 
@@ -257,6 +261,7 @@ const estActif = (id: number, pathname: string): boolean => {
     case 4:
       return (
         pathname === "/about" ||
+        pathname.startsWith("/mot-de-la-gerante") ||
         pathname.startsWith("/agents") ||
         pathname.startsWith("/blog") ||
         pathname.startsWith("/actualites")
@@ -349,6 +354,15 @@ const ITEMS_AGENCE: MenuSubItem[] = [
     description: "Les visages derrière l'agence.",
     image: "/images/photos/team.jpg",
     icon: "equipe",
+  },
+  {
+    label: "Le mot de la gérante",
+    href: "/mot-de-la-gerante",
+    description: "La parole de notre fondatrice.",
+    // Visuel aplati sur fond vert : le méga-menu pose l'image en `object-cover`
+    // derrière un dégradé, où le portrait détouré n'aurait aucun fond.
+    image: "/images/equipe/nene-barry-carte.webp",
+    icon: "parole",
   },
   {
     label: "Blog",
