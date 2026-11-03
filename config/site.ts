@@ -359,9 +359,7 @@ const ITEMS_AGENCE: MenuSubItem[] = [
     label: "Le mot de la gérante",
     href: "/mot-de-la-gerante",
     description: "La parole de notre fondatrice.",
-    // Visuel aplati sur fond vert : le méga-menu pose l'image en `object-cover`
-    // derrière un dégradé, où le portrait détouré n'aurait aucun fond.
-    image: "/images/equipe/nene-barry-carte.webp",
+    image: "/images/equipe/nene-barry-agence.webp",
     icon: "parole",
   },
   {

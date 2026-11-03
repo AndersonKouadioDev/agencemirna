@@ -6,6 +6,10 @@
  * par diverger de la lettre complète. Aucun écran d'admin ne pilote ce texte
  * pour l'instant — il se modifie ici.
  *
+ * `accroche` et `lettre` sont le texte VALIDÉ par la gérante : ne pas les
+ * reformuler. Le reste (engagements, repères, `histoire`) est de la mise en
+ * page éditoriale, librement modifiable.
+ *
  * Les apostrophes sont droites, comme partout ailleurs sur la vitrine ; passer
  * par ce module plutôt que par du JSX littéral évite au passage le ballet des
  * `&apos;` dans les composants.
@@ -25,56 +29,57 @@ export const GERANTE = {
   nom: "Barry Néné Yéro",
   civilite: "Madame Barry Néné Yéro",
   role: "Fondatrice & Gérante",
-  /** Portrait détouré (fond transparent) : il se pose sur n'importe quel fond. */
-  photo: "/images/equipe/nene-barry.webp",
+  /** Portrait principal : photo en situation, avec son propre arrière-plan. */
+  photo: "/images/equipe/nene-barry-agence.webp",
   photoAlt:
-    "Portrait de Madame Barry Néné Yéro, fondatrice et gérante de l'Agence Mirna",
-  depuis: "2022",
+    "Madame Barry Néné Yéro, fondatrice et gérante de l'Agence Mirna, devant une résidence à Abidjan",
+  /** Portrait détouré, réservé aux petites vignettes rondes (cadrage visage). */
+  portraitDetoure: "/images/equipe/nene-barry.webp",
+  depuis: "2018",
 
-  /** Phrase d'accroche, reprise en titre sur la home et en exergue sur la page. */
-  accroche: "Derrière chaque clé remise, une parole tenue.",
+  /** Repère d'ancienneté : l'activité précède la création de l'agence. */
+  histoire:
+    "L'activité de location d'appartements meublés a débuté en 2018 ; l'agence immobilière a été officiellement créée en 2022.",
 
-  /** Extrait affiché en page d'accueil : les deux premiers temps de la lettre. */
+  /** Phrase d'accroche, reprise en titre sur la home et sur la page dédiée. */
+  accroche:
+    "Une expérience immobilière plus transparente, plus professionnelle et plus sereine.",
+
+  /** Extrait affiché en page d'accueil : le second temps de la lettre. */
   extrait: [
-    "Quand j'ai fondé l'Agence Mirna en 2022, je voulais répondre à une inquiétude que j'entendais partout autour de moi : à Abidjan, confier son bien ou chercher un logement reste trop souvent une épreuve.",
-    "J'ai voulu une maison qui fasse l'inverse : un mandat clair, un interlocuteur qui connaît votre dossier, et la vérité sur un bien même quand elle dessert la vente.",
+    "Nous sommes convaincus que l'immobilier ne se résume pas à la vente, à l'achat ou à la location d'un bien. Il s'agit avant tout de comprendre les aspirations de chaque client, de sécuriser ses engagements et de l'accompagner dans des décisions qui comptent pour son avenir.",
   ],
 
   /** Lettre complète, affichée sur /mot-de-la-gerante. */
   lettre: [
-    "Quand j'ai fondé l'Agence Mirna en 2022, je voulais répondre à une inquiétude que j'entendais partout autour de moi : à Abidjan, confier son bien ou chercher un logement reste trop souvent une épreuve. Des promesses tenues à moitié, des visites sans suite, des loyers encaissés sans le moindre compte rendu. J'ai voulu une maison qui fasse exactement l'inverse.",
-    "Notre méthode tient en peu de choses, mais nous n'en dérogeons pas : un mandat clair, un interlocuteur qui connaît votre dossier du premier appel à la signature, des comptes rendus réguliers, et la vérité sur un bien même quand elle dessert la vente. Un client qui comprend ce qu'il signe revient, et parle de nous autour de lui. C'est tout ce que nous demandons.",
-    "Agréée par l'État de Côte d'Ivoire, notre équipe vous accompagne de la recherche à la remise des clés : vente, location meublée et non meublée, gestion locative, décoration et aménagement, construction et programmes neufs. Depuis nos bureaux de Marcory Zone 4, nous couvrons tout le Grand Abidjan.",
-    "Que votre projet soit une première location, un investissement locatif ou la vente d'un bien de famille, vous serez reçu avec la même attention. Poussez notre porte, appelez-nous : nous prendrons le temps de vous écouter avant de vous proposer quoi que ce soit.",
+    "Depuis sa création en 2022, Mirna Immobilier s'est donné pour mission de contribuer à une expérience immobilière plus transparente, plus professionnelle et plus sereine en Côte d'Ivoire.",
+    "Nous sommes convaincus que l'immobilier ne se résume pas à la vente, à l'achat ou à la location d'un bien. Il s'agit avant tout de comprendre les aspirations de chaque client, de sécuriser ses engagements et de l'accompagner dans des décisions qui comptent pour son avenir.",
   ],
 
+  /** Les trois mots de la mission, dépliés. Habillage éditorial, pas une
+   *  citation : à faire relire si le ton doit changer. */
   engagements: [
     {
-      titre: "Un interlocuteur unique",
+      titre: "Transparence",
       texte:
-        "Votre dossier est suivi par une personne qui le connaît, du premier appel à la remise des clés.",
+        "Des informations claires sur le bien, le prix et chaque étape, dès le premier échange.",
     },
     {
-      titre: "Des honoraires annoncés",
+      titre: "Professionnalisme",
       texte:
-        "Le montant et ce qu'il couvre vous sont dits avant la visite. Aucun frais découvert en cours de route.",
+        "Une agence agréée par l'État de Côte d'Ivoire, de la recherche à la remise des clés.",
     },
     {
-      titre: "Des comptes rendus réguliers",
+      titre: "Sérénité",
       texte:
-        "Propriétaires, vous savez où en est votre bien et votre loyer sans avoir à le réclamer.",
-    },
-    {
-      titre: "La vérité sur le bien",
-      texte:
-        "Nous disons aussi ce qui ne va pas. Une belle vente est une vente que personne ne regrette.",
+        "Des engagements sécurisés, pour des décisions qui comptent pour votre avenir.",
     },
   ] satisfies readonly EngagementGerante[],
 
   reperes: [
-    { valeur: "2022", libelle: "Création de l'agence" },
+    { valeur: "2018", libelle: "Premières locations meublées" },
+    { valeur: "2022", libelle: "Création officielle de l'agence" },
     { valeur: "Marcory Zone 4", libelle: "Nos bureaux, immeuble Fawaz" },
-    { valeur: "Agrément d'État", libelle: "Côte d'Ivoire" },
     { valeur: "Grand Abidjan", libelle: "Zone couverte" },
   ] satisfies readonly RepereGerante[],
 } as const;

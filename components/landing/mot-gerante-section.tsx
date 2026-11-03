@@ -12,54 +12,40 @@ import { GERANTE } from "@/src/data/gerante";
  * sociale (avis clients) : on met un visage et une parole avant de laisser
  * parler les clients.
  *
- * Le portrait est détouré (PNG/WebP à fond transparent) : il déborde du
- * panneau vert par le haut, posé sur un disque doré qui détache le tailleur
- * sombre du fond. Le texte affiché ici est un EXTRAIT de la lettre complète —
- * les deux viennent de `src/data/gerante.ts` pour ne jamais diverger.
+ * Le texte affiché ici est un EXTRAIT de la lettre complète — les deux
+ * viennent de `src/data/gerante.ts` pour ne jamais diverger. L'attribution
+ * (nom, rôle) vit sous la citation, pas sur la photo : la répéter aux deux
+ * endroits alourdissait le bloc.
  */
 export default function MotGeranteSection() {
   return (
     <section className="bg-[#FAF5EE] py-20 md:py-28">
-      <div className="mx-auto grid max-w-[1400px] grid-cols-1 items-center gap-16 px-4 md:px-8 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:gap-20">
+      <div className="mx-auto grid max-w-[1400px] grid-cols-1 items-center gap-14 px-4 md:px-8 lg:grid-cols-[minmax(0,400px)_minmax(0,1fr)] lg:gap-20">
         {/* ── Portrait ───────────────────────────────────────────────── */}
         <Motion
           variant="verticalSlideIn"
           viewport={{ once: true, amount: 0.2 }}
         >
-          <div className="relative mx-auto mb-10 w-full max-w-[380px] lg:mb-0">
-            {/* Panneau, ancré en bas : le portrait le dépasse par le haut */}
-            <div className="absolute inset-x-0 bottom-0 top-[14%] overflow-hidden rounded-[2.5rem] bg-gradient-to-b from-[#1B3C35] to-[#102A25]">
-              <div className="absolute -top-20 left-1/2 h-72 w-72 -translate-x-1/2 rounded-full bg-[#F5B324]/25 blur-3xl" />
-              <div className="absolute inset-5 rounded-[2rem] border border-white/10" />
-            </div>
+          <div className="relative mx-auto w-full max-w-[380px]">
+            {/* Cadre doré décalé. Masqué sous `sm` : la colonne y occupe toute
+                la largeur utile, le décalage ferait scroller horizontalement. */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 hidden translate-x-4 translate-y-4 rounded-[2.5rem] border-2 border-[#F5B324]/60 sm:block"
+            />
 
-            {/* Disque doré : détache le tailleur sombre du panneau vert */}
-            <div className="absolute left-1/2 top-[19%] aspect-square w-[74%] -translate-x-1/2 rounded-full bg-[#F5B324]/20 ring-1 ring-[#F5B324]/30" />
-
-            <div className="relative aspect-[3/4] w-full">
+            <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[2.5rem] bg-[#1B3C35] shadow-xl">
               <Image
                 src={GERANTE.photo}
                 alt={GERANTE.photoAlt}
                 fill
-                sizes="(max-width: 1024px) 80vw, 380px"
-                className="object-contain object-bottom drop-shadow-[0_28px_45px_rgba(16,42,37,0.45)]"
+                sizes="(max-width: 1024px) 85vw, 380px"
+                className="object-cover"
               />
             </div>
 
-            {/* Pastille d'ancienneté, gardée DANS le cadre : un débord ferait
-                scroller la page horizontalement sur mobile. */}
-            <div className="absolute right-4 top-[22%] rounded-full bg-[#F5B324] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-secondary shadow-lg">
+            <div className="absolute left-5 top-5 rounded-full bg-[#F5B324] px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-secondary shadow-lg">
               Depuis {GERANTE.depuis}
-            </div>
-
-            {/* Carte signature, à cheval sur le bas du panneau */}
-            <div className="absolute -bottom-7 left-0 rounded-2xl bg-white px-5 py-4 shadow-xl ring-1 ring-black/5 sm:-left-6">
-              <p className="font-agate text-lg font-bold leading-none text-secondary">
-                {GERANTE.nom}
-              </p>
-              <p className="mt-1.5 text-[11px] font-bold uppercase tracking-widest text-[#F5B324]">
-                {GERANTE.role}
-              </p>
             </div>
           </div>
         </Motion>
@@ -109,6 +95,10 @@ export default function MotGeranteSection() {
                 </p>
               </div>
             </div>
+
+            <p className="mt-6 text-sm leading-relaxed text-stone-500">
+              {GERANTE.histoire}
+            </p>
 
             <Button
               asChild

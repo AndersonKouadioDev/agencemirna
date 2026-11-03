@@ -21,16 +21,12 @@ import { getSiteContact } from "@/src/lib/site-contact";
  * Destination du bloc « Le mot de la gérante » affiché en page d'accueil ;
  * l'extrait de la home et la lettre d'ici viennent du même module
  * `src/data/gerante.ts`.
- *
- * Le portrait est détouré : dans le hero, il est ancré sur le bord bas de la
- * bande verte (`items-end` + `object-bottom`), ce qui le fait « tenir debout »
- * sur la section suivante.
  */
 
 export const metadata = {
   title: "Le mot de la gérante | Agence Mirna",
   description:
-    "Madame Barry Néné Yéro, fondatrice et gérante de l'Agence Mirna, revient sur la raison d'être de l'agence et sur les engagements pris envers chaque client à Abidjan.",
+    "Madame Barry Néné Yéro, fondatrice et gérante de l'Agence Mirna, revient sur la mission de l'agence : une expérience immobilière plus transparente, plus professionnelle et plus sereine en Côte d'Ivoire.",
 };
 
 export default async function MotGerantePage() {
@@ -48,12 +44,12 @@ export default async function MotGerantePage() {
       />
 
       {/* ── HERO ──────────────────────────────────────────────────────── */}
-      <section className="relative isolate overflow-hidden bg-[#1B3C35] pt-36 sm:pt-44">
+      <section className="relative isolate overflow-hidden bg-[#1B3C35] pb-20 pt-36 sm:pb-28 sm:pt-44">
         <div className="absolute -top-24 right-0 h-96 w-96 rounded-full bg-[#F5B324]/15 blur-3xl" />
         <div className="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
 
-        <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-end gap-12 px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)] lg:gap-16 lg:px-8">
-          <div className="pb-14 lg:pb-28">
+        <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,400px)] lg:gap-16 lg:px-8">
+          <div>
             <Motion>
               <span className="mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#F5B324]">
                 Le mot de la gérante <span>✦</span>
@@ -68,16 +64,14 @@ export default async function MotGerantePage() {
 
             <Motion variant="verticalSlideIn" animationParams={{ delay: 0.2 }}>
               <p className="mt-6 max-w-xl text-base leading-relaxed text-white/75 md:text-lg">
-                {GERANTE.civilite} a fondé l&apos;Agence Mirna en{" "}
-                {GERANTE.depuis}. Elle revient ici sur ce qui l&apos;y a
-                poussée, et sur ce que son équipe vous doit.
+                {GERANTE.histoire}
               </p>
 
               <div className="mt-8 flex items-center gap-4">
                 <span className="h-px w-12 shrink-0 bg-[#F5B324]" />
                 <div>
                   <p className="font-agate text-xl font-bold text-white">
-                    {GERANTE.nom}
+                    {GERANTE.civilite}
                   </p>
                   <p className="text-sm font-medium text-white/60">
                     {GERANTE.role}
@@ -87,22 +81,26 @@ export default async function MotGerantePage() {
             </Motion>
           </div>
 
-          {/* Portrait détouré, posé sur le bord bas de la bande verte */}
           <Motion
             variant="verticalSlideIn"
             animationParams={{ delay: 0.15 }}
             viewport={{ once: true, amount: 0.1 }}
           >
-            <div className="relative mx-auto w-full max-w-[400px]">
-              <div className="absolute left-1/2 top-[14%] aspect-square w-[82%] -translate-x-1/2 rounded-full bg-[#F5B324]/20 ring-1 ring-[#F5B324]/30" />
-              <div className="relative aspect-[3/4] w-full">
+            <div className="relative mx-auto w-full max-w-[380px]">
+              {/* Cadre doré décalé, masqué sous `sm` : la colonne y prend toute
+                  la largeur utile et le décalage ferait scroller la page. */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 hidden translate-x-4 translate-y-4 rounded-[2.5rem] border-2 border-[#F5B324]/60 sm:block"
+              />
+              <div className="relative aspect-[3/4] w-full overflow-hidden rounded-[2.5rem] bg-[#102A25] shadow-2xl">
                 <Image
                   src={GERANTE.photo}
                   alt={GERANTE.photoAlt}
                   fill
                   priority
-                  sizes="(max-width: 1024px) 85vw, 400px"
-                  className="object-contain object-bottom drop-shadow-[0_30px_50px_rgba(0,0,0,0.45)]"
+                  sizes="(max-width: 1024px) 85vw, 380px"
+                  className="object-cover"
                 />
               </div>
             </div>
@@ -129,7 +127,10 @@ export default async function MotGerantePage() {
       {/* ── LA LETTRE ─────────────────────────────────────────────────── */}
       <section className="py-20 md:py-28">
         <div className="mx-auto max-w-4xl px-6 lg:px-8">
-          <Motion variant="verticalSlideIn" viewport={{ once: true, amount: 0.1 }}>
+          <Motion
+            variant="verticalSlideIn"
+            viewport={{ once: true, amount: 0.1 }}
+          >
             <article className="relative rounded-[2.5rem] bg-white p-8 shadow-sm ring-1 ring-stone-100 sm:p-12 md:p-16">
               <Quote
                 aria-hidden
@@ -147,11 +148,11 @@ export default async function MotGerantePage() {
               </div>
 
               <div className="mt-12 flex flex-col gap-5 border-t border-stone-100 pt-8 sm:flex-row sm:items-center">
-                {/* `object-top` plutôt que centré : le portrait est un buste,
-                    un cadrage central ne montrerait que le tailleur. */}
+                {/* Vignette ronde : le portrait détouré, cadré sur le visage —
+                    la photo en situation y montrerait surtout l'immeuble. */}
                 <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full bg-[#1B3C35]">
                   <Image
-                    src={GERANTE.photo}
+                    src={GERANTE.portraitDetoure}
                     alt=""
                     fill
                     sizes="80px"
@@ -180,11 +181,11 @@ export default async function MotGerantePage() {
               Nos engagements <span>✦</span>
             </span>
             <h2 className="max-w-2xl font-agate text-3xl font-bold leading-tight text-secondary md:text-5xl">
-              Ce que nous vous devons
+              Ce que cela veut dire au quotidien
             </h2>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:gap-8">
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3 lg:gap-8">
             {GERANTE.engagements.map((engagement, index) => (
               <div
                 key={engagement.titre}
@@ -221,8 +222,8 @@ export default async function MotGerantePage() {
                 ou décrochez simplement
               </h2>
               <p className="mt-4 max-w-md text-white/70">
-                Nous prenons le temps de vous écouter avant de vous proposer
-                quoi que ce soit.
+                Nous prenons le temps de comprendre votre projet avant de vous
+                proposer quoi que ce soit.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
