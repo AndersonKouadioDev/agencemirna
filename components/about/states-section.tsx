@@ -1,4 +1,5 @@
 import Motion from "../motion";
+import { GERANTE } from "@/src/data/gerante";
 
 export default function StatesSection() {
   return (
@@ -24,12 +25,11 @@ export default function StatesSection() {
                   satisfaction client.
                 </p>
               </Motion>
+              {/* Ce paragraphe affichait encore du lorem ipsum en production.
+                  Il porte désormais l'ancienneté réelle, lue depuis la même
+                  source que le mot de la gérante. */}
               <Motion>
-                <p className="text-lg mt-4">
-                  Ut enim ad minim veniam, quis nostrud exercitation ullamco
-                  laboris nisi{" "}
-                  <span className="whitespace-nowrap">ut conset.</span>
-                </p>
+                <p className="text-lg mt-4">{GERANTE.histoire}</p>
               </Motion>
             </div>
           </div>

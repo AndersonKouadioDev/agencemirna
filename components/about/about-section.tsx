@@ -21,7 +21,7 @@ export default function AboutSection() {
               <p className="text-sm md:text-lg mb-4">
                 Fondée en 2022 par{" "}
                 <Link
-                  href="/mot-de-la-gerante"
+                  href="#mot-de-la-gerante"
                   className="font-semibold text-secondary underline decoration-primary decoration-2 underline-offset-4 transition-colors hover:text-primary"
                 >
                   Madame Barry Néné Yéro

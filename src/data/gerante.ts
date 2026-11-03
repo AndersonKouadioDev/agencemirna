@@ -1,14 +1,14 @@
 /**
  * Contenu éditorial du « mot de la gérante ».
  *
- * Module figé, sans « server-only » ni accès base : la home et la page dédiée
- * lisent la même source, ce qui évite que l'extrait affiché en accueil finisse
- * par diverger de la lettre complète. Aucun écran d'admin ne pilote ce texte
- * pour l'instant — il se modifie ici.
+ * Module figé, sans « server-only » ni accès base : la section d'accueil et
+ * celle de /about lisent la même source, ce qui évite que l'extrait affiché en
+ * accueil finisse par diverger de la lettre complète. Aucun écran d'admin ne
+ * pilote ce texte pour l'instant — il se modifie ici.
  *
  * `accroche` et `lettre` sont le texte VALIDÉ par la gérante : ne pas les
- * reformuler. Le reste (engagements, repères, `histoire`) est de la mise en
- * page éditoriale, librement modifiable.
+ * reformuler. Le reste (engagements, `histoire`) est de la mise en page
+ * éditoriale, librement modifiable.
  *
  * Les apostrophes sont droites, comme partout ailleurs sur la vitrine ; passer
  * par ce module plutôt que par du JSX littéral évite au passage le ballet des
@@ -20,11 +20,6 @@ export type EngagementGerante = {
   texte: string;
 };
 
-export type RepereGerante = {
-  valeur: string;
-  libelle: string;
-};
-
 export const GERANTE = {
   nom: "Barry Néné Yéro",
   civilite: "Madame Barry Néné Yéro",
@@ -33,8 +28,6 @@ export const GERANTE = {
   photo: "/images/equipe/nene-barry-agence.webp",
   photoAlt:
     "Madame Barry Néné Yéro, fondatrice et gérante de l'Agence Mirna, devant une résidence à Abidjan",
-  /** Portrait détouré, réservé aux petites vignettes rondes (cadrage visage). */
-  portraitDetoure: "/images/equipe/nene-barry.webp",
   depuis: "2018",
 
   /** Repère d'ancienneté : l'activité précède la création de l'agence. */
@@ -50,7 +43,7 @@ export const GERANTE = {
     "Nous sommes convaincus que l'immobilier ne se résume pas à la vente, à l'achat ou à la location d'un bien. Il s'agit avant tout de comprendre les aspirations de chaque client, de sécuriser ses engagements et de l'accompagner dans des décisions qui comptent pour son avenir.",
   ],
 
-  /** Lettre complète, affichée sur /mot-de-la-gerante. */
+  /** Lettre complète, affichée dans la section « mot de la gérante » de /about. */
   lettre: [
     "Depuis sa création en 2022, Mirna Immobilier s'est donné pour mission de contribuer à une expérience immobilière plus transparente, plus professionnelle et plus sereine en Côte d'Ivoire.",
     "Nous sommes convaincus que l'immobilier ne se résume pas à la vente, à l'achat ou à la location d'un bien. Il s'agit avant tout de comprendre les aspirations de chaque client, de sécuriser ses engagements et de l'accompagner dans des décisions qui comptent pour son avenir.",
@@ -75,11 +68,4 @@ export const GERANTE = {
         "Des engagements sécurisés, pour des décisions qui comptent pour votre avenir.",
     },
   ] satisfies readonly EngagementGerante[],
-
-  reperes: [
-    { valeur: "2018", libelle: "Premières locations meublées" },
-    { valeur: "2022", libelle: "Création officielle de l'agence" },
-    { valeur: "Marcory Zone 4", libelle: "Nos bureaux, immeuble Fawaz" },
-    { valeur: "Grand Abidjan", libelle: "Zone couverte" },
-  ] satisfies readonly RepereGerante[],
 } as const;
