@@ -42,7 +42,7 @@ const BENTO_ITEMS = [
     desc: "Rentabilisez votre patrimoine en toute sérénité.",
     icon: Building2,
     href: "/services/gestion-immobiliere",
-    image: "https://images.unsplash.com/photo-1554469384-e58fac16e23a?auto=format&fit=crop&q=80&w=800",
+    image: "/images/photos/gestion-locative.webp",
     className: "md:col-span-1 md:row-span-1",
   }
 ];
