@@ -13,7 +13,7 @@ const SERVICE_IMAGES: Record<string, string> = {
   "gestion-immobiliere": "/images/biens/bien14.jpg",
   "construction": "/images/photos/immeuble.jpeg",
   "decoration-amenagement": "/images/biens/bien13.jpg",
-  "promotion-immobiliere": "/images/photos/immeuble1.jpg",
+  "promotion-immobiliere": "/images/photos/agence-immeuble.webp",
 };
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {

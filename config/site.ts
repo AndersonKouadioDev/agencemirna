@@ -114,7 +114,7 @@ export type MenuItem = {
 };
 
 /** Visuel de repli unique quand la donnée n'en porte pas. */
-export const MENU_FALLBACK_IMAGE = "/images/photos/immeuble1.jpg";
+export const MENU_FALLBACK_IMAGE = "/images/photos/agence-immeuble.webp";
 
 /**
  * Visuel de repli par famille d'entrée.
