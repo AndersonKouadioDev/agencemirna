@@ -264,7 +264,7 @@ const HERO_SLIDES = [
     title1: "Des biens d'exception.",
     title2: "Rien que pour vous.",
     desc: "Studios meublés, villas, appartements et gestion locative. Découvrez l'immobilier premium à Abidjan avec un accompagnement sur mesure.",
-    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=2000",
+    image: "/images/photos/terrasse-panoramique.webp",
   },
   {
     id: "slide-2",
