@@ -280,7 +280,7 @@ const HERO_SLIDES = [
     title1: "L'excellence dans",
     title2: "la gestion locative.",
     desc: "Rentabilisez votre patrimoine en toute sérénité. Nos experts s'occupent de tout, de la recherche de locataires jusqu'à l'entretien complet.",
-    image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&q=80&w=2000",
+    image: "/images/photos/salon-canape-angle.webp",
   }
 ];
 
