@@ -47,18 +47,12 @@ export default function ConstructionPage() {
             </div>
             
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-4 pt-12">
+              <div className="pt-12">
                 <div className="relative aspect-[3/4] rounded-2xl overflow-hidden">
                   <Image src="/images/photos/immeuble.jpeg" alt="Chantier moderne" fill className="object-cover" />
                 </div>
-                <div className="bg-[#FAF5EE] p-6 rounded-2xl text-center">
-                  <div className="font-agate text-3xl font-bold text-primary mb-1">Gros Œuvre</div>
-                </div>
               </div>
-              <div className="space-y-4">
-                <div className="bg-primary text-white p-6 rounded-2xl text-center">
-                  <div className="font-agate text-3xl font-bold mb-1">Second Œuvre</div>
-                </div>
+              <div>
                 <div className="relative aspect-[3/4] rounded-2xl overflow-hidden">
                   <Image src="https://images.unsplash.com/photo-1581094288338-2314dddb7ece?auto=format&fit=crop&q=80&w=600" alt="Plans d'architecte" fill className="object-cover" />
                 </div>
