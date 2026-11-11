@@ -24,7 +24,7 @@ const BENTO_ITEMS = [
     desc: "Des projets bâtis de A à Z par nos experts en architecture et ingénierie.",
     icon: HardHat,
     href: "/services/construction",
-    image: "https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=800",
+    image: "/images/photos/chantier-immeuble.webp",
     className: "md:col-span-1 md:row-span-2",
   },
   {
