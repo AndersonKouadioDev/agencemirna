@@ -272,7 +272,7 @@ const HERO_SLIDES = [
     title1: "Votre nouveau cadre",
     title2: "de vie prestigieux.",
     desc: "Des appartements de très haut standing offrant des vues panoramiques sur la lagune et des prestations inégalées pour un confort absolu.",
-    image: "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=2000",
+    image: "/images/photos/salon-meuble.webp",
   },
   {
     id: "slide-3",
