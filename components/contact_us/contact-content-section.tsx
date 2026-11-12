@@ -10,6 +10,7 @@ import { Building2, Phone, Mail } from "lucide-react";
 import { useFormStatus } from "react-dom";
 import { createLead } from "@/src/actions/leads";
 import { suivreDemande } from "@/src/lib/suivi";
+import { ChampPiege, useAntiRobot } from "@/components/anti-robot";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -28,6 +29,7 @@ export default function ContactContentSection({
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const { piegeRef, controle } = useAntiRobot();
 
   async function handleSubmit(formData: FormData) {
     setErrorMessage(null);
@@ -42,6 +44,7 @@ export default function ContactContentSection({
       message: (formData.get("message") as string) || null,
       source_url:
         typeof window !== "undefined" ? window.location.pathname : null,
+      anti_robot: controle(),
     });
     if (result.ok) {
       setStatus("success");
@@ -88,6 +91,7 @@ export default function ContactContentSection({
           </div>
           <div className="w-full md:w-1/2">
             <form ref={formRef} action={handleSubmit} className="space-y-4">
+              <ChampPiege ref={piegeRef} />
               <div className="flex flex-col lg:flex-row gap-4">
                 <div className="w-full lg:w-1/2">
                   <label

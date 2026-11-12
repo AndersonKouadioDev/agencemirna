@@ -4,6 +4,7 @@ import BookingRequestEmail from "@/emails/booking_asking.email";
 import BookingRequestConfirmationEmail from "@/emails/booking_asking_confirmation.email";
 import { Resend } from "resend";
 import { getSiteContact } from "@/src/lib/site-contact";
+import { evaluerDemande, type ControleAntiRobot } from "@/src/lib/anti-spam";
 
 let resendInstance: Resend | null = null;
 function getResend(): Resend {
@@ -28,6 +29,7 @@ export async function BookingRequest({
   guests,
   message,
   propertyImage,
+  anti_robot,
 }: {
   firstName: string;
   lastName: string;
@@ -39,7 +41,23 @@ export async function BookingRequest({
   guests: number;
   message: string;
   propertyImage: string;
+  anti_robot?: ControleAntiRobot | null;
 }) {
+  // Même tri que `createLead` : sans lui, cette action publique envoyait un
+  // e-mail à l'agence et un accusé de réception à N'IMPORTE QUELLE adresse
+  // saisie par un robot. Une demande suspecte reçoit une réponse « succès »
+  // sans qu'aucun e-mail parte.
+  const verdict = evaluerDemande({
+    source: "contact",
+    full_name: `${firstName ?? ""} ${lastName ?? ""}`.trim(),
+    email,
+    message,
+    anti_robot,
+  });
+  if (verdict.action !== "accepter") {
+    return { success: true as const };
+  }
+
   // Le destinataire suit l'adresse saisie dans /admin/parametres : en dur,
   // changer l'email du back-office n'avait aucun effet sur les demandes de
   // réservation, qui partaient toujours à l'ancienne adresse.

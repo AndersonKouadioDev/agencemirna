@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 import { Button } from "./ui/button";
 import { createLead } from "@/src/actions/leads";
 import { suivreInscriptionNewsletter } from "@/src/lib/suivi";
+import { ChampPiege, useAntiRobot } from "./anti-robot";
 
 /**
  * Formulaire d'abonnement du pied de page.
@@ -32,6 +33,7 @@ export default function NewsletterForm() {
   const [statut, setStatut] = useState<"idle" | "success" | "error">("idle");
   const [messageErreur, setMessageErreur] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const { piegeRef, controle } = useAntiRobot();
 
   async function handleSubmit(formData: FormData) {
     setMessageErreur(null);
@@ -40,6 +42,7 @@ export default function NewsletterForm() {
       email: (formData.get("email") as string) || null,
       source_url:
         typeof window !== "undefined" ? window.location.pathname : null,
+      anti_robot: controle(),
     });
     if (resultat.ok) {
       setStatut("success");
@@ -70,6 +73,7 @@ export default function NewsletterForm() {
           placeholder="Votre email"
           className="bg-transparent border-none outline-none text-sm w-full px-4 text-stone-600 placeholder:text-stone-400"
         />
+        <ChampPiege ref={piegeRef} />
         <BoutonAbonnement />
       </form>
 

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createLead } from "@/src/actions/leads";
 import { suivreDemande } from "@/src/lib/suivi";
+import { ChampPiege, useAntiRobot } from "@/components/anti-robot";
 
 const TYPES = [
   "Appartement",
@@ -44,6 +45,7 @@ export function EstimationForm({ whatsappUrl }: { whatsappUrl: string }) {
   const [chambres, setChambres] = React.useState("");
   const [annee, setAnnee] = React.useState("");
   const [message, setMessage] = React.useState("");
+  const { piegeRef, controle } = useAntiRobot();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,6 +67,7 @@ export function EstimationForm({ whatsappUrl }: { whatsappUrl: string }) {
         chambres: chambres || null,
         annee_construction: annee || null,
       },
+      anti_robot: controle(),
     });
 
     setSubmitting(false);
@@ -107,6 +110,7 @@ export function EstimationForm({ whatsappUrl }: { whatsappUrl: string }) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
+      <ChampPiege ref={piegeRef} />
       <header>
         <h2 className="font-agate text-2xl sm:text-3xl font-bold text-secondary">
           Décrivez votre bien

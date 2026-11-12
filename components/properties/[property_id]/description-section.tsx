@@ -45,6 +45,7 @@ import { BookingRequest } from "@/services/emails/booking_asking.action";
 import { createLead } from "@/src/actions/leads";
 import { Textarea } from "@/components/ui/textarea";
 import { suivreDemande } from "@/src/lib/suivi";
+import { ChampPiege, useAntiRobot } from "@/components/anti-robot";
 
 /**
  * Les lignes de `biens` n'ont pas de type généré : on décrit ici les seules
@@ -452,6 +453,7 @@ const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: BienFicheSource
 
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const formRef = useRef<HTMLFormElement>(null);
+  const { piegeRef, controle } = useAntiRobot();
 
   const [value, setValue] = useState<PlageSejour>(null);
   // Compteur de remontage du sélecteur. `setValue(null)` ne vide que la valeur
@@ -475,6 +477,7 @@ const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: BienFicheSource
     const phone = formData.get("phone") as string;
     const message = formData.get("message") as string;
     const guests = Number(formData.get("people") || 1);
+    const antiRobot = controle();
 
     // La demande la plus qualifiée du site — la seule qui porte un `bien_id` —
     // ne passait que par Resend et n'atteignait jamais /admin/leads. On
@@ -495,6 +498,7 @@ const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: BienFicheSource
         check_out: checkOut ?? null,
         guests,
       },
+      anti_robot: antiRobot,
     });
 
     const emailResult = await BookingRequest({
@@ -508,6 +512,7 @@ const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: BienFicheSource
       guests,
       message,
       propertyImage: bien.image ?? "",
+      anti_robot: antiRobot,
     });
 
     // Succès dès que l'un des deux canaux a abouti : l'agence est servie soit
@@ -579,6 +584,7 @@ const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: BienFicheSource
             Contactez-nous pour ce bien
           </h3>
           <form ref={formRef} action={handleSubmit} className="space-y-4">
+            <ChampPiege ref={piegeRef} />
             <div className="grid grid-cols-2 gap-4">
               <Input
                 name="firstName"

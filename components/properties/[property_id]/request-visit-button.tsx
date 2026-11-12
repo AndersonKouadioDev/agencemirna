@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createLead } from "@/src/actions/leads";
 import { suivreDemande } from "@/src/lib/suivi";
+import { ChampPiege, useAntiRobot } from "@/components/anti-robot";
 
 export function RequestVisitButton({
   bienId,
@@ -30,6 +31,7 @@ export function RequestVisitButton({
   const [email, setEmail] = React.useState("");
   const [date, setDate] = React.useState("");
   const [message, setMessage] = React.useState("");
+  const { piegeRef, controle } = useAntiRobot();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -49,6 +51,7 @@ export function RequestVisitButton({
         bien_name: bienName ?? null,
         date_souhaitee: date || null,
       },
+      anti_robot: controle(),
     });
 
     setSubmitting(false);
@@ -135,6 +138,7 @@ export function RequestVisitButton({
               </div>
             ) : (
               <form onSubmit={onSubmit} className="flex flex-col flex-1 overflow-hidden">
+                <ChampPiege ref={piegeRef} />
                 <div className="p-6 sm:p-8 flex-1 overflow-y-auto space-y-5">
                   {error && (
                     <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 flex items-start gap-3">

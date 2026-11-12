@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { createClient } from "../supabase/server";
 import { notifyNewLead } from "../lib/notify";
+import { evaluerDemande, type ControleAntiRobot } from "../lib/anti-spam";
 
 /**
  * Server Actions publiques pour la capture de leads (RLS autorise INSERT
@@ -31,6 +32,8 @@ export type CreateLeadInput = {
   bien_id?: string | null;
   source_url?: string | null;
   metadata?: Record<string, unknown> | null;
+  /** Champ piège et durée de saisie, fournis par `useAntiRobot()`. */
+  anti_robot?: ControleAntiRobot | null;
 };
 
 export type LeadActionResult =
@@ -71,6 +74,25 @@ export async function createLead(
     }
   }
 
+  // Tri des robots (voir src/lib/anti-spam.ts). Un robot certain reçoit la
+  // même réponse qu'un visiteur, sans rien enregistrer : lui signaler l'échec
+  // l'aiderait seulement à s'adapter.
+  const verdict = evaluerDemande({
+    source: input.source,
+    full_name: input.full_name,
+    email,
+    message: input.message,
+    anti_robot: input.anti_robot,
+  });
+  if (verdict.action === "ignorer") {
+    console.warn(`[anti-spam] demande ignorée (${input.source}) : ${verdict.motif}`);
+    return { ok: true };
+  }
+  const motifSpam = verdict.action === "rejeter" ? verdict.motif : null;
+  const metadata = motifSpam
+    ? { ...(input.metadata ?? {}), spam: motifSpam }
+    : (input.metadata ?? null);
+
   const supabase = await createClient();
   // NB : la policy publique de `leads` autorise INSERT mais pas SELECT — et
   // c'est volontaire, une policy SELECT publique exposerait les coordonnées de
@@ -89,7 +111,10 @@ export async function createLead(
       message: input.message?.trim() || null,
       bien_id: input.bien_id || null,
       source_url: input.source_url || null,
-      metadata: input.metadata ?? null,
+      metadata,
+      // Demande suspecte : gardée au statut « Rejeté » (filtre « Rejetés » de
+      // l'admin) au lieu d'arriver parmi les nouvelles.
+      ...(motifSpam ? { status: "rejected" } : {}),
     });
 
   if (error) {
@@ -97,6 +122,12 @@ export async function createLead(
     return { ok: false, error: "Impossible d'enregistrer votre demande." };
   }
   const insertedLead = { id: leadId };
+
+  // Pas d'e-mail à l'agence pour une demande suspecte.
+  if (motifSpam) {
+    console.warn(`[anti-spam] demande rejetée (${input.source}) : ${motifSpam}`);
+    return { ok: true };
+  }
 
   // Best-effort : notification email à l'agence. Skip silencieux si
   // RESEND_API_KEY non configuré, échec silencieux sinon (le lead est
