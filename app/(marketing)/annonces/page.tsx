@@ -9,7 +9,8 @@ import { AnnoncesGrid } from "./_components/annonces-grid";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Annonces & Promotions | Mirna",
+  title: "Annonces & promotions",
+  alternates: { canonical: "/annonces" },
   description: "Découvrez nos offres exclusives, nos promotions en cours et nos dernières nouveautés.",
 };
 

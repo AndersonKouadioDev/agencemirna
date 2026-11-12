@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-static";
 
 export const metadata = {
-  title: "Décoration d'intérieur & Aménagement à Abidjan : Agence Mirna",
+  title: "Décoration d'intérieur & Aménagement à Abidjan",
+  alternates: { canonical: "/services/decoration-amenagement" },
   description: "Aménagement et décoration sur-mesure pour sublimer vos espaces : design personnalisé, mobilier de créateurs et optimisation de l'espace.",
 };
 

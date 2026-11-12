@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "./ui/button";
 import { createLead } from "@/src/actions/leads";
+import { suivreInscriptionNewsletter } from "@/src/lib/suivi";
 
 /**
  * Formulaire d'abonnement du pied de page.
@@ -42,6 +43,7 @@ export default function NewsletterForm() {
     });
     if (resultat.ok) {
       setStatut("success");
+      suivreInscriptionNewsletter();
       formRef.current?.reset();
     } else {
       setStatut("error");

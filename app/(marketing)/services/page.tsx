@@ -9,7 +9,8 @@ import { AnimatedServices } from "./_components/animated-services";
 export const dynamic = "force-static";
 
 export const metadata = {
-  title: "Nos services : Agence Mirna",
+  title: "Nos services",
+  alternates: { canonical: "/services" },
   description: "Vente, gestion immobilière, location meublée, décoration, construction, promotion : tous nos services à Abidjan.",
 };
 

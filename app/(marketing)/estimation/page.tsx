@@ -3,7 +3,8 @@ import { EstimationForm } from "./estimation-form";
 import { getSiteContact } from "@/src/lib/site-contact";
 
 export const metadata = {
-  title: "Estimation gratuite de votre bien : Agence Mirna",
+  title: "Estimation gratuite de votre bien",
+  alternates: { canonical: "/estimation" },
   description:
     "Obtenez une estimation gratuite et argumentée de votre bien à Abidjan sous 24h ouvrées. Marché local, comparables, prix de vente ou de location.",
 };

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-static";
 
 export const metadata = {
-  title: "Promotion immobilière et programmes neufs : Agence Mirna",
+  title: "Promotion immobilière et programmes neufs",
+  alternates: { canonical: "/services/promotion-immobiliere" },
   description: "Développement de projets immobiliers résidentiels et commerciaux à Abidjan : emplacements de choix, architecture moderne et normes environnementales.",
 };
 

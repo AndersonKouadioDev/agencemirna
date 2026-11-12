@@ -7,6 +7,9 @@ import { Roboto as FontSans } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./provider";
 import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
+import Script from "next/script";
+import { SuiviClics } from "@/components/suivi-clics";
+import { SCRIPT_CONSENTEMENT_DEFAUT } from "@/src/lib/consentement";
 
 const fontSans = FontSans({
   weight: ["400", "700"],
@@ -15,9 +18,15 @@ const fontSans = FontSans({
 });
 
 export const metadata: Metadata = {
+  // Base des URL relatives : chaque page déclare sa propre adresse canonique
+  // (`alternates.canonical: "/services/vente"`), résolue sur ce domaine.
+  metadataBase: new URL("https://www.agencemirna.com"),
   title: {
     default: "AGENCE MIRNA | Expert Immobilier à Abidjan",
-    template: `%s | AGENCE MIRNA - Votre Partenaire Immobilier en Côte d'Ivoire`,
+    // Court : Google tronque vers 60 caractères, et l'ancien suffixe
+    // (« AGENCE MIRNA - Votre Partenaire Immobilier en Côte d'Ivoire ») portait
+    // les titres de page au-delà de 100.
+    template: "%s | Agence Mirna",
     absolute: "AGENCE MIRNA - Votre Expert Immobilier à Abidjan, Côte d'Ivoire",
   },
   description:
@@ -56,13 +65,10 @@ export const metadata: Metadata = {
   authors: [{ name: "AGENCE MIRNA", url: "https://www.agencemirna.com" }],
   creator: "AGENCE MIRNA",
   publisher: "LUNION-LAB",
-  alternates: {
-    canonical: "https://www.agencemirna.com",
-    languages: {
-      "fr-CI": "https://www.agencemirna.com",
-      "en-US": "https://www.agencemirna.com/en",
-    },
-  },
+  // Pas d'`alternates` ici : posée dans le layout racine, l'adresse canonique
+  // était héritée par toutes les pages, qui se déclaraient ainsi doublons de
+  // l'accueil. Chaque page porte désormais la sienne. Le hreflang « en-US »
+  // pointait vers /en, une page qui n'existe pas (404).
   openGraph: {
     type: "website",
     locale: "fr_CI",
@@ -151,8 +157,16 @@ export default function RootLayout({
           fontSans.variable
         )}
       >
+        {/* Consentement par défaut (Consent Mode v2), avant GTM et GA4. */}
+        <Script id="consentement-defaut" strategy="beforeInteractive">
+          {SCRIPT_CONSENTEMENT_DEFAUT}
+        </Script>
         <GoogleTagManager gtmId="GTM-W2PS7KNF" />
+        {/* GA4 est chargé ici et nulle part ailleurs : le conteneur GTM ne
+            doit pas recevoir de balise GA4, sous peine de compter chaque
+            visite deux fois. */}
         <GoogleAnalytics gaId="G-C5RY1GRYG1" />
+        <SuiviClics />
 
         <Providers>
           {children}

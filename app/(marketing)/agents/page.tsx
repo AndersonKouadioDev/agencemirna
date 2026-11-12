@@ -18,7 +18,8 @@ import { getActiveAgents } from "@/src/actions/public";
 import { getSiteContact } from "@/src/lib/site-contact";
 
 export const metadata = {
-  title: "Notre équipe : Agence Mirna",
+  title: "Notre équipe",
+  alternates: { canonical: "/agents" },
   description:
     "Rencontrez l'équipe d'Agence Mirna : conseillers et experts immobiliers à Abidjan.",
 };

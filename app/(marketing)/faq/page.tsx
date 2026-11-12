@@ -2,7 +2,8 @@ import { Metadata } from "next";
 import { getActiveFaqs } from "@/src/actions/public";
 
 export const metadata: Metadata = {
-  title: "FAQ | Agence Mirna",
+  title: "FAQ",
+  alternates: { canonical: "/faq" },
   description: "Foire aux questions",
 };
 

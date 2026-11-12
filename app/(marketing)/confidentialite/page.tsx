@@ -1,7 +1,8 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Politique de Confidentialité | Agence Mirna",
+  title: "Politique de confidentialité",
+  alternates: { canonical: "/confidentialite" },
   description: "Protection de vos données personnelles",
 };
 

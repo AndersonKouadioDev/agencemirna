@@ -17,7 +17,8 @@ import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
  */
 
 export const metadata = {
-  title: "Blog | Agence Mirna",
+  title: "Blog",
+  alternates: { canonical: "/blog" },
   description:
     "Conseils, guides et actualités du marché immobilier à Abidjan par les experts d'Agence Mirna.",
 };

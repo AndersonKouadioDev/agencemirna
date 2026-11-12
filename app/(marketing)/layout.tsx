@@ -1,3 +1,5 @@
+import { BandeauCookies } from "@/components/bandeau-cookies";
+import { BoutonWhatsApp } from "@/components/bouton-whatsapp";
 import MarqueeBar from "@/components/landing/marquee-bar";
 import { SiteFooter } from "@/components/site-footer";
 import { Header } from "@/components/site-header";
@@ -7,6 +9,7 @@ import {
   getCatalogueFacettes,
   listCommunesPublic,
 } from "@/src/actions/public";
+import { getSiteContact } from "@/src/lib/site-contact";
 
 interface MarketingLayoutProps {
   children: React.ReactNode;
@@ -18,10 +21,11 @@ export default async function MarketingLayout({
   // Point d'injection de la navigation dynamique : le Header est un composant
   // client, il ne peut pas interroger Supabase lui-même. On charge donc ici
   // types / services / communes et on lui passe le menu construit.
-  const [communes, refData, facettes] = await Promise.all([
+  const [communes, refData, facettes, contact] = await Promise.all([
     listCommunesPublic(),
     getBienReferenceData(),
     getCatalogueFacettes(),
+    getSiteContact(),
   ]);
 
   // Pathname vide : un Server Component ne le connaît pas. Le Header réapplique
@@ -42,6 +46,8 @@ export default async function MarketingLayout({
       <Header menu={menu} />
       <main className="mx-auto flex-1">{children}</main>
       <SiteFooter communes={communes} />
+      <BoutonWhatsApp whatsappUrl={contact.whatsappUrl} />
+      <BandeauCookies />
     </>
   );
 }

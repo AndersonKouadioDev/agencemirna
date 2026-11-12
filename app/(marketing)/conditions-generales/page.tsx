@@ -1,7 +1,8 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Conditions Générales | Agence Mirna",
+  title: "Conditions générales",
+  alternates: { canonical: "/conditions-generales" },
   description: "Conditions générales de vente et d'utilisation",
 };
 

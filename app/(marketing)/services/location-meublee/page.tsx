@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-static";
 
 export const metadata = {
-  title: "Location meublée à Abidjan : Agence Mirna",
+  title: "Location meublée à Abidjan",
+  alternates: { canonical: "/services/location-meublee" },
   description:
     "Appartements et villas meublés prêts à vivre, pour de courtes ou longues durées : biens équipés, conciergerie et flexibilité de durée.",
 };

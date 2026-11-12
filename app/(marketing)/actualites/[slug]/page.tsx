@@ -38,8 +38,10 @@ export async function generateMetadata({
   const article = await getArticleBySlug(slug);
   if (!article) return { title: "Article introuvable" };
   return {
-    title: `${article.title} | Agence Mirna`,
+    // Le modèle du layout ajoute déjà « | Agence Mirna ».
+    title: article.title,
     description: article.excerpt ?? undefined,
+    alternates: { canonical: `/actualites/${slug}` },
   };
 }
 

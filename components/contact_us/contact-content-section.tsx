@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Building2, Phone, Mail } from "lucide-react";
 import { useFormStatus } from "react-dom";
 import { createLead } from "@/src/actions/leads";
+import { suivreDemande } from "@/src/lib/suivi";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -44,6 +45,7 @@ export default function ContactContentSection({
     });
     if (result.ok) {
       setStatus("success");
+      suivreDemande("contact");
       formRef.current?.reset();
     } else {
       setStatus("error");

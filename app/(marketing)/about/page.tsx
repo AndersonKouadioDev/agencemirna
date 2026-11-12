@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import AdresseSection from "@/components/adresse-section";
 import DescriptionSection from "@/components/about/description-section";
 import HeroSection from "@/components/about/hero-section";
@@ -10,6 +11,13 @@ import AboutServicesSection from "@/components/about/services-section";
 import BlogSection from "@/components/landing/blog-section";
 import CommoditiesSection from "@/components/landing/commodities-section";
 import FAQSection from "@/components/landing/faq-section";
+
+export const metadata: Metadata = {
+  title: "À propos de l'agence",
+  description:
+    "Agence Mirna, agence immobilière à Marcory Zone 4 (Abidjan) : vente, location meublée, gestion locative et construction. Découvrez notre histoire, notre équipe et nos valeurs.",
+  alternates: { canonical: "/about" },
+};
 
 /**
  * Page /about enrichie : réceptacle des sections "détail" déplacées

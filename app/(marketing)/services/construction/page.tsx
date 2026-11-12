@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-static";
 
 export const metadata = {
-  title: "Construction & Maîtrise d'œuvre à Abidjan : Agence Mirna",
+  title: "Construction & Maîtrise d'œuvre à Abidjan",
+  alternates: { canonical: "/services/construction" },
   description: "De la conception à la remise des clés : expertise technique, suivi de chantier et respect des délais pour vos projets de construction à Abidjan.",
 };
 

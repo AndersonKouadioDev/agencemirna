@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { EmplacementPub } from "@/components/publicites/emplacement-pub";
 import FeaturedPropertiesServer from "@/components/landing/featured-properties-server";
 import HeroSection from "@/components/landing/hero-section";
@@ -16,6 +17,11 @@ import {
   OrganizationJsonLd,
   WebsiteJsonLd,
 } from "@/components/seo/structured-data";
+
+// L'accueil garde le titre du layout ; il déclare seulement son adresse canonique.
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default async function Page() {
   const [communes, quartiers, refData, testimonials, contact, facettes] =

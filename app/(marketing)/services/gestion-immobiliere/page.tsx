@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-static";
 
 export const metadata = {
-  title: "Gestion locative à Abidjan : Agence Mirna",
+  title: "Gestion locative à Abidjan",
+  alternates: { canonical: "/services/gestion-immobiliere" },
   description:
     "Confiez-nous la gestion de votre patrimoine immobilier : sélection des locataires, suivi comptable et garantie des loyers impayés.",
 };

@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-static";
 
 export const metadata = {
-  title: "Vente de biens immobiliers à Abidjan : Agence Mirna",
+  title: "Vente de biens immobiliers à Abidjan",
+  alternates: { canonical: "/services/vente" },
   description:
     "Achat et vente de villas, terrains et appartements haut de gamme à Abidjan : estimation précise, visibilité maximale et accompagnement juridique.",
 };

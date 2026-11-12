@@ -1,8 +1,18 @@
+import type { Metadata } from "next";
 import { EmplacementPub } from "@/components/publicites/emplacement-pub";
 import HeroSection from "@/components/properties/hero-section";
 import ListPropertiesSection from "@/components/properties/list-properties-section";
 import { getAllBiens } from "@/src/actions/bien.actions";
 import { getBienReferenceData, listCommunesPublic, getActiveQuartiers, getCatalogueFacettes } from "@/src/actions/public";
+
+// Une seule adresse canonique pour le catalogue : les variantes filtrées
+// (?type=, ?commune=…) ne doivent pas concurrencer la page principale.
+export const metadata: Metadata = {
+  title: "Biens immobiliers à Abidjan : location et vente",
+  description:
+    "Appartements meublés, studios, villas, terrains et bureaux à Abidjan : parcourez les biens de l'Agence Mirna à la location et à la vente, avec photos, prix et localisation.",
+  alternates: { canonical: "/properties" },
+};
 
 const norm = (v: unknown) =>
   String(v ?? "")

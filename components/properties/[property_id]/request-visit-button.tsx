@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { createLead } from "@/src/actions/leads";
+import { suivreDemande } from "@/src/lib/suivi";
 
 export function RequestVisitButton({
   bienId,
@@ -55,6 +56,7 @@ export function RequestVisitButton({
       setError(result.error);
       return;
     }
+    suivreDemande("demande_visite", { bien: bienName ?? undefined });
     setDone(true);
   }
 

@@ -16,6 +16,7 @@ import { ModaleVideo } from "@/components/video/modale-video";
 import { mediaAnnonce } from "@/src/lib/annonce";
 import type { PublicAnnonce } from "@/src/actions/public";
 import { RequestVisitButton } from "./request-visit-button";
+import { BoutonPartager } from "./bouton-partager";
 import {
   DateRangePicker,
   DateField,
@@ -43,6 +44,7 @@ import { useFormStatus } from "react-dom";
 import { BookingRequest } from "@/services/emails/booking_asking.action";
 import { createLead } from "@/src/actions/leads";
 import { Textarea } from "@/components/ui/textarea";
+import { suivreDemande } from "@/src/lib/suivi";
 
 /**
  * Les lignes de `biens` n'ont pas de type généré : on décrit ici les seules
@@ -210,6 +212,7 @@ export default function DescriptionSection({
                      {addressLine}
                    </div>
                  ))}
+               <BoutonPartager nom={bien?.name} />
              </div>
              
              {/* Un bien sans montant affichait « Loyer mensuel / 0 FCFA /
@@ -513,6 +516,7 @@ const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: BienFicheSource
     // aujourd'hui en `{success:false}` alors que l'agence a bien été notifiée.
     if (leadResult.ok || emailResult.success) {
       setStatus("success");
+      suivreDemande("contact_bien", { bien: bien?.name ?? undefined });
       formRef.current?.reset();
       setValue(null);
       setSejourKey((k) => k + 1);
