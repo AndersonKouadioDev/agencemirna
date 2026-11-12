@@ -14,6 +14,7 @@ import { getAdminUser } from "@/src/supabase/admin-auth";
  *     rejected / archived)
  *   - ajouter des notes internes
  *   - supprimer
+ *   - changer le statut ou supprimer plusieurs leads d'un coup
  */
 
 export type ActionResult<T = void> =
@@ -169,6 +170,119 @@ export async function deleteLead(id: string): Promise<ActionResult> {
   if (error) return { ok: false, error: error.message };
   revalidatePath("/admin/leads");
   return { ok: true, data: undefined };
+}
+
+// ============================================================================
+// Actions groupées (cases à cocher de /admin/leads)
+// ============================================================================
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const STATUTS: readonly LeadStatus[] = [
+  "new",
+  "in_progress",
+  "qualified",
+  "converted",
+  "rejected",
+  "archived",
+];
+/** Au-delà d'environ 200 identifiants, l'URL de la requête PostgREST devient trop longue. */
+const TAILLE_LOT = 100;
+const SELECTION_MAX = 5000;
+
+/** Identifiants dédoublonnés, ou `null` si la sélection n'est pas exploitable. */
+function selectionValide(ids: unknown): string[] | null {
+  if (!Array.isArray(ids) || ids.length === 0 || ids.length > SELECTION_MAX) {
+    return null;
+  }
+  const uniques = [...new Set(ids)];
+  return uniques.every((id) => typeof id === "string" && UUID.test(id))
+    ? (uniques as string[])
+    : null;
+}
+
+function enLots<T>(liste: T[]): T[][] {
+  const lots: T[][] = [];
+  for (let i = 0; i < liste.length; i += TAILLE_LOT) {
+    lots.push(liste.slice(i, i + TAILLE_LOT));
+  }
+  return lots;
+}
+
+export async function deleteLeads(
+  ids: string[],
+): Promise<ActionResult<{ supprimes: number }>> {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, error: "Non autorisé." };
+  const selection = selectionValide(ids);
+  if (!selection) return { ok: false, error: "Sélection invalide." };
+
+  const supabase = await createClient();
+  let supprimes = 0;
+  for (const lot of enLots(selection)) {
+    const { error, count } = await supabase
+      .from("leads")
+      .delete({ count: "exact" })
+      .in("id", lot);
+    if (error) {
+      revalidatePath("/admin/leads");
+      return {
+        ok: false,
+        error: supprimes
+          ? `${supprimes} lead(s) supprimé(s), puis échec : ${error.message}`
+          : error.message,
+      };
+    }
+    supprimes += count ?? 0;
+  }
+
+  revalidatePath("/admin/leads");
+  return { ok: true, data: { supprimes } };
+}
+
+export async function updateLeadsStatus(
+  ids: string[],
+  status: LeadStatus,
+): Promise<ActionResult<{ modifies: number }>> {
+  const admin = await getAdminUser();
+  if (!admin) return { ok: false, error: "Non autorisé." };
+  const selection = selectionValide(ids);
+  if (!selection) return { ok: false, error: "Sélection invalide." };
+  if (!STATUTS.includes(status)) return { ok: false, error: "Statut inconnu." };
+
+  const supabase = await createClient();
+  const maintenant = new Date().toISOString();
+  let modifies = 0;
+  for (const lot of enLots(selection)) {
+    // Mêmes règles que `updateLeadStatus` : `handled_by` suit la dernière
+    // prise en main, `handled_at` ne date que la première (d'où le filtre
+    // `is null` de la seconde requête).
+    const { error, count } = await supabase
+      .from("leads")
+      .update(status === "new" ? { status } : { status, handled_by: admin.id }, {
+        count: "exact",
+      })
+      .in("id", lot);
+    if (!error && status !== "new") {
+      await supabase
+        .from("leads")
+        .update({ handled_at: maintenant })
+        .in("id", lot)
+        .is("handled_at", null);
+    }
+    if (error) {
+      revalidatePath("/admin/leads");
+      return {
+        ok: false,
+        error: modifies
+          ? `${modifies} lead(s) modifié(s), puis échec : ${error.message}`
+          : error.message,
+      };
+    }
+    modifies += count ?? 0;
+  }
+
+  revalidatePath("/admin/leads");
+  return { ok: true, data: { modifies } };
 }
 
 // ============================================================================
