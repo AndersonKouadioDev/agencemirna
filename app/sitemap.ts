@@ -4,6 +4,7 @@ import {
   getActiveServices,
   getActiveArticles,
 } from "@/src/actions/public";
+import { LISTE_PAGES_SEO } from "@/src/data/pages-seo";
 
 /**
  * Génère /sitemap.xml dynamiquement avec :
@@ -78,6 +79,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
   ];
 
+  // Pages d'atterrissage SEO : leurs biens changent avec le catalogue.
+  const pagesSeo: MetadataRoute.Sitemap = LISTE_PAGES_SEO.map((p) => ({
+    url: `${baseUrl}/${p.slug}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.8,
+  }));
+
   // ─── Routes dynamiques (fetch en parallèle, échec gracieux) ────────
   const [biens, services, articles] = await Promise.all([
     getAllBiens().catch(() => []),
@@ -106,5 +115,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...staticRoutes, ...bienRoutes, ...serviceRoutes, ...articleRoutes];
+  return [
+    ...staticRoutes,
+    ...pagesSeo,
+    ...bienRoutes,
+    ...serviceRoutes,
+    ...articleRoutes,
+  ];
 }

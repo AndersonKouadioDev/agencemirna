@@ -20,6 +20,7 @@ import {
   getCatalogueFacettes,
   type CatalogueFacettes,
 } from "@/src/actions/public";
+import { LISTE_PAGES_SEO } from "@/src/data/pages-seo";
 
 const STATS = [
   { icon: Home, value: "100+", label: "Biens" },
@@ -209,6 +210,22 @@ export async function SiteFooter({
             <NewsletterForm />
           </div>
         </div>
+
+        {/* Recherches fréquentes : liens vers les pages d'atterrissage SEO,
+            présents sur toutes les pages pour que Google les découvre et les
+            juge importantes. */}
+        <nav aria-label="Recherches fréquentes" className="mb-10">
+          <h4 className="font-bold text-secondary mb-4">Recherches fréquentes</h4>
+          <ul className="flex flex-wrap gap-x-6 gap-y-3 text-sm text-stone-500">
+            {LISTE_PAGES_SEO.map((page) => (
+              <li key={page.slug}>
+                <Link href={`/${page.slug}`} className="hover:text-primary transition-colors">
+                  {page.lienCourt}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
         {/* Bottom */}
         <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-stone-100 text-xs text-stone-400">

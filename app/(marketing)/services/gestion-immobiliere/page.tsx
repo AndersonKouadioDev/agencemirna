@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-static";
 
 export const metadata = {
-  title: "Gestion locative à Abidjan",
+  // « Gestion locative à Abidjan » est le titre de la page d'atterrissage
+  // /gestion-locative-abidjan : deux pages au même titre se feraient
+  // concurrence dans Google.
+  title: "Gestion immobilière à Abidjan",
   alternates: { canonical: "/services/gestion-immobiliere" },
   description:
     "Confiez-nous la gestion de votre patrimoine immobilier : sélection des locataires, suivi comptable et garantie des loyers impayés.",
