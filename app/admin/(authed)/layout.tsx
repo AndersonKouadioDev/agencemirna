@@ -29,11 +29,19 @@ export default async function AdminAuthedLayout({
   const admin = await requireAdmin();
 
   return (
-    <div className="min-h-screen bg-stone-50">
-      <AdminSidebar />
-      <div className="lg:pl-64">
-        <AdminTopbar admin={admin} />
-        <main className="p-6 lg:p-8 max-w-7xl mx-auto">{children}</main>
+    // À l'impression (affiches QR, états des lieux), seule la page sort :
+    // barre latérale et barre du haut sont masquées.
+    <div className="min-h-screen bg-stone-50 print:bg-white">
+      <div className="print:hidden">
+        <AdminSidebar />
+      </div>
+      <div className="lg:pl-64 print:pl-0">
+        <div className="print:hidden">
+          <AdminTopbar admin={admin} />
+        </div>
+        <main className="p-6 lg:p-8 max-w-7xl mx-auto print:p-0 print:max-w-none">
+          {children}
+        </main>
       </div>
     </div>
   );

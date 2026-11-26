@@ -17,6 +17,8 @@ import {
   Tags,
   ScrollText,
   BadgePercent,
+  Star,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Tableau de bord", href: "/admin", icon: LayoutDashboard },
   { label: "Leads", href: "/admin/leads", icon: Inbox },
   { label: "Biens", href: "/admin/biens", icon: Home },
+  { label: "États des lieux", href: "/admin/etats-des-lieux", icon: ClipboardList },
   { label: "Types & services", href: "/admin/taxonomie", icon: Tags },
   {
     label: "Communes & quartiers",
@@ -49,6 +52,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Publicités", href: "/admin/publicites", icon: BadgePercent },
   
   { label: "Agents", href: "/admin/agents", icon: Users },
+  { label: "Avis clients", href: "/admin/avis", icon: Star },
   { label: "Témoignages", href: "/admin/testimonials", icon: MessageSquareQuote },
   { label: "Articles", href: "/admin/articles", icon: Newspaper },
   { label: "FAQ", href: "/admin/faqs", icon: HelpCircle },

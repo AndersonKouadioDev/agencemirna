@@ -5,6 +5,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Génération des PDF d'états des lieux : la bibliothèque s'exécute telle
+  // quelle côté serveur plutôt que d'être réempaquetée par le bundler.
+  serverExternalPackages: ["@react-pdf/renderer"],
   turbopack: {
     // Force le workspace root pour éviter le warning sur les multiples lockfiles
     // (un pnpm-lock.yaml dans le repo parent crée une ambiguïté)

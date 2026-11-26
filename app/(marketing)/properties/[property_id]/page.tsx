@@ -11,6 +11,8 @@ import { getAnnonceVideoDuBien } from "@/src/actions/public";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BreadcrumbJsonLd } from "@/components/seo/structured-data";
+import AvisSection from "@/components/properties/[property_id]/avis-section";
+import { getAvisPublies } from "@/src/actions/avis";
 
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.agencemirna.com";
@@ -128,10 +130,11 @@ export default async function Page(props: {
   const params = await props.params;
   // La vidéo est lue en parallèle du bien : elle ne conditionne pas le rendu de
   // la fiche, et la faire attendre le bien doublerait l'aller-retour.
-  const [bien, contact, annonceVideo] = await Promise.all([
+  const [bien, contact, annonceVideo, avis] = await Promise.all([
     getBienWithImages(params.property_id),
     getSiteContact(),
     getAnnonceVideoDuBien(params.property_id),
+    getAvisPublies(params.property_id),
   ]);
 
   if (!bien) {
@@ -214,6 +217,7 @@ export default async function Page(props: {
         pubAside={<EmplacementPub cle="bien-aside" />}
       />
       <GallerySection bien={bien} />
+      <AvisSection avis={avis} />
       <EmplacementPub cle="bien-bas" className="container mx-auto px-4 md:px-8 max-w-screen-xl py-8" />
       <SimilarProperties bien={bien} />
 
