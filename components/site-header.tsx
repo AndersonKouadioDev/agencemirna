@@ -108,8 +108,8 @@ export const Header = ({ menu }: HeaderProps = {}) => {
                       "h-10 gap-2 rounded-full px-5 shadow-lg shadow-primary/25 ring-1 ring-primary/30 transition-transform hover:scale-[1.03] xl:h-11 xl:px-6",
                     )}
                   >
-                    <KeyRound className="h-4 w-4" />
-                    <span className="hidden sm:inline">Réserver</span>
+                    <KeyRound className="h-4 w-4" aria-hidden="true" />
+                    <span className="sr-only sm:not-sr-only">Réserver</span>
                   </Link>
                 </div>
               </div>

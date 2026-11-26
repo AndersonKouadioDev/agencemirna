@@ -139,8 +139,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Pas de `maximumScale` ni de `userScalable: false` : interdire le zoom
+  // pénalise les personnes malvoyantes (et la note d'accessibilité).
   themeColor: "#FAF5EE",
 };
 

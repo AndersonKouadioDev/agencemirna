@@ -9,6 +9,7 @@
   src: url("/font/agate.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
+  font-display: swap;
 }
 
 @font-face {
@@ -16,6 +17,7 @@
   src: url("/font/agate-italic.otf") format("opentype");
   font-weight: 400;
   font-style: italic;
+  font-display: swap;
 }
 
 @font-face {
@@ -23,6 +25,19 @@
   src: url("/font/agate-bold.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
+  font-display: swap;
+}
+
+/* iPhone : Safari zoome tout seul sur un champ dont le texte fait moins de
+   16 px. Le site interdisait le zoom pour l'éviter (maximum-scale=1), ce qui
+   pénalisait les personnes malvoyantes. On fixe plutôt la taille des champs,
+   sur iOS seulement, et le zoom à deux doigts redevient possible. */
+@supports (-webkit-touch-callout: none) {
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 
 :root {

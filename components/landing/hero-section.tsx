@@ -366,7 +366,11 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
       >
         {/* Background Image Carousel */}
         <div className="absolute inset-0 z-0">
-          <AnimatePresence mode="wait">
+          {/* `initial={false}` : la première diapositive s'affiche sans
+              animation d'entrée. Sinon image et texte restaient invisibles
+              (opacité 0) jusqu'au chargement du JavaScript, soit près de 3 s
+              de retard d'affichage sur mobile (mesure PageSpeed). */}
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={slide.id}
               initial={{ opacity: 0, scale: 1.05 }}
@@ -379,6 +383,7 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
                 src={slide.image}
                 alt="Propriété"
                 fill
+                sizes="100vw"
                 className="object-cover"
                 priority
               />
@@ -392,7 +397,7 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
         {/* Content */}
         <div className="relative z-10 w-full max-w-[1440px] mx-auto px-6 lg:px-12 xl:px-16 pt-48 lg:pt-56 pb-32 flex-1 flex flex-col justify-center">
           <div className="max-w-4xl xl:max-w-5xl">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={slide.id}
                 initial={{ opacity: 0, y: 30 }}
@@ -439,15 +444,21 @@ export default function HeroSection({ communes = [], quartiers = [], types = [],
           {HERO_SLIDES.map((_, idx) => (
             <button
               key={idx}
+              type="button"
               onClick={() => setCurrentSlide(idx)}
-              className={cn(
-                "rounded-full transition-all duration-500 ease-out",
-                currentSlide === idx
-                  ? "bg-primary w-10 h-2.5"
-                  : "bg-white/50 hover:bg-white/90 w-2.5 h-2.5"
-              )}
-              aria-label={`Aller à la slide ${idx + 1}`}
-            />
+              className="group flex h-6 min-w-6 items-center justify-center"
+              aria-label={`Aller à la diapositive ${idx + 1}`}
+              aria-current={currentSlide === idx}
+            >
+              <span
+                className={cn(
+                  "block rounded-full transition-all duration-500 ease-out",
+                  currentSlide === idx
+                    ? "bg-primary w-10 h-2.5"
+                    : "bg-white/50 group-hover:bg-white/90 w-2.5 h-2.5"
+                )}
+              />
+            </button>
           ))}
         </div>
 

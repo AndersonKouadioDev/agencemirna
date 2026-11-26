@@ -130,14 +130,19 @@ export default function FeaturedPropertiesCarousel({
                 key={i}
                 type="button"
                 onClick={() => emblaApi?.scrollTo(i)}
-                aria-label={`Aller au slide ${i + 1}`}
-                className={cn(
-                  "h-2 rounded-full transition-all",
-                  i === selectedIndex
-                    ? "w-6 bg-[#F5B324]"
-                    : "w-2 bg-stone-200 hover:bg-stone-300",
-                )}
-              />
+                aria-label={`Aller au bien ${i + 1}`}
+                aria-current={i === selectedIndex}
+                className="group flex h-6 min-w-6 items-center justify-center"
+              >
+                <span
+                  className={cn(
+                    "block h-2 rounded-full transition-all",
+                    i === selectedIndex
+                      ? "w-6 bg-[#F5B324]"
+                      : "w-2 bg-stone-200 group-hover:bg-stone-300",
+                  )}
+                />
+              </button>
             ))}
           </div>
         )}

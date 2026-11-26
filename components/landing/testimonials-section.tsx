@@ -46,6 +46,7 @@ export default function TestimonialsSection({
 
                 <div
                   className="flex gap-1 mb-6"
+                  role="img"
                   aria-label={`Note : ${notePleine} sur 5`}
                 >
                   {[...Array(5)].map((_, i) => (
@@ -71,9 +72,9 @@ export default function TestimonialsSection({
                       testimonial.author_name.slice(0, 2).toUpperCase()}
                   </div>
                   <div>
-                    <h4 className="font-bold text-secondary">
+                    <h3 className="font-bold text-secondary">
                       {testimonial.author_name}
-                    </h4>
+                    </h3>
                     {testimonial.author_role && (
                       <p className="text-sm font-medium text-stone-500">
                         {testimonial.author_role}
