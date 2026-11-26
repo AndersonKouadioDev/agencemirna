@@ -46,6 +46,7 @@ import { createLead } from "@/src/actions/leads";
 import { Textarea } from "@/components/ui/textarea";
 import { suivreDemande } from "@/src/lib/suivi";
 import { ChampPiege, useAntiRobot } from "@/components/anti-robot";
+import { lireProvenance } from "@/src/lib/provenance";
 
 /**
  * Les lignes de `biens` n'ont pas de type généré : on décrit ici les seules
@@ -499,6 +500,7 @@ const PriceCard = ({ bien, contact, isMeuble, isVente }: { bien: BienFicheSource
         guests,
       },
       anti_robot: antiRobot,
+      provenance: lireProvenance(),
     });
 
     const emailResult = await BookingRequest({

@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { createClient } from "../supabase/server";
 import { notifyNewLead } from "../lib/notify";
 import { evaluerDemande, type ControleAntiRobot } from "../lib/anti-spam";
+import { nettoyerProvenance, type Provenance } from "../lib/provenance";
 
 /**
  * Server Actions publiques pour la capture de leads (RLS autorise INSERT
@@ -34,6 +35,8 @@ export type CreateLeadInput = {
   metadata?: Record<string, unknown> | null;
   /** Champ piège et durée de saisie, fournis par `useAntiRobot()`. */
   anti_robot?: ControleAntiRobot | null;
+  /** Lien suivi (UTM) ou site d'origine du visiteur, via `lireProvenance()`. */
+  provenance?: Provenance | null;
 };
 
 export type LeadActionResult =
@@ -89,9 +92,15 @@ export async function createLead(
     return { ok: true };
   }
   const motifSpam = verdict.action === "rejeter" ? verdict.motif : null;
-  const metadata = motifSpam
-    ? { ...(input.metadata ?? {}), spam: motifSpam }
-    : (input.metadata ?? null);
+
+  // Provenance (lien suivi, site d'origine) : jointe aux informations du
+  // lead, sans jamais écraser ce que le formulaire a lui-même fourni.
+  const assemblees: Record<string, unknown> = {
+    ...nettoyerProvenance(input.provenance),
+    ...(input.metadata ?? {}),
+    ...(motifSpam ? { spam: motifSpam } : {}),
+  };
+  const metadata = Object.keys(assemblees).length > 0 ? assemblees : null;
 
   const supabase = await createClient();
   // NB : la policy publique de `leads` autorise INSERT mais pas SELECT — et
@@ -141,7 +150,7 @@ export async function createLead(
     email,
     phone,
     message: input.message?.trim() || null,
-    metadata: input.metadata ?? null,
+    metadata,
     bien_name: bienName,
   }).catch((e) => {
     console.error("[notify] failed:", e);

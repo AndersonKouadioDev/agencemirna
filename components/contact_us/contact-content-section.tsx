@@ -11,6 +11,7 @@ import { useFormStatus } from "react-dom";
 import { createLead } from "@/src/actions/leads";
 import { suivreDemande } from "@/src/lib/suivi";
 import { ChampPiege, useAntiRobot } from "@/components/anti-robot";
+import { lireProvenance } from "@/src/lib/provenance";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -45,6 +46,7 @@ export default function ContactContentSection({
       source_url:
         typeof window !== "undefined" ? window.location.pathname : null,
       anti_robot: controle(),
+      provenance: lireProvenance(),
     });
     if (result.ok) {
       setStatus("success");

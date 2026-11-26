@@ -19,6 +19,7 @@ import {
   BadgePercent,
   Star,
   ClipboardList,
+  QrCode,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -50,6 +51,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Annonces", href: "/admin/annonces", icon: Megaphone },
   { label: "Bandeau d'infos", href: "/admin/bandeau", icon: ScrollText },
   { label: "Publicités", href: "/admin/publicites", icon: BadgePercent },
+  { label: "Liens & QR codes", href: "/admin/liens", icon: QrCode },
   
   { label: "Agents", href: "/admin/agents", icon: Users },
   { label: "Avis clients", href: "/admin/avis", icon: Star },

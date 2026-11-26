@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createLead } from "@/src/actions/leads";
 import { suivreDemande } from "@/src/lib/suivi";
 import { ChampPiege, useAntiRobot } from "@/components/anti-robot";
+import { lireProvenance } from "@/src/lib/provenance";
 
 export function RequestVisitButton({
   bienId,
@@ -52,6 +53,7 @@ export function RequestVisitButton({
         date_souhaitee: date || null,
       },
       anti_robot: controle(),
+      provenance: lireProvenance(),
     });
 
     setSubmitting(false);

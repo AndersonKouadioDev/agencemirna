@@ -6,6 +6,7 @@ import { Button } from "./ui/button";
 import { createLead } from "@/src/actions/leads";
 import { suivreInscriptionNewsletter } from "@/src/lib/suivi";
 import { ChampPiege, useAntiRobot } from "./anti-robot";
+import { lireProvenance } from "@/src/lib/provenance";
 
 /**
  * Formulaire d'abonnement du pied de page.
@@ -43,6 +44,7 @@ export default function NewsletterForm() {
       source_url:
         typeof window !== "undefined" ? window.location.pathname : null,
       anti_robot: controle(),
+      provenance: lireProvenance(),
     });
     if (resultat.ok) {
       setStatut("success");

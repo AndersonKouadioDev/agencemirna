@@ -9,6 +9,7 @@ import { Providers } from "./provider";
 import { GoogleTagManager, GoogleAnalytics } from "@next/third-parties/google";
 import Script from "next/script";
 import { SuiviClics } from "@/components/suivi-clics";
+import { CaptureProvenance } from "@/components/capture-provenance";
 import { SCRIPT_CONSENTEMENT_DEFAUT } from "@/src/lib/consentement";
 
 const fontSans = FontSans({
@@ -167,6 +168,7 @@ export default function RootLayout({
             visite deux fois. */}
         <GoogleAnalytics gaId="G-C5RY1GRYG1" />
         <SuiviClics />
+        <CaptureProvenance />
 
         <Providers>
           {children}

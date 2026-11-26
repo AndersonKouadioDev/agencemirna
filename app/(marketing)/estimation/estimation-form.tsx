@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { createLead } from "@/src/actions/leads";
 import { suivreDemande } from "@/src/lib/suivi";
 import { ChampPiege, useAntiRobot } from "@/components/anti-robot";
+import { lireProvenance } from "@/src/lib/provenance";
 
 const TYPES = [
   "Appartement",
@@ -68,6 +69,7 @@ export function EstimationForm({ whatsappUrl }: { whatsappUrl: string }) {
         annee_construction: annee || null,
       },
       anti_robot: controle(),
+      provenance: lireProvenance(),
     });
 
     setSubmitting(false);
